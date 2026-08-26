@@ -867,6 +867,51 @@ describe('createPlayerStore', () => {
     ]);
   });
 
+  it('releases failed hydration ownership before an idle subscriber retries', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_subscriber_retry', {
+      ...createInitialPlayerState('case_subscriber_retry', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({
+      caseId: 'case_subscriber_retry',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_pre_retry']);
+
+    let retry: Promise<void> | null = null;
+    const unsubscribe = store.subscribe((state, previousState) => {
+      if (
+        previousState.hydrationStatus === 'hydrating' &&
+        state.hydrationStatus === 'idle'
+      ) {
+        retry = state.actions.hydrate();
+        void retry.catch(() => undefined);
+      }
+    });
+
+    const firstHydration = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 1);
+    adapter.rejectNextLoad();
+    await expect(firstHydration).rejects.toThrow('load failed');
+    await waitForCount(adapter.loadStarts, 2);
+
+    adapter.releaseNextLoad();
+    if (retry === null) throw new Error('Idle subscriber did not start hydration retry.');
+    await retry;
+    unsubscribe();
+
+    expect(adapter.loadStarts).toEqual(['case_subscriber_retry', 'case_subscriber_retry']);
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_pre_retry',
+    ]);
+  });
+
   it('hydrates before an initial save so persisted and pre-hydrate progress are merged', async () => {
     const adapter = new MemoryAdapter();
     adapter.saved.set('case_save_before_hydrate', {

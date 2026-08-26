@@ -56,6 +56,7 @@ type PlayerMutation = (state: PlayerState) => PlayerState;
 
 type ActiveHydration = {
   generation: number;
+  owner: symbol;
   operation: Promise<void>;
 };
 
@@ -274,6 +275,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
       }
 
       set({ hydrationStatus: 'hydrating' });
+      const owner = Symbol('player-store-hydration');
       const operation = enqueueLifecycle(async () => {
         try {
           if (requestedGeneration !== lifecycleGeneration) return;
@@ -305,13 +307,17 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
           mutationCaptures.delete(initialHydrationMutations);
           initialHydrationMutations.length = 0;
         } catch (error) {
-          if (requestedGeneration === lifecycleGeneration) {
+          if (
+            requestedGeneration === lifecycleGeneration &&
+            activeHydration?.owner === owner
+          ) {
+            activeHydration = null;
             set({ hydrationStatus: 'idle' });
           }
           throw error;
         }
       });
-      const hydration: ActiveHydration = { generation: requestedGeneration, operation };
+      const hydration: ActiveHydration = { generation: requestedGeneration, owner, operation };
       activeHydration = hydration;
       void operation.then(
         () => {
