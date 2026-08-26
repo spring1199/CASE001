@@ -20,6 +20,15 @@ export const playerTimestampsSchema = z.strictObject({
   lastSavedAt: timestampSchema.nullable(),
 });
 
+function findDuplicate(values: string[]): string | null {
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (seen.has(value)) return value;
+    seen.add(value);
+  }
+  return null;
+}
+
 export const playerStateSchema = z.strictObject({
   caseId: identifierSchema,
   discoveredArtifactIds: z.array(identifierSchema),
@@ -36,4 +45,38 @@ export const playerStateSchema = z.strictObject({
   endingBranchId: identifierSchema.nullable(),
   endingId: identifierSchema.nullable(),
   timestamps: playerTimestampsSchema,
+}).superRefine((state, context) => {
+  const duplicateTimelineEventId = findDuplicate(
+    state.timelinePlacements.map((placement) => placement.eventId),
+  );
+  if (duplicateTimelineEventId !== null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['timelinePlacements'],
+      message: `Timeline event "${duplicateTimelineEventId}" has more than one placement.`,
+    });
+  }
+
+  for (const key of ['confirmedGraphEdgeIds', 'severedGraphEdgeIds'] as const) {
+    const duplicateEdgeId = findDuplicate(state[key]);
+    if (duplicateEdgeId !== null) {
+      context.addIssue({
+        code: 'custom',
+        path: [key],
+        message: `Graph edge "${duplicateEdgeId}" appears more than once.`,
+      });
+    }
+  }
+
+  const confirmedEdges = new Set(state.confirmedGraphEdgeIds);
+  const conflictingEdgeId = state.severedGraphEdgeIds.find((edgeId) =>
+    confirmedEdges.has(edgeId),
+  );
+  if (conflictingEdgeId !== undefined) {
+    context.addIssue({
+      code: 'custom',
+      path: ['severedGraphEdgeIds'],
+      message: `Graph edge "${conflictingEdgeId}" cannot be both confirmed and severed.`,
+    });
+  }
 }) satisfies z.ZodType<PlayerState>;

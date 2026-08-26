@@ -18,5 +18,5 @@ Adapters namespace records by case ID and verify that the embedded case ID match
 
 - Local storage and future remote adapters can share validation and migrations.
 - Adding a save version requires a schema and an explicit migration step rather than a cast or silent fallback.
-- Legacy saves receive deterministic defaults for fields that did not exist in the starter shape.
+- Legacy saves receive deterministic defaults for fields that did not exist in the starter shape. Missing timestamps use the Unix epoch sentinel rather than load time so repeated decoding cannot reset pacing metadata.
 - Unsupported future saves fail closed instead of risking progress corruption.

@@ -5,6 +5,7 @@ import { createInitialPlayerState, type PlayerState } from '@/game/state/types';
 
 export const CURRENT_SAVE_VERSION = 1 as const;
 export const LEGACY_SAVE_VERSION = 0 as const;
+export const LEGACY_TIMESTAMP_SENTINEL = '1970-01-01T00:00:00.000Z';
 
 export const saveEnvelopeSchema = z.strictObject({
   version: z.literal(CURRENT_SAVE_VERSION),
@@ -43,15 +44,15 @@ export class SavePersistenceError extends Error {
   }
 }
 
-type Migration = (input: unknown, now: string) => PlayerState;
+type Migration = (input: unknown) => PlayerState;
 
-function migrateLegacyPlayerState(input: unknown, now: string): PlayerState {
+function migrateLegacyPlayerState(input: unknown): PlayerState {
   const result = legacyPlayerStateSchema.safeParse(input);
   if (!result.success) throw new Error(z.prettifyError(result.error));
 
   const legacy = result.data;
   return {
-    ...createInitialPlayerState(legacy.caseId, now),
+    ...createInitialPlayerState(legacy.caseId, LEGACY_TIMESTAMP_SENTINEL),
     discoveredEvidenceIds: legacy.discoveredEvidenceIds,
     knownFactIds: legacy.knownFactIds,
     completedDeductionIds: legacy.completedDeductionIds,
@@ -94,7 +95,7 @@ export function createSaveEnvelope(state: PlayerState, savedAt: string): SaveEnv
   return result.data;
 }
 
-export function deserializeSave(raw: string, expectedCaseId: string, now: string): PlayerState {
+export function deserializeSave(raw: string, expectedCaseId: string): PlayerState {
   let input: unknown;
   try {
     input = JSON.parse(raw) as unknown;
@@ -130,7 +131,7 @@ export function deserializeSave(raw: string, expectedCaseId: string, now: string
   }
 
   try {
-    const migrated = SAVE_MIGRATIONS[LEGACY_SAVE_VERSION](input, now);
+    const migrated = SAVE_MIGRATIONS[LEGACY_SAVE_VERSION](input);
     assertMatchingCaseId(migrated, expectedCaseId);
     return playerStateSchema.parse(migrated);
   } catch (error) {

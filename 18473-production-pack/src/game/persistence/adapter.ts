@@ -43,7 +43,7 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
     const storage = this.storage();
     if (storage === null) return null;
     const raw = storage.getItem(saveKey(caseId));
-    return raw === null ? null : deserializeSave(raw, caseId, this.now());
+    return raw === null ? null : deserializeSave(raw, caseId);
   }
 
   async save(state: PlayerState): Promise<void> {

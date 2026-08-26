@@ -4,7 +4,7 @@ import {
   LocalStoragePersistenceAdapter,
   type StorageLike,
 } from '@/game/persistence/adapter';
-import { CURRENT_SAVE_VERSION } from '@/game/persistence/save';
+import { CURRENT_SAVE_VERSION, LEGACY_TIMESTAMP_SENTINEL } from '@/game/persistence/save';
 import { createInitialPlayerState, type PlayerState } from '@/game/state/types';
 
 class MemoryStorage implements StorageLike {
@@ -101,7 +101,7 @@ describe('LocalStoragePersistenceAdapter', () => {
     });
 
     expect(await adapter.load('legacy_case')).toEqual({
-      ...createInitialPlayerState('legacy_case', NOW),
+      ...createInitialPlayerState('legacy_case', LEGACY_TIMESTAMP_SENTINEL),
       discoveredEvidenceIds: ['ev_1'],
       knownFactIds: ['fact_1'],
       completedDeductionIds: ['ded_1'],
@@ -110,6 +110,36 @@ describe('LocalStoragePersistenceAdapter', () => {
       flags: { seen: true, score: 2, route: 'quiet' },
       endingId: 'ending_old',
     });
+  });
+
+  it('produces identical timestamps when the same legacy save is loaded at different times', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      '18473:save:legacy_repeatable',
+      JSON.stringify({
+        caseId: 'legacy_repeatable',
+        discoveredEvidenceIds: [],
+        knownFactIds: [],
+        completedDeductionIds: [],
+        unlockedContentIds: [],
+        completedObjectiveIds: [],
+        flags: {},
+      }),
+    );
+    const early = new LocalStoragePersistenceAdapter({
+      storage: () => storage,
+      now: () => '2026-01-01T00:00:00.000Z',
+    });
+    const late = new LocalStoragePersistenceAdapter({
+      storage: () => storage,
+      now: () => '2036-01-01T00:00:00.000Z',
+    });
+
+    const first = await early.load('legacy_repeatable');
+    const second = await late.load('legacy_repeatable');
+
+    expect(first?.timestamps).toEqual(second?.timestamps);
+    expect(first?.timestamps.startedAt).toBe(LEGACY_TIMESTAMP_SENTINEL);
   });
 
   it.each([
@@ -147,6 +177,47 @@ describe('LocalStoragePersistenceAdapter', () => {
     await expect(adapter.load('expected_case')).rejects.toMatchObject({
       code: 'CASE_ID_MISMATCH',
       caseId: 'expected_case',
+    });
+  });
+
+  it.each([
+    [
+      'duplicate timeline event placements',
+      (state: PlayerState) => {
+        state.timelinePlacements.push({ eventId: 'event_b', positionId: 'slot_3' });
+      },
+    ],
+    [
+      'duplicate confirmed graph edges',
+      (state: PlayerState) => {
+        state.confirmedGraphEdgeIds.push('edge_confirmed');
+      },
+    ],
+    [
+      'duplicate severed graph edges',
+      (state: PlayerState) => {
+        state.severedGraphEdgeIds.push('edge_severed');
+      },
+    ],
+    [
+      'an edge that is both confirmed and severed',
+      (state: PlayerState) => {
+        state.severedGraphEdgeIds.push('edge_confirmed');
+      },
+    ],
+  ])('rejects %s in persisted player state', async (_label, makeInvalid) => {
+    const storage = new MemoryStorage();
+    const state = completeState();
+    makeInvalid(state);
+    storage.setItem(
+      '18473:save:case_alpha',
+      JSON.stringify({ version: CURRENT_SAVE_VERSION, savedAt: NOW, state }),
+    );
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => storage });
+
+    await expect(adapter.load('case_alpha')).rejects.toMatchObject({
+      code: 'INVALID_SAVE',
+      caseId: 'case_alpha',
     });
   });
 

@@ -30,32 +30,88 @@ class MemoryAdapter implements PersistenceAdapter {
   }
 }
 
-class PausedSaveAdapter extends MemoryAdapter {
+class ControlledAdapter extends MemoryAdapter {
+  pauseLoads = false;
+  pauseSaves = true;
+  readonly loadStarts: string[] = [];
   readonly saveStarts: PlayerState[] = [];
+  private readonly pendingLoads: Array<{
+    value: PlayerState | null;
+    resolve: (value: PlayerState | null) => void;
+    reject: (error: Error) => void;
+  }> = [];
   private readonly pendingReleases: Array<() => void> = [];
+  private readonly pendingSaveRejections: Array<(error: Error) => void> = [];
+
+  override async load(caseId: string): Promise<PlayerState | null> {
+    if (!this.pauseLoads) return super.load(caseId);
+    this.loadCalls.push(caseId);
+    this.loadStarts.push(caseId);
+    const value = structuredClone(this.saved.get(caseId) ?? null);
+    return new Promise<PlayerState | null>((resolve, reject) => {
+      this.pendingLoads.push({ value, resolve, reject });
+    });
+  }
 
   override async save(state: PlayerState): Promise<void> {
+    if (!this.pauseSaves) return super.save(state);
     const snapshot = structuredClone(state);
     this.saveStarts.push(snapshot);
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
       this.pendingReleases.push(resolve);
+      this.pendingSaveRejections.push(reject);
     });
     this.saveCalls.push(snapshot);
     this.saved.set(snapshot.caseId, snapshot);
   }
 
-  releaseNext(): void {
+  releaseNextLoad(): void {
+    const pending = this.pendingLoads.shift();
+    if (pending === undefined) throw new Error('No load is pending.');
+    pending.resolve(pending.value);
+  }
+
+  rejectNextLoad(error = new Error('load failed')): void {
+    const pending = this.pendingLoads.shift();
+    if (pending === undefined) throw new Error('No load is pending.');
+    pending.reject(error);
+  }
+
+  releaseNextSave(): void {
     const release = this.pendingReleases.shift();
     if (release === undefined) throw new Error('No save is pending.');
+    this.pendingSaveRejections.shift();
     release();
+  }
+
+  rejectNextSave(error = new Error('save failed')): void {
+    this.pendingReleases.shift();
+    const reject = this.pendingSaveRejections.shift();
+    if (reject === undefined) throw new Error('No save is pending.');
+    reject(error);
   }
 }
 
-async function waitForSaveStarts(adapter: PausedSaveAdapter, count: number): Promise<void> {
-  for (let attempt = 0; attempt < 10 && adapter.saveStarts.length < count; attempt += 1) {
+class FinalizationGapAdapter extends MemoryAdapter {
+  onFinalizationGap: (() => void) | null = null;
+
+  override async save(state: PlayerState): Promise<void> {
+    await super.save(state);
+    const callback = this.onFinalizationGap;
+    this.onFinalizationGap = null;
+    if (callback !== null) {
+      queueMicrotask(() => {
+        queueMicrotask(callback);
+      });
+    }
+  }
+}
+
+async function waitForCount(values: unknown[], count: number): Promise<void> {
+  for (let attempt = 0; attempt < 10 && values.length < count; attempt += 1) {
     await Promise.resolve();
   }
-  expect(adapter.saveStarts).toHaveLength(count);
+  expect(values).toHaveLength(count);
 }
 
 function sequenceClock(...values: string[]): () => string {
@@ -211,7 +267,7 @@ describe('createPlayerStore', () => {
   });
 
   it('persists progress made while an asynchronous save is pending before resolving', async () => {
-    const adapter = new PausedSaveAdapter();
+    const adapter = new ControlledAdapter();
     const store = createPlayerStore({ caseId: 'case_concurrent', adapter, now: () => T1 });
 
     const save = store.getState().actions.save();
@@ -219,11 +275,12 @@ describe('createPlayerStore', () => {
     void save.then(() => {
       saveResolved = true;
     });
+    await waitForCount(adapter.saveStarts, 1);
     store.getState().actions.learnFacts(['fact_during_save']);
-    adapter.releaseNext();
-    await waitForSaveStarts(adapter, 2);
+    adapter.releaseNextSave();
+    await waitForCount(adapter.saveStarts, 2);
     expect(saveResolved).toBe(false);
-    adapter.releaseNext();
+    adapter.releaseNextSave();
     await save;
 
     const reloaded = createPlayerStore({ caseId: 'case_concurrent', adapter, now: () => T2 });
@@ -233,24 +290,156 @@ describe('createPlayerStore', () => {
   });
 
   it('serializes concurrent saves so an older snapshot cannot finish last', async () => {
-    const adapter = new PausedSaveAdapter();
+    const adapter = new ControlledAdapter();
     const store = createPlayerStore({ caseId: 'case_ordered', adapter, now: () => T1 });
 
     const firstSave = store.getState().actions.save();
+    await waitForCount(adapter.saveStarts, 1);
     store.getState().actions.learnFacts(['fact_1']);
     const secondSave = store.getState().actions.save();
     store.getState().actions.learnFacts(['fact_2']);
 
     expect(adapter.saveStarts).toHaveLength(1);
-    adapter.releaseNext();
-    await waitForSaveStarts(adapter, 2);
+    adapter.releaseNextSave();
+    await waitForCount(adapter.saveStarts, 2);
     expect(adapter.saveStarts[1]?.knownFactIds).toEqual(['fact_1', 'fact_2']);
-    adapter.releaseNext();
+    adapter.releaseNextSave();
     await Promise.all([firstSave, secondSave]);
 
     const reloaded = createPlayerStore({ caseId: 'case_ordered', adapter, now: () => T2 });
     await reloaded.getState().actions.hydrate();
     expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_1', 'fact_2']);
     expect(adapter.saveCalls).toHaveLength(2);
+  });
+
+  it('replays actions made after hydrate starts onto the persisted baseline', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_hydrate_action', {
+      ...createInitialPlayerState('case_hydrate_action', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({ caseId: 'case_hydrate_action', adapter, now: () => T1 });
+
+    const hydration = store.getState().actions.hydrate();
+    store.getState().actions.learnFacts(['fact_during_hydrate']);
+    await waitForCount(adapter.loadStarts, 1);
+    adapter.releaseNextLoad();
+    await hydration;
+    await store.getState().actions.save();
+
+    const reloaded = createPlayerStore({ caseId: 'case_hydrate_action', adapter, now: () => T2 });
+    adapter.pauseLoads = false;
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_during_hydrate',
+    ]);
+  });
+
+  it('orders save after an in-flight hydrate so stale loaded state cannot win', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_hydrate_save', {
+      ...createInitialPlayerState('case_hydrate_save', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({ caseId: 'case_hydrate_save', adapter, now: () => T1 });
+
+    const hydration = store.getState().actions.hydrate();
+    store.getState().actions.learnFacts(['fact_newer']);
+    const save = store.getState().actions.save();
+    await waitForCount(adapter.loadStarts, 1);
+    expect(adapter.saveCalls).toHaveLength(0);
+    adapter.releaseNextLoad();
+    await Promise.all([hydration, save]);
+
+    adapter.pauseLoads = false;
+    const reloaded = createPlayerStore({ caseId: 'case_hydrate_save', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_persisted', 'fact_newer']);
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_newer',
+    ]);
+  });
+
+  it('orders clear after an active save and preserves actions made after clear begins', async () => {
+    const adapter = new ControlledAdapter();
+    const store = createPlayerStore({ caseId: 'case_clear_race', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_before_clear']);
+
+    const save = store.getState().actions.save();
+    await waitForCount(adapter.saveStarts, 1);
+    const clear = store.getState().actions.clear();
+    store.getState().actions.learnFacts(['fact_after_clear_started']);
+    adapter.releaseNextSave();
+    await clear;
+    for (let attempt = 0; attempt < 10; attempt += 1) await Promise.resolve();
+    expect(adapter.saveStarts).toHaveLength(1);
+    await save;
+
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_after_clear_started']);
+    expect(await adapter.load('case_clear_race')).toBeNull();
+  });
+
+  it('hands a save requested during finalization to a new persistence operation', async () => {
+    const adapter = new FinalizationGapAdapter();
+    const store = createPlayerStore({ caseId: 'case_handoff', adapter, now: () => T1 });
+    let handoffSave: Promise<void> | null = null;
+    adapter.onFinalizationGap = () => {
+      store.getState().actions.learnFacts(['fact_in_finalization_gap']);
+      handoffSave = store.getState().actions.save();
+    };
+
+    await store.getState().actions.save();
+    await Promise.resolve();
+    if (handoffSave === null) throw new Error('Finalization hook did not run.');
+    await handoffSave;
+
+    const reloaded = createPlayerStore({ caseId: 'case_handoff', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_in_finalization_gap']);
+    expect(adapter.saveCalls).toHaveLength(2);
+  });
+
+  it('recovers after an adapter save rejection without wedging later saves', async () => {
+    const adapter = new ControlledAdapter();
+    const store = createPlayerStore({ caseId: 'case_retry', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_retry']);
+
+    const failedSave = store.getState().actions.save();
+    await waitForCount(adapter.saveStarts, 1);
+    adapter.rejectNextSave();
+    await expect(failedSave).rejects.toThrow('save failed');
+
+    const retry = store.getState().actions.save();
+    await waitForCount(adapter.saveStarts, 2);
+    adapter.releaseNextSave();
+    await retry;
+
+    expect((await adapter.load('case_retry'))?.knownFactIds).toEqual(['fact_retry']);
+  });
+
+  it('runs a queued save after hydrate rejects and preserves live progress', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    const store = createPlayerStore({ caseId: 'case_load_retry', adapter, now: () => T1 });
+
+    const hydration = store.getState().actions.hydrate();
+    store.getState().actions.learnFacts(['fact_after_failed_load']);
+    const save = store.getState().actions.save();
+    await waitForCount(adapter.loadStarts, 1);
+    adapter.rejectNextLoad();
+
+    await expect(hydration).rejects.toThrow('load failed');
+    await save;
+    adapter.pauseLoads = false;
+    expect((await adapter.load('case_load_retry'))?.knownFactIds).toEqual([
+      'fact_after_failed_load',
+    ]);
   });
 });

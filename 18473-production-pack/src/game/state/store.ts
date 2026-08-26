@@ -35,6 +35,8 @@ export type CreatePlayerStoreOptions = {
 
 const defaultClock = (): string => new Date().toISOString();
 
+type PlayerMutation = (state: PlayerState) => PlayerState;
+
 function appendUnique(existing: string[], incoming: string[]): string[] {
   const seen = new Set(existing);
   const additions = incoming.filter((id) => {
@@ -48,57 +50,72 @@ function appendUnique(existing: string[], incoming: string[]): string[] {
 export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<PlayerStoreState> {
   const now = options.now ?? defaultClock;
   let progressRevision = 0;
-  let activeSave: Promise<void> | null = null;
+  let persistedRevision: number | null = null;
+  let lifecycleGeneration = 0;
+  let lifecycleTail = Promise.resolve();
+  const mutationCaptures = new Set<PlayerMutation[]>();
 
   return createStore<PlayerStoreState>((set, get) => {
-    const updateProgress = (change: (state: PlayerState) => PlayerState): void => {
+    const enqueueLifecycle = (operation: () => Promise<void>): Promise<void> => {
+      const result = lifecycleTail.then(operation);
+      lifecycleTail = result.catch(() => undefined);
+      return result;
+    };
+
+    const updateProgress = (change: PlayerMutation): void => {
       const current = get().playerState;
       const changed = change(current);
       if (changed === current) return;
       const changedAt = now();
-      progressRevision += 1;
-      set({
-        playerState: {
-          ...changed,
+      const mutation: PlayerMutation = (state) => {
+        const next = change(state);
+        return {
+          ...(next === state ? state : next),
           timestamps: {
-            ...changed.timestamps,
+            ...(next === state ? state.timestamps : next.timestamps),
             updatedAt: changedAt,
             lastPlayedAt: changedAt,
           },
-        },
-      });
-    };
-
-    const drainSave = async (): Promise<void> => {
-      while (true) {
-        const revisionToSave = progressRevision;
-        const savedAt = now();
-        const current = get().playerState;
-        const savedState: PlayerState = {
-          ...current,
-          timestamps: {
-            ...current.timestamps,
-            updatedAt: savedAt,
-            lastSavedAt: savedAt,
-          },
         };
-
-        await options.adapter.save(savedState);
-        if (progressRevision !== revisionToSave) continue;
-
-        set({ playerState: savedState });
-        if (progressRevision === revisionToSave) return;
-      }
+      };
+      progressRevision += 1;
+      for (const capture of mutationCaptures) capture.push(mutation);
+      set({ playerState: mutation(current) });
     };
 
-    const saveLatestProgress = (): Promise<void> => {
-      if (activeSave !== null) return activeSave;
+    const saveLatestProgress = (requestedGeneration: number): Promise<void> => {
+      return enqueueLifecycle(async () => {
+        if (
+          requestedGeneration !== lifecycleGeneration ||
+          persistedRevision === progressRevision
+        ) {
+          return;
+        }
 
-      const trackedSave = drainSave().finally(() => {
-        if (activeSave === trackedSave) activeSave = null;
+        while (requestedGeneration === lifecycleGeneration) {
+          const revisionToSave = progressRevision;
+          const savedAt = now();
+          const current = get().playerState;
+          const savedState: PlayerState = {
+            ...current,
+            timestamps: {
+              ...current.timestamps,
+              updatedAt: savedAt,
+              lastSavedAt: savedAt,
+            },
+          };
+
+          await options.adapter.save(savedState);
+          if (requestedGeneration !== lifecycleGeneration) return;
+          if (progressRevision !== revisionToSave) continue;
+
+          set({ playerState: savedState });
+          if (requestedGeneration !== lifecycleGeneration) return;
+          if (progressRevision !== revisionToSave) continue;
+          persistedRevision = revisionToSave;
+          return;
+        }
       });
-      activeSave = trackedSave;
-      return trackedSave;
     };
 
     const appendIds = (
@@ -111,8 +128,9 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
         | 'knownFactIds',
       ids: string[],
     ): void => {
+      const orderedIds = [...ids];
       updateProgress((state) => {
-        const nextIds = appendUnique(state[key], ids);
+        const nextIds = appendUnique(state[key], orderedIds);
         return nextIds === state[key] ? state : { ...state, [key]: nextIds };
       });
     };
@@ -122,9 +140,10 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
       targetKey: 'confirmedGraphEdgeIds' | 'severedGraphEdgeIds',
       oppositeKey: 'confirmedGraphEdgeIds' | 'severedGraphEdgeIds',
     ): void => {
+      const orderedIds = [...ids];
       updateProgress((state) => {
-        const moving = new Set(ids);
-        const target = appendUnique(state[targetKey], ids);
+        const moving = new Set(orderedIds);
+        const target = appendUnique(state[targetKey], orderedIds);
         const opposite = state[oppositeKey].filter((id) => !moving.has(id));
         if (target === state[targetKey] && opposite.length === state[oppositeKey].length) {
           return state;
@@ -183,14 +202,48 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
             : { ...state, endingBranchId: branchId, endingId },
         );
       },
-      hydrate: async () => {
-        const loaded = await options.adapter.load(options.caseId);
-        if (loaded !== null) set({ playerState: loaded });
+      hydrate: () => {
+        const requestedGeneration = lifecycleGeneration;
+        const capturedMutations: PlayerMutation[] = [];
+        mutationCaptures.add(capturedMutations);
+        return enqueueLifecycle(async () => {
+          try {
+            const loaded = await options.adapter.load(options.caseId);
+            if (requestedGeneration !== lifecycleGeneration || loaded === null) return;
+
+            const playerState = capturedMutations.reduce(
+              (state, mutation) => mutation(state),
+              loaded,
+            );
+            set({ playerState });
+            persistedRevision =
+              capturedMutations.length === 0 ? progressRevision : null;
+          } finally {
+            mutationCaptures.delete(capturedMutations);
+          }
+        });
       },
-      save: saveLatestProgress,
-      clear: async () => {
-        await options.adapter.clear(options.caseId);
-        set({ playerState: createInitialPlayerState(options.caseId, now()) });
+      save: () => saveLatestProgress(lifecycleGeneration),
+      clear: () => {
+        lifecycleGeneration += 1;
+        const requestedGeneration = lifecycleGeneration;
+        const capturedMutations: PlayerMutation[] = [];
+        mutationCaptures.add(capturedMutations);
+        return enqueueLifecycle(async () => {
+          try {
+            await options.adapter.clear(options.caseId);
+            if (requestedGeneration !== lifecycleGeneration) return;
+
+            const playerState = capturedMutations.reduce(
+              (state, mutation) => mutation(state),
+              createInitialPlayerState(options.caseId, now()),
+            );
+            set({ playerState });
+            persistedRevision = null;
+          } finally {
+            mutationCaptures.delete(capturedMutations);
+          }
+        });
       },
     };
 
