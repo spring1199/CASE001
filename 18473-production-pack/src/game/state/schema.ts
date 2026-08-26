@@ -20,6 +20,26 @@ export const playerTimestampsSchema = z.strictObject({
   lastSavedAt: timestampSchema.nullable(),
 });
 
+export function orderedUniqueStringArraySchema(itemSchema: z.ZodType<string>) {
+  return z.array(itemSchema).superRefine((values, context) => {
+    const firstIndexByValue = new Map<string, number>();
+    values.forEach((value, index) => {
+      const firstIndex = firstIndexByValue.get(value);
+      if (firstIndex === undefined) {
+        firstIndexByValue.set(value, index);
+        return;
+      }
+      context.addIssue({
+        code: 'custom',
+        path: [index],
+        message: `Duplicate ID "${value}"; first occurrence is at index ${firstIndex}.`,
+      });
+    });
+  });
+}
+
+const orderedUniqueIdentifierArraySchema = orderedUniqueStringArraySchema(identifierSchema);
+
 function findDuplicate(values: string[]): string | null {
   const seen = new Set<string>();
   for (const value of values) {
@@ -31,16 +51,16 @@ function findDuplicate(values: string[]): string | null {
 
 export const playerStateSchema = z.strictObject({
   caseId: identifierSchema,
-  discoveredArtifactIds: z.array(identifierSchema),
-  discoveredEvidenceIds: z.array(identifierSchema),
-  unlockedAppIds: z.array(identifierSchema),
-  unlockedContentIds: z.array(identifierSchema),
-  completedDeductionIds: z.array(identifierSchema),
-  knownFactIds: z.array(identifierSchema),
+  discoveredArtifactIds: orderedUniqueIdentifierArraySchema,
+  discoveredEvidenceIds: orderedUniqueIdentifierArraySchema,
+  unlockedAppIds: orderedUniqueIdentifierArraySchema,
+  unlockedContentIds: orderedUniqueIdentifierArraySchema,
+  completedDeductionIds: orderedUniqueIdentifierArraySchema,
+  knownFactIds: orderedUniqueIdentifierArraySchema,
   objectiveStates: z.record(identifierSchema, objectiveStateSchema),
   timelinePlacements: z.array(timelinePlacementSchema),
-  confirmedGraphEdgeIds: z.array(identifierSchema),
-  severedGraphEdgeIds: z.array(identifierSchema),
+  confirmedGraphEdgeIds: orderedUniqueIdentifierArraySchema,
+  severedGraphEdgeIds: orderedUniqueIdentifierArraySchema,
   flags: z.record(identifierSchema, flagValueSchema),
   endingBranchId: identifierSchema.nullable(),
   endingId: identifierSchema.nullable(),
@@ -55,17 +75,6 @@ export const playerStateSchema = z.strictObject({
       path: ['timelinePlacements'],
       message: `Timeline event "${duplicateTimelineEventId}" has more than one placement.`,
     });
-  }
-
-  for (const key of ['confirmedGraphEdgeIds', 'severedGraphEdgeIds'] as const) {
-    const duplicateEdgeId = findDuplicate(state[key]);
-    if (duplicateEdgeId !== null) {
-      context.addIssue({
-        code: 'custom',
-        path: [key],
-        message: `Graph edge "${duplicateEdgeId}" appears more than once.`,
-      });
-    }
   }
 
   const confirmedEdges = new Set(state.confirmedGraphEdgeIds);

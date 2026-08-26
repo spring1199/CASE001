@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PersistenceAdapter } from '@/game/persistence/adapter';
+import { playerStateSchema } from '@/game/state/schema';
 import { createPlayerStore } from '@/game/state/store';
 import { createInitialPlayerState, type PlayerState } from '@/game/state/types';
 
@@ -192,6 +193,7 @@ describe('createPlayerStore', () => {
     });
     expect(state.timestamps.updatedAt).toBe(T2);
     expect(state.timestamps.lastPlayedAt).toBe(T2);
+    expect(playerStateSchema.safeParse(state).success).toBe(true);
   });
 
   it('does not update timestamps for a no-op action', () => {

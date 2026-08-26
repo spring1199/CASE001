@@ -46,6 +46,10 @@ export class SavePersistenceError extends Error {
 
 type Migration = (input: unknown) => PlayerState;
 
+function uniqueInOrder(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
 function migrateLegacyPlayerState(input: unknown): PlayerState {
   const result = legacyPlayerStateSchema.safeParse(input);
   if (!result.success) throw new Error(z.prettifyError(result.error));
@@ -53,12 +57,14 @@ function migrateLegacyPlayerState(input: unknown): PlayerState {
   const legacy = result.data;
   return {
     ...createInitialPlayerState(legacy.caseId, LEGACY_TIMESTAMP_SENTINEL),
-    discoveredEvidenceIds: legacy.discoveredEvidenceIds,
-    knownFactIds: legacy.knownFactIds,
-    completedDeductionIds: legacy.completedDeductionIds,
-    unlockedContentIds: legacy.unlockedContentIds,
+    discoveredEvidenceIds: uniqueInOrder(legacy.discoveredEvidenceIds),
+    knownFactIds: uniqueInOrder(legacy.knownFactIds),
+    completedDeductionIds: uniqueInOrder(legacy.completedDeductionIds),
+    unlockedContentIds: uniqueInOrder(legacy.unlockedContentIds),
     objectiveStates: Object.fromEntries(
-      legacy.completedObjectiveIds.map((objectiveId) => [objectiveId, 'completed'] as const),
+      uniqueInOrder(legacy.completedObjectiveIds).map(
+        (objectiveId) => [objectiveId, 'completed'] as const,
+      ),
     ),
     flags: legacy.flags,
     endingId: legacy.endingId ?? null,

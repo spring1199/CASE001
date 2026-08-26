@@ -142,6 +142,33 @@ describe('LocalStoragePersistenceAdapter', () => {
     expect(first?.timestamps.startedAt).toBe(LEGACY_TIMESTAMP_SENTINEL);
   });
 
+  it('normalizes duplicate legacy progress IDs by first occurrence', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      '18473:save:legacy_duplicates',
+      JSON.stringify({
+        caseId: 'legacy_duplicates',
+        discoveredEvidenceIds: ['ev_2', 'ev_1', 'ev_2'],
+        knownFactIds: ['fact_2', 'fact_1', 'fact_2'],
+        completedDeductionIds: ['ded_2', 'ded_1', 'ded_2'],
+        unlockedContentIds: ['content_2', 'content_1', 'content_2'],
+        completedObjectiveIds: ['objective_2', 'objective_1', 'objective_2'],
+        flags: {},
+      }),
+    );
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => storage });
+
+    const migrated = await adapter.load('legacy_duplicates');
+
+    expect(migrated).toMatchObject({
+      discoveredEvidenceIds: ['ev_2', 'ev_1'],
+      knownFactIds: ['fact_2', 'fact_1'],
+      completedDeductionIds: ['ded_2', 'ded_1'],
+      unlockedContentIds: ['content_2', 'content_1'],
+      objectiveStates: { objective_2: 'completed', objective_1: 'completed' },
+    });
+  });
+
   it.each([
     ['corrupt JSON', '{nope', 'CORRUPT_SAVE'],
     [
@@ -182,6 +209,42 @@ describe('LocalStoragePersistenceAdapter', () => {
 
   it.each([
     [
+      'duplicate discovered artifact IDs',
+      (state: PlayerState) => {
+        state.discoveredArtifactIds.push('artifact_2');
+      },
+    ],
+    [
+      'duplicate discovered evidence IDs',
+      (state: PlayerState) => {
+        state.discoveredEvidenceIds.push('evidence_2');
+      },
+    ],
+    [
+      'duplicate unlocked app IDs',
+      (state: PlayerState) => {
+        state.unlockedAppIds.push('app_messages');
+      },
+    ],
+    [
+      'duplicate unlocked content IDs',
+      (state: PlayerState) => {
+        state.unlockedContentIds.push('thread_2');
+      },
+    ],
+    [
+      'duplicate completed deduction IDs',
+      (state: PlayerState) => {
+        state.completedDeductionIds.push('deduction_3');
+      },
+    ],
+    [
+      'duplicate known fact IDs',
+      (state: PlayerState) => {
+        state.knownFactIds.push('fact_7');
+      },
+    ],
+    [
       'duplicate timeline event placements',
       (state: PlayerState) => {
         state.timelinePlacements.push({ eventId: 'event_b', positionId: 'slot_3' });
@@ -219,6 +282,21 @@ describe('LocalStoragePersistenceAdapter', () => {
       code: 'INVALID_SAVE',
       caseId: 'case_alpha',
     });
+  });
+
+  it('reports the duplicate ordered ID field and index context', async () => {
+    const storage = new MemoryStorage();
+    const state = completeState();
+    state.discoveredArtifactIds.push('artifact_2');
+    storage.setItem(
+      '18473:save:case_alpha',
+      JSON.stringify({ version: CURRENT_SAVE_VERSION, savedAt: NOW, state }),
+    );
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => storage });
+
+    await expect(adapter.load('case_alpha')).rejects.toThrow(
+      /state\.discoveredArtifactIds\[2\]/,
+    );
   });
 
   it('clears only the targeted case namespace', async () => {
