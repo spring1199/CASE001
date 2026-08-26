@@ -57,7 +57,33 @@ export const deductionSchema = z.object({
   prerequisiteFacts: z.array(idSchema).optional(),
   grantsFacts: z.array(idSchema),
   unlocks: z.array(idSchema).optional(),
-}).strict();
+}).strict().superRefine((deduction, context) => {
+  const candidates = new Set<string>();
+
+  deduction.requiredAnyGroups?.forEach((group, groupIndex) => {
+    group.forEach((evidenceId, evidenceIndex) => {
+      if (candidates.has(evidenceId)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['requiredAnyGroups', groupIndex, evidenceIndex],
+          message: `duplicate candidate evidence ID "${evidenceId}"`,
+        });
+      }
+      candidates.add(evidenceId);
+    });
+  });
+
+  if (
+    deduction.minimumFromAnyGroup !== undefined
+    && deduction.minimumFromAnyGroup > candidates.size
+  ) {
+    context.addIssue({
+      code: 'custom',
+      path: ['minimumFromAnyGroup'],
+      message: `threshold ${deduction.minimumFromAnyGroup} exceeds ${candidates.size} distinct candidate(s)`,
+    });
+  }
+});
 
 export type Deduction = z.infer<typeof deductionSchema>;
 

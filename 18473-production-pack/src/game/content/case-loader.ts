@@ -30,37 +30,33 @@ export type CaseBundleSources = {
   endings: AuthoredSource;
 };
 
-export type CaseRecordKind =
-  | 'manifest'
-  | 'character'
-  | 'evidence'
-  | 'fact'
-  | 'deduction'
-  | 'objective'
-  | 'lock'
-  | 'trigger'
-  | 'ending';
+type CaseRecordByKind = {
+  manifest: CaseBundle['manifest'];
+  character: CaseBundle['characters'][number];
+  evidence: CaseBundle['evidence'][number];
+  fact: CaseBundle['facts'][number];
+  deduction: CaseBundle['deductions'][number];
+  objective: CaseBundle['objectives'][number];
+  lock: CaseBundle['locks'][number];
+  trigger: CaseBundle['triggers'][number];
+  ending: CaseBundle['endings'][number];
+};
 
-type CaseRecord =
-  | CaseBundle['manifest']
-  | CaseBundle['characters'][number]
-  | CaseBundle['evidence'][number]
-  | CaseBundle['facts'][number]
-  | CaseBundle['deductions'][number]
-  | CaseBundle['objectives'][number]
-  | CaseBundle['locks'][number]
-  | CaseBundle['triggers'][number]
-  | CaseBundle['endings'][number];
+export type CaseRecordKind = keyof CaseRecordByKind;
 
 export type CaseIndexEntry = {
-  kind: CaseRecordKind;
-  sourcePath: string;
-  value: CaseRecord;
-};
+  [Kind in CaseRecordKind]: {
+    kind: Kind;
+    sourcePath: string;
+    value: CaseRecordByKind[Kind];
+  }
+}[CaseRecordKind];
 
 export type LoadedCaseBundle = CaseBundle & {
   index: ReadonlyMap<string, CaseIndexEntry>;
 };
+
+type ReferenceTargetKind = 'character' | 'deduction' | 'ending' | 'evidence' | 'fact' | 'objective';
 
 function formatIssuePath(path: PropertyKey[]): string {
   if (path.length === 0) return '<root>';
@@ -95,6 +91,206 @@ function parseSource<T>(schema: z.ZodType<T>, source: AuthoredSource): T {
   throw new Error(`Invalid authored case data:\n${details.join('\n')}`);
 }
 
+function assertKnownReference(
+  validIds: ReadonlySet<string>,
+  targetKind: ReferenceTargetKind,
+  targetId: string,
+  sourcePath: string,
+  recordId: string,
+  issuePath: string,
+): void {
+  if (validIds.has(targetId)) return;
+
+  throw new Error(
+    `Invalid authored case reference:\n${sourcePath} (record "${recordId}") at ${issuePath}: unknown ${targetKind} ID "${targetId}"`,
+  );
+}
+
+function assertKnownReferences(
+  validIds: ReadonlySet<string>,
+  targetKind: ReferenceTargetKind,
+  targetIds: readonly string[] | undefined,
+  sourcePath: string,
+  recordId: string,
+  issuePath: string,
+): void {
+  targetIds?.forEach((targetId, targetIndex) => {
+    assertKnownReference(
+      validIds,
+      targetKind,
+      targetId,
+      sourcePath,
+      recordId,
+      `${issuePath}[${targetIndex}]`,
+    );
+  });
+}
+
+function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources): void {
+  const characterIds = new Set(bundle.characters.map(({ id }) => id));
+  const deductionIds = new Set(bundle.deductions.map(({ id }) => id));
+  const endingIds = new Set(bundle.endings.map(({ id }) => id));
+  const evidenceIds = new Set(bundle.evidence.map(({ id }) => id));
+  const factIds = new Set(bundle.facts.map(({ id }) => id));
+  const objectiveIds = new Set(bundle.objectives.map(({ id }) => id));
+
+  const validateCondition = (
+    condition: CaseBundle['locks'][number]['unlockWhen'],
+    sourcePath: string,
+    recordId: string,
+    basePath: string,
+  ) => {
+    if ('fact' in condition) {
+      assertKnownReference(factIds, 'fact', condition.fact, sourcePath, recordId, `${basePath}.fact`);
+      return;
+    }
+
+    assertKnownReferences(
+      factIds,
+      'fact',
+      condition.allFacts,
+      sourcePath,
+      recordId,
+      `${basePath}.allFacts`,
+    );
+  };
+
+  assertKnownReference(
+    endingIds,
+    'ending',
+    bundle.manifest.canonEndingId,
+    sources.manifest.sourcePath,
+    bundle.manifest.id,
+    'canonEndingId',
+  );
+  assertKnownReferences(
+    objectiveIds,
+    'objective',
+    bundle.manifest.initialObjectiveIds,
+    sources.manifest.sourcePath,
+    bundle.manifest.id,
+    'initialObjectiveIds',
+  );
+
+  bundle.characters.forEach((character, characterIndex) => {
+    if (character.canonicalCharacterId !== undefined) {
+      assertKnownReference(
+        characterIds,
+        'character',
+        character.canonicalCharacterId,
+        sources.characters.sourcePath,
+        character.id,
+        `[${characterIndex}].canonicalCharacterId`,
+      );
+    }
+    if (character.hiddenUntilFact !== undefined) {
+      assertKnownReference(
+        factIds,
+        'fact',
+        character.hiddenUntilFact,
+        sources.characters.sourcePath,
+        character.id,
+        `[${characterIndex}].hiddenUntilFact`,
+      );
+    }
+  });
+
+  bundle.evidence.forEach((evidence, evidenceIndex) => {
+    assertKnownReferences(
+      factIds,
+      'fact',
+      evidence.grantsFacts,
+      sources.evidence.sourcePath,
+      evidence.id,
+      `[${evidenceIndex}].grantsFacts`,
+    );
+    assertKnownReferences(
+      factIds,
+      'fact',
+      evidence.hiddenUntilFacts,
+      sources.evidence.sourcePath,
+      evidence.id,
+      `[${evidenceIndex}].hiddenUntilFacts`,
+    );
+  });
+
+  bundle.facts.forEach((fact, factIndex) => {
+    if (fact.reveal !== undefined) {
+      assertKnownReference(
+        deductionIds,
+        'deduction',
+        fact.reveal,
+        sources.facts.sourcePath,
+        fact.id,
+        `[${factIndex}].reveal`,
+      );
+    }
+  });
+
+  bundle.deductions.forEach((deduction, deductionIndex) => {
+    assertKnownReferences(
+      evidenceIds,
+      'evidence',
+      deduction.requiredAll,
+      sources.deductions.sourcePath,
+      deduction.id,
+      `[${deductionIndex}].requiredAll`,
+    );
+    deduction.requiredAnyGroups?.forEach((group, groupIndex) => {
+      assertKnownReferences(
+        evidenceIds,
+        'evidence',
+        group,
+        sources.deductions.sourcePath,
+        deduction.id,
+        `[${deductionIndex}].requiredAnyGroups[${groupIndex}]`,
+      );
+    });
+    assertKnownReferences(
+      factIds,
+      'fact',
+      deduction.prerequisiteFacts,
+      sources.deductions.sourcePath,
+      deduction.id,
+      `[${deductionIndex}].prerequisiteFacts`,
+    );
+    assertKnownReferences(
+      factIds,
+      'fact',
+      deduction.grantsFacts,
+      sources.deductions.sourcePath,
+      deduction.id,
+      `[${deductionIndex}].grantsFacts`,
+    );
+  });
+
+  bundle.locks.forEach((lock, lockIndex) => {
+    validateCondition(
+      lock.unlockWhen,
+      sources.locks.sourcePath,
+      lock.id,
+      `[${lockIndex}].unlockWhen`,
+    );
+    assertKnownReferences(
+      evidenceIds,
+      'evidence',
+      lock.requiredEvidence,
+      sources.locks.sourcePath,
+      lock.id,
+      `[${lockIndex}].requiredEvidence`,
+    );
+  });
+
+  bundle.triggers.forEach((trigger, triggerIndex) => {
+    validateCondition(
+      trigger.when,
+      sources.triggers.sourcePath,
+      trigger.id,
+      `[${triggerIndex}].when`,
+    );
+  });
+}
+
 export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
   const bundle = caseBundleSchema.parse({
     manifest: parseSource(caseManifestSchema, sources.manifest),
@@ -110,37 +306,48 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
 
   const index = new Map<string, CaseIndexEntry>();
 
-  const addRecord = (
-    value: CaseRecord,
-    kind: CaseRecordKind,
-    sourcePath: string,
-  ) => {
-    const existing = index.get(value.id);
+  const addRecord = (entry: CaseIndexEntry) => {
+    const existing = index.get(entry.value.id);
     if (existing !== undefined) {
       throw new Error(
-        `Duplicate ID "${value.id}": first declared in ${existing.sourcePath}; repeated in ${sourcePath}`,
+        `Duplicate ID "${entry.value.id}": first declared in ${existing.sourcePath}; repeated in ${entry.sourcePath}`,
       );
     }
 
-    index.set(value.id, { kind, sourcePath, value });
+    index.set(entry.value.id, entry);
   };
 
-  addRecord(bundle.manifest, 'manifest', sources.manifest.sourcePath);
+  addRecord({
+    kind: 'manifest',
+    sourcePath: sources.manifest.sourcePath,
+    value: bundle.manifest,
+  });
+  bundle.characters.forEach((value) => addRecord({
+    kind: 'character', sourcePath: sources.characters.sourcePath, value,
+  }));
+  bundle.evidence.forEach((value) => addRecord({
+    kind: 'evidence', sourcePath: sources.evidence.sourcePath, value,
+  }));
+  bundle.facts.forEach((value) => addRecord({
+    kind: 'fact', sourcePath: sources.facts.sourcePath, value,
+  }));
+  bundle.deductions.forEach((value) => addRecord({
+    kind: 'deduction', sourcePath: sources.deductions.sourcePath, value,
+  }));
+  bundle.objectives.forEach((value) => addRecord({
+    kind: 'objective', sourcePath: sources.objectives.sourcePath, value,
+  }));
+  bundle.locks.forEach((value) => addRecord({
+    kind: 'lock', sourcePath: sources.locks.sourcePath, value,
+  }));
+  bundle.triggers.forEach((value) => addRecord({
+    kind: 'trigger', sourcePath: sources.triggers.sourcePath, value,
+  }));
+  bundle.endings.forEach((value) => addRecord({
+    kind: 'ending', sourcePath: sources.endings.sourcePath, value,
+  }));
 
-  const collections = [
-    [bundle.characters, 'character', sources.characters.sourcePath],
-    [bundle.evidence, 'evidence', sources.evidence.sourcePath],
-    [bundle.facts, 'fact', sources.facts.sourcePath],
-    [bundle.deductions, 'deduction', sources.deductions.sourcePath],
-    [bundle.objectives, 'objective', sources.objectives.sourcePath],
-    [bundle.locks, 'lock', sources.locks.sourcePath],
-    [bundle.triggers, 'trigger', sources.triggers.sourcePath],
-    [bundle.endings, 'ending', sources.endings.sourcePath],
-  ] as const;
-
-  for (const [records, kind, sourcePath] of collections) {
-    for (const record of records) addRecord(record, kind, sourcePath);
-  }
+  validateCaseReferences(bundle, sources);
 
   return { ...bundle, index };
 }
