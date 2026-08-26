@@ -26,6 +26,7 @@ export type PlayerStoreActions = {
 
 export type PlayerStoreState = {
   playerState: PlayerState;
+  hydrationStatus: 'idle' | 'hydrating' | 'hydrated';
   actions: PlayerStoreActions;
 };
 
@@ -124,6 +125,9 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
   let lifecycleGeneration = 0;
   let lifecycleTail = Promise.resolve();
   const mutationCaptures = new Set<PlayerMutation[]>();
+  const initialHydrationMutations: PlayerMutation[] = [];
+  mutationCaptures.add(initialHydrationMutations);
+  let activeHydration: Promise<void> | null = null;
 
   return createStore<PlayerStoreState>((set, get) => {
     const enqueueLifecycle = (operation: () => Promise<void>): Promise<void> => {
@@ -256,6 +260,60 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
       });
     };
 
+    const hydrateInitialState = (): Promise<void> => {
+      if (get().hydrationStatus === 'hydrated') return Promise.resolve();
+      if (activeHydration !== null) return activeHydration;
+
+      const requestedGeneration = lifecycleGeneration;
+      set({ hydrationStatus: 'hydrating' });
+      const hydration = enqueueLifecycle(async () => {
+        try {
+          if (get().hydrationStatus === 'hydrated') return;
+          const loadedInput = await options.adapter.load(options.caseId);
+          if (requestedGeneration !== lifecycleGeneration) return;
+
+          if (loadedInput === null) {
+            set({ hydrationStatus: 'hydrated' });
+            persistedFingerprint = null;
+          } else {
+            const loaded = validateStorePlayerState(
+              loadedInput,
+              'hydrate',
+              options.caseId,
+            );
+            const playerState = initialHydrationMutations.reduce(
+              (state, mutation) => mutation(state),
+              loaded,
+            );
+            set({ playerState, hydrationStatus: 'hydrated' });
+            const loadedFingerprint = fingerprintPlayerState(loaded);
+            persistedFingerprint =
+              fingerprintPlayerState(playerState) === loadedFingerprint
+                ? loadedFingerprint
+                : null;
+          }
+
+          mutationCaptures.delete(initialHydrationMutations);
+          initialHydrationMutations.length = 0;
+        } catch (error) {
+          if (requestedGeneration === lifecycleGeneration) {
+            set({ hydrationStatus: 'idle' });
+          }
+          throw error;
+        }
+      });
+      activeHydration = hydration;
+      void hydration.then(
+        () => {
+          if (activeHydration === hydration) activeHydration = null;
+        },
+        () => {
+          if (activeHydration === hydration) activeHydration = null;
+        },
+      );
+      return hydration;
+    };
+
     const actions: PlayerStoreActions = {
       discoverArtifacts: (ids) => appendIds('discoveredArtifactIds', ids),
       discoverEvidence: (ids) => appendIds('discoveredEvidenceIds', ids),
@@ -306,38 +364,14 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
             : { ...state, endingBranchId: branchId, endingId },
         );
       },
-      hydrate: () => {
+      hydrate: hydrateInitialState,
+      save: () => {
         const requestedGeneration = lifecycleGeneration;
-        const capturedMutations: PlayerMutation[] = [];
-        mutationCaptures.add(capturedMutations);
-        return enqueueLifecycle(async () => {
-          try {
-            const loadedInput = await options.adapter.load(options.caseId);
-            if (requestedGeneration !== lifecycleGeneration || loadedInput === null) return;
-            const loaded = validateStorePlayerState(
-              loadedInput,
-              'hydrate',
-              options.caseId,
-            );
-
-            const playerState = capturedMutations.reduce(
-              (state, mutation) => mutation(state),
-              loaded,
-            );
-            set({ playerState });
-            const loadedFingerprint = fingerprintPlayerState(loaded);
-            persistedFingerprint =
-              fingerprintPlayerState(playerState) === loadedFingerprint
-                ? loadedFingerprint
-                : null;
-          } finally {
-            mutationCaptures.delete(capturedMutations);
-          }
-        });
+        return hydrateInitialState().then(() => saveLatestProgress(requestedGeneration));
       },
-      save: () => saveLatestProgress(lifecycleGeneration),
       clear: () => {
         const requestedAt = now();
+        const hydrationStatusAtRequest = get().hydrationStatus;
         lifecycleGeneration += 1;
         const requestedGeneration = lifecycleGeneration;
         const capturedMutations: PlayerMutation[] = [];
@@ -351,8 +385,18 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
               (state, mutation) => mutation(state),
               createInitialPlayerState(options.caseId, requestedAt),
             );
-            set({ playerState });
+            set({ playerState, hydrationStatus: 'hydrated' });
             persistedFingerprint = null;
+            mutationCaptures.delete(initialHydrationMutations);
+            initialHydrationMutations.length = 0;
+          } catch (error) {
+            if (
+              requestedGeneration === lifecycleGeneration &&
+              hydrationStatusAtRequest !== 'hydrated'
+            ) {
+              set({ hydrationStatus: 'idle' });
+            }
+            throw error;
           } finally {
             mutationCaptures.delete(capturedMutations);
           }
@@ -362,6 +406,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
 
     return {
       playerState: createInitialPlayerState(options.caseId, now()),
+      hydrationStatus: 'idle',
       actions,
     };
   });

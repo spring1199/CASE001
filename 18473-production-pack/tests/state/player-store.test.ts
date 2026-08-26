@@ -46,14 +46,17 @@ class ControlledAdapter extends MemoryAdapter {
   }> = [];
   private readonly pendingReleases: Array<() => void> = [];
   private readonly pendingSaveRejections: Array<(error: Error) => void> = [];
-  private readonly pendingClearReleases: Array<() => void> = [];
+  private readonly pendingClears: Array<{
+    resolve: () => void;
+    reject: (error: Error) => void;
+  }> = [];
 
   override async clear(caseId: string): Promise<void> {
     if (!this.pauseClears) return super.clear(caseId);
     this.clearCalls.push(caseId);
     this.clearStarts.push(caseId);
-    await new Promise<void>((resolve) => {
-      this.pendingClearReleases.push(resolve);
+    await new Promise<void>((resolve, reject) => {
+      this.pendingClears.push({ resolve, reject });
     });
     this.saved.delete(caseId);
   }
@@ -107,9 +110,15 @@ class ControlledAdapter extends MemoryAdapter {
   }
 
   releaseNextClear(): void {
-    const release = this.pendingClearReleases.shift();
-    if (release === undefined) throw new Error('No clear is pending.');
-    release();
+    const pending = this.pendingClears.shift();
+    if (pending === undefined) throw new Error('No clear is pending.');
+    pending.resolve();
+  }
+
+  rejectNextClear(error = new Error('clear failed')): void {
+    const pending = this.pendingClears.shift();
+    if (pending === undefined) throw new Error('No clear is pending.');
+    pending.reject(error);
   }
 }
 
@@ -452,7 +461,7 @@ describe('createPlayerStore', () => {
     expect((await adapter.load('case_retry'))?.knownFactIds).toEqual(['fact_retry']);
   });
 
-  it('runs a queued save after hydrate rejects and preserves live progress', async () => {
+  it('rejects a queued save after hydrate fails and preserves progress for retry', async () => {
     const adapter = new ControlledAdapter();
     adapter.pauseLoads = true;
     adapter.pauseSaves = false;
@@ -465,7 +474,13 @@ describe('createPlayerStore', () => {
     adapter.rejectNextLoad();
 
     await expect(hydration).rejects.toThrow('load failed');
-    await save;
+    await expect(save).rejects.toThrow('load failed');
+
+    const retry = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 2);
+    adapter.releaseNextLoad();
+    await retry;
+    await store.getState().actions.save();
     adapter.pauseLoads = false;
     expect((await adapter.load('case_load_retry'))?.knownFactIds).toEqual([
       'fact_after_failed_load',
@@ -761,5 +776,226 @@ describe('createPlayerStore', () => {
     await store.getState().actions.save();
 
     expect(adapter.saveCalls).toHaveLength(1);
+  });
+
+  it('replays an immediate pre-hydrate action onto the persisted baseline and saves it', async () => {
+    const adapter = new MemoryAdapter();
+    adapter.saved.set('case_pre_hydrate', {
+      ...createInitialPlayerState('case_pre_hydrate', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({ caseId: 'case_pre_hydrate', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_immediate']);
+
+    await store.getState().actions.hydrate();
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_immediate',
+    ]);
+    await store.getState().actions.save();
+
+    const reloaded = createPlayerStore({ caseId: 'case_pre_hydrate', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_immediate',
+    ]);
+  });
+
+  it('marks empty-storage hydration ready without losing pre-hydrate progress', async () => {
+    const adapter = new MemoryAdapter();
+    const store = createPlayerStore({ caseId: 'case_empty_hydrate', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_immediate']);
+
+    await store.getState().actions.hydrate();
+
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_immediate']);
+    await store.getState().actions.save();
+    const reloaded = createPlayerStore({ caseId: 'case_empty_hydrate', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_immediate']);
+  });
+
+  it('makes hydrate a one-shot no-op after successful readiness', async () => {
+    const adapter = new MemoryAdapter();
+    adapter.saved.set('case_hydrate_once', createInitialPlayerState('case_hydrate_once', T0));
+    const store = createPlayerStore({ caseId: 'case_hydrate_once', adapter, now: () => T1 });
+
+    await store.getState().actions.hydrate();
+    store.getState().actions.learnFacts(['fact_after_ready']);
+    await store.getState().actions.hydrate();
+
+    expect(adapter.loadCalls).toEqual(['case_hydrate_once']);
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_after_ready']);
+  });
+
+  it('retries failed hydration without losing pre-hydrate intent', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_hydrate_retry', {
+      ...createInitialPlayerState('case_hydrate_retry', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({ caseId: 'case_hydrate_retry', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_pre_retry']);
+
+    const failed = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 1);
+    adapter.rejectNextLoad();
+    await expect(failed).rejects.toThrow('load failed');
+    expect(store.getState().hydrationStatus).toBe('idle');
+
+    const retry = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 2);
+    adapter.releaseNextLoad();
+    await retry;
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_pre_retry',
+    ]);
+    await store.getState().actions.save();
+    adapter.pauseLoads = false;
+    const reloaded = createPlayerStore({ caseId: 'case_hydrate_retry', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_pre_retry',
+    ]);
+  });
+
+  it('hydrates before an initial save so persisted and pre-hydrate progress are merged', async () => {
+    const adapter = new MemoryAdapter();
+    adapter.saved.set('case_save_before_hydrate', {
+      ...createInitialPlayerState('case_save_before_hydrate', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({
+      caseId: 'case_save_before_hydrate',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_pre_save']);
+
+    await store.getState().actions.save();
+
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    const reloaded = createPlayerStore({
+      caseId: 'case_save_before_hydrate',
+      adapter,
+      now: () => T2,
+    });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_pre_save',
+    ]);
+  });
+
+  it('makes a successful pre-hydrate clear authoritative and preserves later progress', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_clear_before_hydrate', {
+      ...createInitialPlayerState('case_clear_before_hydrate', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({
+      caseId: 'case_clear_before_hydrate',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_before_clear']);
+
+    const clear = store.getState().actions.clear();
+    await waitForCount(adapter.clearStarts, 1);
+    const hydration = store.getState().actions.hydrate();
+    adapter.releaseNextClear();
+    await clear;
+    await hydration;
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([]);
+    await store.getState().actions.hydrate();
+    expect(adapter.loadCalls).toEqual([]);
+
+    store.getState().actions.learnFacts(['fact_after_clear']);
+    await store.getState().actions.save();
+    const reloaded = createPlayerStore({
+      caseId: 'case_clear_before_hydrate',
+      adapter,
+      now: () => T2,
+    });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_after_clear']);
+  });
+
+  it('does not let a pre-hydrate save repopulate storage after a concurrent clear', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set(
+      'case_save_then_clear',
+      createInitialPlayerState('case_save_then_clear', T0),
+    );
+    const store = createPlayerStore({
+      caseId: 'case_save_then_clear',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_before_clear']);
+
+    const save = store.getState().actions.save();
+    await waitForCount(adapter.loadStarts, 1);
+    const clear = store.getState().actions.clear();
+    adapter.releaseNextLoad();
+    await waitForCount(adapter.clearStarts, 1);
+    adapter.releaseNextClear();
+    await clear;
+    await save;
+
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([]);
+    expect(adapter.saveCalls).toEqual([]);
+    adapter.pauseLoads = false;
+    expect(await adapter.load('case_save_then_clear')).toBeNull();
+  });
+
+  it('returns to idle after a clear cancels hydration and then fails', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_clear_retry', {
+      ...createInitialPlayerState('case_clear_retry', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({ caseId: 'case_clear_retry', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_pre_hydrate']);
+
+    const save = store.getState().actions.save();
+    await waitForCount(adapter.loadStarts, 1);
+    const clear = store.getState().actions.clear();
+    adapter.releaseNextLoad();
+    await waitForCount(adapter.clearStarts, 1);
+    adapter.rejectNextClear();
+
+    await expect(clear).rejects.toThrow('clear failed');
+    await save;
+    expect(store.getState().hydrationStatus).toBe('idle');
+    expect(adapter.saveCalls).toEqual([]);
+
+    const retry = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 2);
+    adapter.releaseNextLoad();
+    await retry;
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_pre_hydrate',
+    ]);
   });
 });
