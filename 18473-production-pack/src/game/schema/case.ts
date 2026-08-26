@@ -136,6 +136,20 @@ export const endingSchema = z.object({
 
 export type Ending = z.infer<typeof endingSchema>;
 
+export const deferredEmptyCollectionSchema = z.array(z.unknown()).superRefine(
+  (records, context) => {
+    if (records.length === 0) return;
+
+    context.addIssue({
+      code: 'custom',
+      path: [0],
+      message: 'source requires its later-phase schema before records can be loaded',
+    });
+  },
+).transform((): never[] => []);
+
+export type DeferredEmptyCollection = z.output<typeof deferredEmptyCollectionSchema>;
+
 export const caseBundleSchema = z.object({
   manifest: caseManifestSchema,
   characters: z.array(characterSchema),
@@ -146,6 +160,15 @@ export const caseBundleSchema = z.object({
   locks: z.array(lockSchema),
   triggers: z.array(triggerSchema),
   endings: z.array(endingSchema),
+  artifacts: deferredEmptyCollectionSchema,
+  browser: deferredEmptyCollectionSchema,
+  calls: deferredEmptyCollectionSchema,
+  emails: deferredEmptyCollectionSchema,
+  locations: deferredEmptyCollectionSchema,
+  messages: deferredEmptyCollectionSchema,
+  notes: deferredEmptyCollectionSchema,
+  photos: deferredEmptyCollectionSchema,
+  timeline: deferredEmptyCollectionSchema,
 }).strict();
 
 export type CaseBundle = z.infer<typeof caseBundleSchema>;

@@ -1,5 +1,6 @@
 import { expect, test, type Response } from '@playwright/test';
 import { case001Seed } from '../../src/game/content/case-001';
+import { deferredCaseSourceKeys } from '../../src/game/content/case-loader';
 
 const publicCaseSummary = {
   label: case001Seed.manifest.id.replace(/^case_/, 'CASE ').replaceAll('_', ' '),
@@ -117,6 +118,12 @@ function buildProtectedValues(): ProtectedValue[] {
 
   case001Seed.endings.forEach((ending) => {
     collectRecordStrings(ending, `ending record ${ending.id}`);
+  });
+
+  deferredCaseSourceKeys.forEach((sourceKey) => {
+    (case001Seed[sourceKey] as readonly unknown[]).forEach((record, recordIndex) => {
+      collectRecordStrings(record, `deferred ${sourceKey} record ${recordIndex}`);
+    });
   });
 
   return [...values.entries()]

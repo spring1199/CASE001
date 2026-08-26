@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   parseCaseBundle,
@@ -69,6 +70,15 @@ function createValidSources() {
         canon: true,
       }],
     },
+    artifacts: { sourcePath: 'content/cases/test/artifacts.json', data: [] },
+    browser: { sourcePath: 'content/cases/test/browser.json', data: [] },
+    calls: { sourcePath: 'content/cases/test/calls.json', data: [] },
+    emails: { sourcePath: 'content/cases/test/emails.json', data: [] },
+    locations: { sourcePath: 'content/cases/test/locations.json', data: [] },
+    messages: { sourcePath: 'content/cases/test/messages.json', data: [] },
+    notes: { sourcePath: 'content/cases/test/notes.json', data: [] },
+    photos: { sourcePath: 'content/cases/test/photos.json', data: [] },
+    timeline: { sourcePath: 'content/cases/test/timeline.json', data: [] },
   };
 }
 
@@ -208,10 +218,43 @@ const danglingReferenceCases: Array<{
   },
 ];
 
+const deferredSourceCases = [
+  ['artifacts', 'artifacts.json'],
+  ['browser', 'browser.json'],
+  ['calls', 'calls.json'],
+  ['emails', 'emails.json'],
+  ['locations', 'locations.json'],
+  ['messages', 'messages.json'],
+  ['notes', 'notes.json'],
+  ['photos', 'photos.json'],
+  ['timeline', 'timeline.json'],
+] as const;
+
+const expectedSourceFiles = [
+  'artifacts.json',
+  'browser.json',
+  'calls.json',
+  'case.json',
+  'characters.json',
+  'deductions.json',
+  'emails.json',
+  'endings.json',
+  'evidence.json',
+  'facts.json',
+  'locations.json',
+  'locks.json',
+  'messages.json',
+  'notes.json',
+  'objectives.json',
+  'photos.json',
+  'timeline.json',
+  'triggers.json',
+];
+
 describe('case bundle loading', () => {
-  it('loads and indexes the authored Case #001 seed', () => {
+  it('loads and core-indexes the authored Case #001 seed', () => {
     expect(case001Seed.manifest.id).toBe('case_001');
-    expect(case001Seed.index.get('ev_18473_paper')).toMatchObject({
+    expect(case001Seed.coreIndex.get('ev_18473_paper')).toMatchObject({
       kind: 'evidence',
       sourcePath: 'content/cases/case-001/evidence.json',
     });
@@ -226,16 +269,67 @@ describe('case bundle loading', () => {
       + case001Seed.triggers.length
       + case001Seed.endings.length;
 
-    expect(case001Seed.index.size).toBe(expectedRecordCount);
+    expect(case001Seed.coreIndex.size).toBe(expectedRecordCount);
   });
 
   it('narrows an indexed record value from its kind', () => {
-    const entry = case001Seed.index.get('ev_18473_paper');
+    const entry = case001Seed.coreIndex.get('ev_18473_paper');
     expect(entry?.kind).toBe('evidence');
     if (entry?.kind !== 'evidence') throw new Error('Expected indexed evidence');
 
     expectTypeOf(entry.value).toEqualTypeOf<Evidence>();
   });
+
+  it('loads every authored Case #001 JSON source with explicit metadata', () => {
+    const authoredFiles = readdirSync(
+      new URL('../../content/cases/case-001/', import.meta.url),
+    ).filter((fileName) => fileName.endsWith('.json')).sort();
+
+    expect(authoredFiles).toEqual(expectedSourceFiles);
+    expect(Object.values(case001Seed.sourceMetadata)
+      .map(({ sourcePath }) => sourcePath.split('/').at(-1))
+      .sort()).toEqual(authoredFiles);
+    expect(Object.keys(case001Seed.sourceMetadata)).toHaveLength(18);
+  });
+
+  it.each(deferredSourceCases)(
+    'loads deferred source %s as an explicitly unindexed empty array',
+    (sourceKey) => {
+      expect(case001Seed[sourceKey]).toEqual([]);
+      expect(case001Seed.sourceMetadata[sourceKey]).toMatchObject({
+        validation: 'deferred-empty',
+        indexed: false,
+      });
+    },
+  );
+
+  it.each(deferredSourceCases)(
+    'rejects records in deferred source %s until its later-phase schema exists',
+    (sourceKey, fileName) => {
+      const invalidSources = replaceSource(createValidSources(), sourceKey, [{ id: 'future' }]);
+
+      expect(() => parseCaseBundle(invalidSources)).toThrowError(
+        new RegExp(
+          `content/cases/test/${fileName.replace('.', '\\.')}.*record "future".*requires its later-phase schema`,
+          's',
+        ),
+      );
+    },
+  );
+
+  it.each(deferredSourceCases)(
+    'rejects malformed non-array deferred source %s',
+    (sourceKey, fileName) => {
+      const invalidSources = replaceSource(createValidSources(), sourceKey, { records: [] });
+
+      expect(() => parseCaseBundle(invalidSources)).toThrowError(
+        new RegExp(
+          `content/cases/test/${fileName.replace('.', '\\.')}.*expected array`,
+          's',
+        ),
+      );
+    },
+  );
 
   it('reports the source path, record ID, and issue path for invalid authored data', () => {
     const sources = createValidSources();

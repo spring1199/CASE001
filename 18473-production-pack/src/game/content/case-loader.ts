@@ -3,6 +3,7 @@ import {
   caseBundleSchema,
   caseManifestSchema,
   characterSchema,
+  deferredEmptyCollectionSchema,
   deductionSchema,
   endingSchema,
   evidenceSchema,
@@ -28,6 +29,51 @@ export type CaseBundleSources = {
   locks: AuthoredSource;
   triggers: AuthoredSource;
   endings: AuthoredSource;
+  artifacts: AuthoredSource;
+  browser: AuthoredSource;
+  calls: AuthoredSource;
+  emails: AuthoredSource;
+  locations: AuthoredSource;
+  messages: AuthoredSource;
+  notes: AuthoredSource;
+  photos: AuthoredSource;
+  timeline: AuthoredSource;
+};
+
+export const coreCaseSourceKeys = [
+  'manifest',
+  'characters',
+  'evidence',
+  'facts',
+  'deductions',
+  'objectives',
+  'locks',
+  'triggers',
+  'endings',
+] as const;
+
+export const deferredCaseSourceKeys = [
+  'artifacts',
+  'browser',
+  'calls',
+  'emails',
+  'locations',
+  'messages',
+  'notes',
+  'photos',
+  'timeline',
+] as const;
+
+export type CoreCaseSourceKey = (typeof coreCaseSourceKeys)[number];
+export type DeferredCaseSourceKey = (typeof deferredCaseSourceKeys)[number];
+export type CaseSourceKey = CoreCaseSourceKey | DeferredCaseSourceKey;
+
+export type CaseSourceMetadata = {
+  [Key in CaseSourceKey]: {
+    sourcePath: string;
+    validation: Key extends DeferredCaseSourceKey ? 'deferred-empty' : 'core';
+    indexed: Key extends DeferredCaseSourceKey ? false : true;
+  }
 };
 
 type CaseRecordByKind = {
@@ -44,7 +90,7 @@ type CaseRecordByKind = {
 
 export type CaseRecordKind = keyof CaseRecordByKind;
 
-export type CaseIndexEntry = {
+export type CoreCaseIndexEntry = {
   [Kind in CaseRecordKind]: {
     kind: Kind;
     sourcePath: string;
@@ -53,7 +99,8 @@ export type CaseIndexEntry = {
 }[CaseRecordKind];
 
 export type LoadedCaseBundle = CaseBundle & {
-  index: ReadonlyMap<string, CaseIndexEntry>;
+  coreIndex: ReadonlyMap<string, CoreCaseIndexEntry>;
+  sourceMetadata: CaseSourceMetadata;
 };
 
 type ReferenceTargetKind = 'character' | 'deduction' | 'ending' | 'evidence' | 'fact' | 'objective';
@@ -325,19 +372,28 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
     locks: parseSource(z.array(lockSchema), sources.locks),
     triggers: parseSource(z.array(triggerSchema), sources.triggers),
     endings: parseSource(z.array(endingSchema), sources.endings),
+    artifacts: parseSource(deferredEmptyCollectionSchema, sources.artifacts),
+    browser: parseSource(deferredEmptyCollectionSchema, sources.browser),
+    calls: parseSource(deferredEmptyCollectionSchema, sources.calls),
+    emails: parseSource(deferredEmptyCollectionSchema, sources.emails),
+    locations: parseSource(deferredEmptyCollectionSchema, sources.locations),
+    messages: parseSource(deferredEmptyCollectionSchema, sources.messages),
+    notes: parseSource(deferredEmptyCollectionSchema, sources.notes),
+    photos: parseSource(deferredEmptyCollectionSchema, sources.photos),
+    timeline: parseSource(deferredEmptyCollectionSchema, sources.timeline),
   });
 
-  const index = new Map<string, CaseIndexEntry>();
+  const coreIndex = new Map<string, CoreCaseIndexEntry>();
 
-  const addRecord = (entry: CaseIndexEntry) => {
-    const existing = index.get(entry.value.id);
+  const addRecord = (entry: CoreCaseIndexEntry) => {
+    const existing = coreIndex.get(entry.value.id);
     if (existing !== undefined) {
       throw new Error(
         `Duplicate ID "${entry.value.id}": first declared in ${existing.sourcePath}; repeated in ${entry.sourcePath}`,
       );
     }
 
-    index.set(entry.value.id, entry);
+    coreIndex.set(entry.value.id, entry);
   };
 
   addRecord({
@@ -372,5 +428,62 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
 
   validateCaseReferences(bundle, sources);
 
-  return { ...bundle, index };
+  const sourceMetadata: CaseSourceMetadata = {
+    manifest: {
+      sourcePath: sources.manifest.sourcePath, validation: 'core', indexed: true,
+    },
+    characters: {
+      sourcePath: sources.characters.sourcePath, validation: 'core', indexed: true,
+    },
+    evidence: {
+      sourcePath: sources.evidence.sourcePath, validation: 'core', indexed: true,
+    },
+    facts: {
+      sourcePath: sources.facts.sourcePath, validation: 'core', indexed: true,
+    },
+    deductions: {
+      sourcePath: sources.deductions.sourcePath, validation: 'core', indexed: true,
+    },
+    objectives: {
+      sourcePath: sources.objectives.sourcePath, validation: 'core', indexed: true,
+    },
+    locks: {
+      sourcePath: sources.locks.sourcePath, validation: 'core', indexed: true,
+    },
+    triggers: {
+      sourcePath: sources.triggers.sourcePath, validation: 'core', indexed: true,
+    },
+    endings: {
+      sourcePath: sources.endings.sourcePath, validation: 'core', indexed: true,
+    },
+    artifacts: {
+      sourcePath: sources.artifacts.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    browser: {
+      sourcePath: sources.browser.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    calls: {
+      sourcePath: sources.calls.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    emails: {
+      sourcePath: sources.emails.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    locations: {
+      sourcePath: sources.locations.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    messages: {
+      sourcePath: sources.messages.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    notes: {
+      sourcePath: sources.notes.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    photos: {
+      sourcePath: sources.photos.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+    timeline: {
+      sourcePath: sources.timeline.sourcePath, validation: 'deferred-empty', indexed: false,
+    },
+  };
+
+  return { ...bundle, coreIndex, sourceMetadata };
 }

@@ -1,6 +1,6 @@
 import type { Evidence } from '@/game/schema/case';
 
-export type VisibleArtifact = Readonly<{
+export type VisibleEvidence = Readonly<{
   id: string;
   title: string;
   sourceArtifactId: string;
@@ -8,19 +8,25 @@ export type VisibleArtifact = Readonly<{
   tags: readonly string[];
 }>;
 
+/**
+ * Docs require the projectVisibleArtifact API name. In Phase 01 it projects an
+ * Evidence record because the authored artifact schema is explicitly deferred.
+ */
+export type VisibleArtifact = VisibleEvidence;
+
 export function projectVisibleArtifact(
-  artifact: Evidence,
+  evidence: Evidence,
   knownFactIds: ReadonlySet<string>,
 ): VisibleArtifact | null {
-  if (artifact.hiddenUntilFacts?.some((factId) => !knownFactIds.has(factId))) {
+  if (evidence.hiddenUntilFacts?.some((factId) => !knownFactIds.has(factId))) {
     return null;
   }
 
   return Object.freeze({
-    id: artifact.id,
-    title: artifact.title,
-    sourceArtifactId: artifact.sourceArtifactId,
-    description: artifact.description,
-    tags: Object.freeze([...artifact.tags]),
+    id: evidence.id,
+    title: evidence.title,
+    sourceArtifactId: evidence.sourceArtifactId,
+    description: evidence.description,
+    tags: Object.freeze([...evidence.tags]),
   });
 }
