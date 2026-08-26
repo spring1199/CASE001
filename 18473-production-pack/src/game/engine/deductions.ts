@@ -1,21 +1,63 @@
 import type { Deduction } from '@/game/schema/case';
 
 export type DeductionState = {
-  evidenceIds: Set<string>;
-  factIds: Set<string>;
+  evidenceIds: ReadonlySet<string>;
+  factIds: ReadonlySet<string>;
 };
 
-export function canCompleteDeduction(deduction: Deduction, state: DeductionState): boolean {
-  const prerequisites = deduction.prerequisiteFacts ?? [];
-  if (!prerequisites.every((id) => state.factIds.has(id))) return false;
+export type DeductionThresholdProgress = {
+  candidateEvidenceIds: string[];
+  matchedEvidenceIds: string[];
+  matched: number;
+  required: number;
+  remaining: number;
+};
 
-  const all = deduction.requiredAll ?? [];
-  if (!all.every((id) => state.evidenceIds.has(id))) return false;
+export type DeductionEvaluation = {
+  complete: boolean;
+  missingPrerequisiteFactIds: string[];
+  missingRequiredEvidenceIds: string[];
+  threshold: DeductionThresholdProgress;
+};
+
+function distinctInAuthoredOrder(ids: readonly string[]): string[] {
+  return [...new Set(ids)];
+}
+
+export function evaluateDeduction(
+  deduction: Deduction,
+  state: DeductionState,
+): DeductionEvaluation {
+  const missingPrerequisiteFactIds = (deduction.prerequisiteFacts ?? [])
+    .filter((id) => !state.factIds.has(id));
+  const missingRequiredEvidenceIds = (deduction.requiredAll ?? [])
+    .filter((id) => !state.evidenceIds.has(id));
 
   const groups = deduction.requiredAnyGroups ?? [];
-  if (groups.length === 0) return true;
+  const candidateEvidenceIds = distinctInAuthoredOrder(groups.flat());
+  const matchedEvidenceIds = candidateEvidenceIds
+    .filter((id) => state.evidenceIds.has(id));
+  const required = groups.length === 0
+    ? 0
+    : (deduction.minimumFromAnyGroup ?? groups.length);
+  const remaining = Math.max(0, required - matchedEvidenceIds.length);
 
-  const matches = groups.flat().filter((id) => state.evidenceIds.has(id)).length;
-  const minimum = deduction.minimumFromAnyGroup ?? groups.length;
-  return matches >= minimum;
+  return {
+    complete: missingPrerequisiteFactIds.length === 0
+      && missingRequiredEvidenceIds.length === 0
+      && remaining === 0,
+    missingPrerequisiteFactIds,
+    missingRequiredEvidenceIds,
+    threshold: {
+      candidateEvidenceIds,
+      matchedEvidenceIds,
+      matched: matchedEvidenceIds.length,
+      required,
+      remaining,
+    },
+  };
+}
+
+export function canCompleteDeduction(deduction: Deduction, state: DeductionState): boolean {
+  return evaluateDeduction(deduction, state).complete;
 }
