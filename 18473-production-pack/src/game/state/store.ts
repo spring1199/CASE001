@@ -1,6 +1,8 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { z } from 'zod';
 
 import type { PersistenceAdapter } from '@/game/persistence/adapter';
+import { playerStateSchema } from '@/game/state/schema';
 import { createInitialPlayerState } from '@/game/state/types';
 import type { FlagValue, ObjectiveState, PlayerState } from '@/game/state/types';
 
@@ -33,9 +35,63 @@ export type CreatePlayerStoreOptions = {
   now?: () => string;
 };
 
+export type PlayerStoreValidationOperation = 'hydrate' | 'save';
+
+export class PlayerStoreValidationError extends Error {
+  constructor(
+    readonly operation: PlayerStoreValidationOperation,
+    readonly caseId: string,
+    message: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+    this.name = 'PlayerStoreValidationError';
+  }
+}
+
 const defaultClock = (): string => new Date().toISOString();
 
 type PlayerMutation = (state: PlayerState) => PlayerState;
+
+function latestIsoInstant(values: Array<string | null>): string {
+  let latestValue: string | null = null;
+  let latestInstant = Number.NEGATIVE_INFINITY;
+  for (const value of values) {
+    if (value === null) continue;
+    const instant = Date.parse(value);
+    if (!Number.isFinite(instant)) throw new RangeError(`Invalid ISO timestamp: "${value}".`);
+    if (instant > latestInstant) {
+      latestValue = value;
+      latestInstant = instant;
+    }
+  }
+  if (latestValue === null) throw new RangeError('At least one ISO timestamp is required.');
+  return latestValue;
+}
+
+function validateStorePlayerState(
+  input: unknown,
+  operation: PlayerStoreValidationOperation,
+  expectedCaseId: string,
+): PlayerState {
+  const result = playerStateSchema.safeParse(input);
+  if (!result.success) {
+    throw new PlayerStoreValidationError(
+      operation,
+      expectedCaseId,
+      `Cannot ${operation} invalid player state for case "${expectedCaseId}": ${z.prettifyError(result.error)}`,
+      { cause: result.error },
+    );
+  }
+  if (result.data.caseId !== expectedCaseId) {
+    throw new PlayerStoreValidationError(
+      operation,
+      expectedCaseId,
+      `Cannot ${operation} player state for case "${result.data.caseId}" into store for case "${expectedCaseId}".`,
+    );
+  }
+  return result.data;
+}
 
 function appendUnique(existing: string[], incoming: string[]): string[] {
   const seen = new Set(existing);
@@ -69,14 +125,18 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
       const changedAt = now();
       const mutation: PlayerMutation = (state) => {
         const next = change(state);
-        const appliedAt =
-          Date.parse(changedAt) < Date.parse(state.timestamps.startedAt)
-            ? state.timestamps.startedAt
-            : changedAt;
+        if (next === state) return state;
+        const appliedAt = latestIsoInstant([
+          state.timestamps.startedAt,
+          state.timestamps.updatedAt,
+          state.timestamps.lastPlayedAt,
+          state.timestamps.lastSavedAt,
+          changedAt,
+        ]);
         return {
-          ...(next === state ? state : next),
+          ...next,
           timestamps: {
-            ...(next === state ? state.timestamps : next.timestamps),
+            ...next.timestamps,
             updatedAt: appliedAt,
             lastPlayedAt: appliedAt,
           },
@@ -99,16 +159,30 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
 
         while (requestedGeneration === lifecycleGeneration) {
           const revisionToSave = progressRevision;
-          const savedAt = now();
-          const current = get().playerState;
-          const savedState: PlayerState = {
-            ...current,
-            timestamps: {
-              ...current.timestamps,
-              updatedAt: savedAt,
-              lastSavedAt: savedAt,
+          const current = validateStorePlayerState(
+            get().playerState,
+            'save',
+            options.caseId,
+          );
+          const savedAt = latestIsoInstant([
+            current.timestamps.startedAt,
+            current.timestamps.updatedAt,
+            current.timestamps.lastPlayedAt,
+            current.timestamps.lastSavedAt,
+            now(),
+          ]);
+          const savedState = validateStorePlayerState(
+            {
+              ...current,
+              timestamps: {
+                ...current.timestamps,
+                updatedAt: savedAt,
+                lastSavedAt: savedAt,
+              },
             },
-          };
+            'save',
+            options.caseId,
+          );
 
           await options.adapter.save(savedState);
           if (requestedGeneration !== lifecycleGeneration) return;
@@ -213,16 +287,20 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
         mutationCaptures.add(capturedMutations);
         return enqueueLifecycle(async () => {
           try {
-            const loaded = await options.adapter.load(options.caseId);
-            if (requestedGeneration !== lifecycleGeneration || loaded === null) return;
+            const loadedInput = await options.adapter.load(options.caseId);
+            if (requestedGeneration !== lifecycleGeneration || loadedInput === null) return;
+            const loaded = validateStorePlayerState(
+              loadedInput,
+              'hydrate',
+              options.caseId,
+            );
 
             const playerState = capturedMutations.reduce(
               (state, mutation) => mutation(state),
               loaded,
             );
             set({ playerState });
-            persistedRevision =
-              capturedMutations.length === 0 ? progressRevision : null;
+            persistedRevision = playerState === loaded ? progressRevision : null;
           } finally {
             mutationCaptures.delete(capturedMutations);
           }

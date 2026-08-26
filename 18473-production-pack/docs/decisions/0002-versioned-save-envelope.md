@@ -20,5 +20,5 @@ Adapters namespace records by case ID and verify that the embedded case ID match
 - Adding a save version requires a schema and an explicit migration step rather than a cast or silent fallback.
 - Legacy saves receive deterministic defaults for fields that did not exist in the starter shape. Missing timestamps use the Unix epoch sentinel rather than load time so repeated decoding cannot reset pacing metadata.
 - Legacy ordered ID lists are normalized by first occurrence before current-schema validation; current-version saves reject duplicates instead of silently changing them.
-- Runtime progress timestamps cannot precede `startedAt`. Clear uses its request time for the new baseline, and replayed lifecycle mutations clamp to that baseline when necessary.
+- Runtime mutation/save timestamps use the latest parsed instant across the candidate clock and existing metadata, so an older local clock cannot regress hydrated progress. Clear uses its request time for the new baseline. Store hydration and save boundaries validate state even when a custom adapter is used.
 - Unsupported future saves fail closed instead of risking progress corruption.

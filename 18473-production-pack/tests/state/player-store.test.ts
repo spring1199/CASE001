@@ -113,6 +113,13 @@ class ControlledAdapter extends MemoryAdapter {
   }
 }
 
+class ValidatingMemoryAdapter extends MemoryAdapter {
+  override async save(state: PlayerState): Promise<void> {
+    playerStateSchema.parse(state);
+    await super.save(state);
+  }
+}
+
 class FinalizationGapAdapter extends MemoryAdapter {
   onFinalizationGap: (() => void) | null = null;
 
@@ -546,5 +553,124 @@ describe('createPlayerStore', () => {
     expect(timestamps.lastSavedAt !== null && timestamps.startedAt <= timestamps.lastSavedAt).toBe(
       true,
     );
+  });
+
+  it('mutates and saves a newer hydrated clock through a validating adapter without regression', async () => {
+    const adapter = new ValidatingMemoryAdapter();
+    adapter.saved.set('case_remote_clock', {
+      ...createInitialPlayerState('case_remote_clock', T3),
+      timestamps: {
+        startedAt: T3,
+        updatedAt: T3,
+        lastPlayedAt: T3,
+        lastSavedAt: T3,
+      },
+    });
+    const store = createPlayerStore({ caseId: 'case_remote_clock', adapter, now: () => T1 });
+
+    await store.getState().actions.hydrate();
+    store.getState().actions.learnFacts(['fact_local']);
+    await store.getState().actions.save();
+
+    const reloaded = createPlayerStore({ caseId: 'case_remote_clock', adapter, now: () => T1 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_local']);
+    expect(reloaded.getState().playerState.timestamps).toEqual({
+      startedAt: T3,
+      updatedAt: T3,
+      lastPlayedAt: T3,
+      lastSavedAt: T3,
+    });
+  });
+
+  it('does not regress newer baseline timestamps when replaying an older captured mutation', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_newer_replay', {
+      ...createInitialPlayerState('case_newer_replay', T0),
+      timestamps: {
+        startedAt: T0,
+        updatedAt: T3,
+        lastPlayedAt: T3,
+        lastSavedAt: T3,
+      },
+    });
+    const store = createPlayerStore({ caseId: 'case_newer_replay', adapter, now: () => T1 });
+
+    const hydration = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 1);
+    store.getState().actions.learnFacts(['fact_captured']);
+    adapter.releaseNextLoad();
+    await hydration;
+
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_captured']);
+    expect(store.getState().playerState.timestamps).toEqual({
+      startedAt: T0,
+      updatedAt: T3,
+      lastPlayedAt: T3,
+      lastSavedAt: T3,
+    });
+    expect(playerStateSchema.safeParse(store.getState().playerState).success).toBe(true);
+  });
+
+  it('preserves baseline timestamps and skips persistence when replayed intent remains a no-op', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    const baseline: PlayerState = {
+      ...createInitialPlayerState('case_replay_noop', T0),
+      knownFactIds: ['fact_a'],
+      timestamps: {
+        startedAt: T0,
+        updatedAt: T3,
+        lastPlayedAt: T3,
+        lastSavedAt: T3,
+      },
+    };
+    adapter.saved.set('case_replay_noop', baseline);
+    const store = createPlayerStore({ caseId: 'case_replay_noop', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_a']);
+
+    const hydration = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 1);
+    store.getState().actions.learnFacts(['fact_a']);
+    adapter.releaseNextLoad();
+    await hydration;
+
+    expect(store.getState().playerState).toEqual(baseline);
+    await store.getState().actions.save();
+    expect(adapter.saveCalls).toHaveLength(0);
+  });
+
+  it('rejects invalid custom-adapter hydration before installing state', async () => {
+    const adapter = new MemoryAdapter();
+    const invalid = createInitialPlayerState('case_invalid_hydrate', T2);
+    invalid.timestamps.updatedAt = T1;
+    adapter.saved.set('case_invalid_hydrate', invalid);
+    const store = createPlayerStore({ caseId: 'case_invalid_hydrate', adapter, now: () => T0 });
+    const initial = store.getState().playerState;
+
+    await expect(store.getState().actions.hydrate()).rejects.toMatchObject({
+      name: 'PlayerStoreValidationError',
+      operation: 'hydrate',
+      caseId: 'case_invalid_hydrate',
+    });
+    expect(store.getState().playerState).toBe(initial);
+  });
+
+  it('rejects invalid state before handing it to a custom persistence adapter', async () => {
+    const adapter = new MemoryAdapter();
+    const store = createPlayerStore({ caseId: 'case_invalid_save', adapter, now: () => T0 });
+    const invalid = createInitialPlayerState('case_invalid_save', T2);
+    invalid.timestamps.lastPlayedAt = T1;
+    store.setState({ playerState: invalid });
+
+    await expect(store.getState().actions.save()).rejects.toMatchObject({
+      name: 'PlayerStoreValidationError',
+      operation: 'save',
+      caseId: 'case_invalid_save',
+    });
+    expect(adapter.saveCalls).toHaveLength(0);
   });
 });
