@@ -1,9 +1,6 @@
 'use client';
 
-export type PublicCaseSummary = Readonly<{
-  label: string;
-  title: string;
-}>;
+import type { PublicCaseSummary } from '@/game/content/public-case-summary';
 
 type PhoneShellProps = {
   caseSummary: PublicCaseSummary;

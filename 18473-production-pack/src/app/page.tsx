@@ -1,10 +1,8 @@
-import { PhoneShell, type PublicCaseSummary } from '@/components/PhoneShell';
+import { PhoneShell } from '@/components/PhoneShell';
 import { case001Seed } from '@/game/content/case-001';
+import { toPublicCaseSummary } from '@/game/content/public-case-summary';
 
-const publicCaseSummary = {
-  label: case001Seed.manifest.id.replace(/^case_/, 'CASE ').replaceAll('_', ' '),
-  title: case001Seed.manifest.title,
-} satisfies PublicCaseSummary;
+const publicCaseSummary = toPublicCaseSummary(case001Seed.manifest);
 
 export default function HomePage() {
   return (
