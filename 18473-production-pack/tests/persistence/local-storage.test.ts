@@ -268,6 +268,24 @@ describe('LocalStoragePersistenceAdapter', () => {
         state.severedGraphEdgeIds.push('edge_confirmed');
       },
     ],
+    [
+      'an updated timestamp before the player start timestamp',
+      (state: PlayerState) => {
+        state.timestamps.updatedAt = '2026-08-26T00:59:00.000Z';
+      },
+    ],
+    [
+      'a last-played timestamp before the player start timestamp',
+      (state: PlayerState) => {
+        state.timestamps.lastPlayedAt = '2026-08-26T00:59:00.000Z';
+      },
+    ],
+    [
+      'a last-saved timestamp before the player start timestamp',
+      (state: PlayerState) => {
+        state.timestamps.lastSavedAt = '2026-08-26T00:59:00.000Z';
+      },
+    ],
   ])('rejects %s in persisted player state', async (_label, makeInvalid) => {
     const storage = new MemoryStorage();
     const state = completeState();
@@ -297,6 +315,19 @@ describe('LocalStoragePersistenceAdapter', () => {
     await expect(adapter.load('case_alpha')).rejects.toThrow(
       /state\.discoveredArtifactIds\[2\]/,
     );
+  });
+
+  it('reports timestamp ordering field context', async () => {
+    const storage = new MemoryStorage();
+    const state = completeState();
+    state.timestamps.updatedAt = '2026-08-26T00:59:00.000Z';
+    storage.setItem(
+      '18473:save:case_alpha',
+      JSON.stringify({ version: CURRENT_SAVE_VERSION, savedAt: NOW, state }),
+    );
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => storage });
+
+    await expect(adapter.load('case_alpha')).rejects.toThrow(/state\.timestamps\.updatedAt/);
   });
 
   it('clears only the targeted case namespace', async () => {

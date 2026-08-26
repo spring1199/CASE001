@@ -18,6 +18,18 @@ export const playerTimestampsSchema = z.strictObject({
   updatedAt: timestampSchema,
   lastPlayedAt: timestampSchema,
   lastSavedAt: timestampSchema.nullable(),
+}).superRefine((timestamps, context) => {
+  const startedAt = Date.parse(timestamps.startedAt);
+  for (const key of ['updatedAt', 'lastPlayedAt', 'lastSavedAt'] as const) {
+    const value = timestamps[key];
+    if (value !== null && Date.parse(value) < startedAt) {
+      context.addIssue({
+        code: 'custom',
+        path: [key],
+        message: `${key} cannot be before startedAt.`,
+      });
+    }
+  }
 });
 
 export function orderedUniqueStringArraySchema(itemSchema: z.ZodType<string>) {

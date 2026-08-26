@@ -65,21 +65,26 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
     const updateProgress = (change: PlayerMutation): void => {
       const current = get().playerState;
       const changed = change(current);
-      if (changed === current) return;
+      if (changed === current && mutationCaptures.size === 0) return;
       const changedAt = now();
       const mutation: PlayerMutation = (state) => {
         const next = change(state);
+        const appliedAt =
+          Date.parse(changedAt) < Date.parse(state.timestamps.startedAt)
+            ? state.timestamps.startedAt
+            : changedAt;
         return {
           ...(next === state ? state : next),
           timestamps: {
             ...(next === state ? state.timestamps : next.timestamps),
-            updatedAt: changedAt,
-            lastPlayedAt: changedAt,
+            updatedAt: appliedAt,
+            lastPlayedAt: appliedAt,
           },
         };
       };
-      progressRevision += 1;
       for (const capture of mutationCaptures) capture.push(mutation);
+      if (changed === current) return;
+      progressRevision += 1;
       set({ playerState: mutation(current) });
     };
 
@@ -225,6 +230,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
       },
       save: () => saveLatestProgress(lifecycleGeneration),
       clear: () => {
+        const requestedAt = now();
         lifecycleGeneration += 1;
         const requestedGeneration = lifecycleGeneration;
         const capturedMutations: PlayerMutation[] = [];
@@ -236,7 +242,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
 
             const playerState = capturedMutations.reduce(
               (state, mutation) => mutation(state),
-              createInitialPlayerState(options.caseId, now()),
+              createInitialPlayerState(options.caseId, requestedAt),
             );
             set({ playerState });
             persistedRevision = null;

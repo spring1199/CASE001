@@ -8,6 +8,7 @@ import { createInitialPlayerState, type PlayerState } from '@/game/state/types';
 const T0 = '2026-08-26T00:00:00.000Z';
 const T1 = '2026-08-26T00:01:00.000Z';
 const T2 = '2026-08-26T00:02:00.000Z';
+const T3 = '2026-08-26T00:03:00.000Z';
 
 class MemoryAdapter implements PersistenceAdapter {
   saved = new Map<string, PlayerState>();
@@ -32,8 +33,10 @@ class MemoryAdapter implements PersistenceAdapter {
 }
 
 class ControlledAdapter extends MemoryAdapter {
+  pauseClears = false;
   pauseLoads = false;
   pauseSaves = true;
+  readonly clearStarts: string[] = [];
   readonly loadStarts: string[] = [];
   readonly saveStarts: PlayerState[] = [];
   private readonly pendingLoads: Array<{
@@ -43,6 +46,17 @@ class ControlledAdapter extends MemoryAdapter {
   }> = [];
   private readonly pendingReleases: Array<() => void> = [];
   private readonly pendingSaveRejections: Array<(error: Error) => void> = [];
+  private readonly pendingClearReleases: Array<() => void> = [];
+
+  override async clear(caseId: string): Promise<void> {
+    if (!this.pauseClears) return super.clear(caseId);
+    this.clearCalls.push(caseId);
+    this.clearStarts.push(caseId);
+    await new Promise<void>((resolve) => {
+      this.pendingClearReleases.push(resolve);
+    });
+    this.saved.delete(caseId);
+  }
 
   override async load(caseId: string): Promise<PlayerState | null> {
     if (!this.pauseLoads) return super.load(caseId);
@@ -90,6 +104,12 @@ class ControlledAdapter extends MemoryAdapter {
     const reject = this.pendingSaveRejections.shift();
     if (reject === undefined) throw new Error('No save is pending.');
     reject(error);
+  }
+
+  releaseNextClear(): void {
+    const release = this.pendingClearReleases.shift();
+    if (release === undefined) throw new Error('No clear is pending.');
+    release();
   }
 }
 
@@ -443,5 +463,88 @@ describe('createPlayerStore', () => {
     expect((await adapter.load('case_load_retry'))?.knownFactIds).toEqual([
       'fact_after_failed_load',
     ]);
+  });
+
+  it('replays a live no-op action onto the empty baseline of a pending clear', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    const store = createPlayerStore({ caseId: 'case_clear_intent', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_a']);
+
+    const clear = store.getState().actions.clear();
+    await waitForCount(adapter.clearStarts, 1);
+    store.getState().actions.learnFacts(['fact_a']);
+    adapter.releaseNextClear();
+    await clear;
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_a']);
+
+    await store.getState().actions.save();
+    const reloaded = createPlayerStore({ caseId: 'case_clear_intent', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_a']);
+  });
+
+  it('replays a live no-op action onto an older baseline loaded by hydrate', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_hydrate_intent', createInitialPlayerState('case_hydrate_intent', T2));
+    const store = createPlayerStore({ caseId: 'case_hydrate_intent', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_a']);
+
+    const hydration = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 1);
+    store.getState().actions.learnFacts(['fact_a']);
+    adapter.releaseNextLoad();
+    await hydration;
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_a']);
+    expect(store.getState().playerState.timestamps.updatedAt).toBe(T2);
+    expect(playerStateSchema.safeParse(store.getState().playerState).success).toBe(true);
+
+    await store.getState().actions.save();
+    adapter.pauseLoads = false;
+    const reloaded = createPlayerStore({ caseId: 'case_hydrate_intent', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_a']);
+  });
+
+  it('uses clear request time as the baseline before replaying later mutations', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    let currentTime = T0;
+    const store = createPlayerStore({
+      caseId: 'case_clear_clock',
+      adapter,
+      now: () => currentTime,
+    });
+
+    currentTime = T1;
+    const clear = store.getState().actions.clear();
+    await waitForCount(adapter.clearStarts, 1);
+    currentTime = T2;
+    store.getState().actions.learnFacts(['fact_after_clear']);
+    currentTime = T3;
+    adapter.releaseNextClear();
+    await clear;
+
+    expect(store.getState().playerState.timestamps).toMatchObject({
+      startedAt: T1,
+      updatedAt: T2,
+      lastPlayedAt: T2,
+      lastSavedAt: null,
+    });
+    expect(playerStateSchema.safeParse(store.getState().playerState).success).toBe(true);
+
+    await store.getState().actions.save();
+    const reloaded = createPlayerStore({ caseId: 'case_clear_clock', adapter, now: () => T3 });
+    await reloaded.getState().actions.hydrate();
+    const timestamps = reloaded.getState().playerState.timestamps;
+    expect(timestamps.startedAt <= timestamps.updatedAt).toBe(true);
+    expect(timestamps.startedAt <= timestamps.lastPlayedAt).toBe(true);
+    expect(timestamps.lastSavedAt !== null && timestamps.startedAt <= timestamps.lastSavedAt).toBe(
+      true,
+    );
   });
 });
