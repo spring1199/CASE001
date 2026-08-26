@@ -29,22 +29,26 @@ type VisualArtifactProps = Readonly<{
 
 function VisualArtifact({ visualId, title, visual }: VisualArtifactProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const captionId = `${visualId}-visual-caption`;
 
   return (
     <>
-      <figure>
-        <VisualMedia visual={visual} />
-        <figcaption>{visual.description}</figcaption>
+      <div data-visual-artifact={visualId}>
+        <figure>
+          <VisualMedia visual={visual} />
+          <figcaption id={captionId}>{visual.description}</figcaption>
+        </figure>
         <button
           type="button"
           aria-haspopup="dialog"
           aria-controls={`${visualId}-visual-dialog`}
+          aria-describedby={captionId}
           onClick={() => dialogRef.current?.showModal()}
           style={{ minHeight: 44, minWidth: 44 }}
         >
           Зургийг томруулах
         </button>
-      </figure>
+      </div>
       <VisualDialog
         dialogRef={dialogRef}
         visualId={visualId}

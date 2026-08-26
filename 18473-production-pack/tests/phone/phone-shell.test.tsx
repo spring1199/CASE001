@@ -103,6 +103,10 @@ describe('data-driven phone application views', () => {
     expect(markup).toContain('Зургийг томруулах');
     expect(markup).toContain('aria-controls="park-rain-photo-visual-dialog"');
     expect(markup).toContain('<dialog id="park-rain-photo-visual-dialog"');
+    expect(markup).toContain('aria-describedby="park-rain-photo-visual-caption"');
+    expect(markup).toContain(
+      '<figcaption id="park-rain-photo-visual-caption">Саарал тэнгэрийн доор нойтон зам гялалзаж, модон сандал хоосон байна.</figcaption></figure><button',
+    );
     expect(markup).toContain('width="3024" height="4032"');
     expect(markup).not.toContain('width="320" height="240"');
   });
