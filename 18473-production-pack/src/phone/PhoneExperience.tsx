@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 
 import type { PublicCaseSummary } from '@/game/content/public-case-summary';
@@ -18,7 +18,6 @@ import type {
   PhoneDeepLinkTarget,
   PhoneItem,
 } from '@/phone/data/schema';
-import { applyDiscoveryEffects } from '@/phone/discovery';
 import {
   createPhoneNavigationState,
   goBack,
@@ -28,6 +27,13 @@ import {
   navigateToItem,
   unlockPhone,
 } from '@/phone/navigation';
+import {
+  commitPhoneDiscovery,
+  initializePhonePlayer,
+  phoneInitializationFailureMessage,
+  type PhoneInitializationFailure,
+  type PhoneInitializationResult,
+} from '@/phone/runtime';
 
 type PhoneExperienceProps = Readonly<{
   caseSummary: PublicCaseSummary;
@@ -65,6 +71,8 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const hydrationStatus = useStore(playerStore, (state) => state.hydrationStatus);
   const [navigation, setNavigation] = useState(createPhoneNavigationState);
   const [status, setStatus] = useState('Төхөөрөмж түгжээтэй байна.');
+  const [initializationFailure, setInitializationFailure] =
+    useState<PhoneInitializationFailure | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const unlockedAppIds = useMemo(() => {
@@ -80,47 +88,57 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     [playerState.unlockedContentIds],
   );
 
+  const applyInitializationResult = useCallback(
+    (result: PhoneInitializationResult, retry: boolean): void => {
+      if (result.kind === 'ready') {
+        setInitializationFailure(null);
+        if (retry) setStatus('Төлөвийг амжилттай шинэчиллээ.');
+        return;
+      }
+      setInitializationFailure(result.kind);
+      setStatus(phoneInitializationFailureMessage(result.kind));
+    },
+    [],
+  );
+
   useEffect(() => {
     let active = true;
-    const actions = playerStore.getState().actions;
-    actions.unlockApps([...INITIAL_UNLOCKED_APP_IDS]);
-    void actions
-      .hydrate()
-      .then(() => actions.save())
-      .catch(() => {
-        if (active) setStatus('Хадгалсан төлөвийг ачаалж чадсангүй.');
-      });
+    void initializePhonePlayer(
+      INITIAL_UNLOCKED_APP_IDS,
+      playerStore.getState().actions,
+    ).then((result) => {
+      if (active) applyInitializationResult(result, false);
+    });
     return () => {
       active = false;
     };
-  }, [playerStore]);
+  }, [applyInitializationResult, playerStore]);
+
+  const retryInitialization = (): void => {
+    setInitializationFailure(null);
+    setStatus('Төлөвийг дахин ачаалж байна.');
+    void initializePhonePlayer(
+      INITIAL_UNLOCKED_APP_IDS,
+      playerStore.getState().actions,
+    ).then((result) => applyInitializationResult(result, true));
+  };
 
   const recordDiscovery = (item: DeepReadonly<PhoneItem>): void => {
     if (!item.discovery || !hasDiscoveries(item)) return;
-    const actions = playerStore.getState().actions;
-    const applied = applyDiscoveryEffects(
-      {
-        artifactIds: item.discovery.artifactIds
-          ? [...item.discovery.artifactIds]
-          : undefined,
-        evidenceIds: item.discovery.evidenceIds
-          ? [...item.discovery.evidenceIds]
-          : undefined,
-        unlockAppIds: item.discovery.unlockAppIds
-          ? [...item.discovery.unlockAppIds]
-          : undefined,
-        unlockContentIds: item.discovery.unlockContentIds
-          ? [...item.discovery.unlockContentIds]
-          : undefined,
-      },
-      actions,
+    const storeState = playerStore.getState();
+    const result = commitPhoneDiscovery(
+      item.discovery,
+      storeState.playerState,
+      storeState.actions,
     );
     setStatus(
-      applied.unlockAppIds.length > 0 || applied.unlockContentIds.length > 0
+      result.kind === 'content-unlocked'
         ? 'Шинэ агуулга нээгдлээ.'
-        : 'Шинэ мэдээлэл бүртгэгдлээ.',
+        : result.kind === 'information-recorded'
+          ? 'Шинэ мэдээлэл бүртгэгдлээ.'
+          : 'Энэ мэдээлэл өмнө бүртгэгдсэн байна.',
     );
-    void actions.save().catch(() => setStatus('Илрүүлэлтийг хадгалж чадсангүй.'));
+    void result.saveOperation?.catch(() => setStatus('Илрүүлэлтийг хадгалж чадсангүй.'));
   };
 
   useEffect(() => {
@@ -216,6 +234,15 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         <p role="status" aria-live="polite">
           {hydrationStatus === 'hydrating' ? 'Хадгалсан төлөвийг ачаалж байна.' : status}
         </p>
+        {initializationFailure ? (
+          <button
+            type="button"
+            onClick={retryInitialization}
+            style={{ minHeight: 44, minWidth: 44 }}
+          >
+            Дахин оролдох
+          </button>
+        ) : null}
       </section>
     );
   }
@@ -253,6 +280,15 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       <p role="status" aria-live="polite">
         {hydrationStatus === 'hydrating' ? 'Хадгалсан төлөвийг ачаалж байна.' : status}
       </p>
+      {initializationFailure ? (
+        <button
+          type="button"
+          onClick={retryInitialization}
+          style={{ minHeight: 44, minWidth: 44 }}
+        >
+          Дахин оролдох
+        </button>
+      ) : null}
 
       {route.screen === 'home' ? (
         <div role="region" aria-label="Аппын нүүр">

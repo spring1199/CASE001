@@ -5,6 +5,7 @@ import { PhoneShell } from '@/components/PhoneShell';
 import { ArtifactDetail } from '@/phone/apps/ArtifactDetail';
 import { PhoneAppView } from '@/phone/apps/PhoneAppView';
 import { neutralPhoneIndex } from '@/phone/data/neutral-seed';
+import { phoneItemSchema } from '@/phone/data/schema';
 
 const syntheticSummary = {
   id: 'case_777',
@@ -81,5 +82,73 @@ describe('data-driven phone application views', () => {
     expect(messageMarkup).toContain('<audio controls=""');
     expect(messageMarkup).toContain('<summary style="min-height:44px">Бичлэгийн тайлал</summary>');
     expect(messageMarkup).toContain('Бороотой бол кофе шопт уулзаж болно шүү.');
+  });
+
+  it('offers every visual artifact in a keyboard-accessible native zoom dialog', () => {
+    const galleryItem = neutralPhoneIndex.appsById.gallery.items[0]!;
+    const sizedItem = {
+      ...galleryItem,
+      visual: {
+        ...galleryItem.visual!,
+        src: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E',
+        width: 3024,
+        height: 4032,
+      },
+    } as const;
+
+    const markup = renderToStaticMarkup(
+      <ArtifactDetail item={sizedItem} onOpenDeepLink={vi.fn()} />,
+    );
+
+    expect(markup).toContain('Зургийг томруулах');
+    expect(markup).toContain('aria-controls="park-rain-photo-visual-dialog"');
+    expect(markup).toContain('<dialog id="park-rain-photo-visual-dialog"');
+    expect(markup).toContain('width="3024" height="4032"');
+    expect(markup).not.toContain('width="320" height="240"');
+  });
+
+  it('preserves incoming, outgoing, and system message direction semantically', () => {
+    const thread = phoneItemSchema.parse({
+      id: 'direction-test-thread',
+      kind: 'message-thread',
+      title: 'Чиглэлийн туршилт',
+      messages: [
+        {
+          id: 'incoming-test-message',
+          senderLabel: 'Хүлээн авагч',
+          direction: 'incoming',
+          body: 'Ирсэн туршилтын зурвас.',
+          timestampLabel: '10:00',
+          read: true,
+        },
+        {
+          id: 'outgoing-test-message',
+          senderLabel: 'Илгээгч',
+          direction: 'outgoing',
+          body: 'Илгээсэн туршилтын зурвас.',
+          timestampLabel: '10:01',
+          read: true,
+        },
+        {
+          id: 'system-test-message',
+          senderLabel: 'Систем',
+          direction: 'system',
+          body: 'Системийн туршилтын зурвас.',
+          timestampLabel: '10:02',
+          read: true,
+        },
+      ],
+    });
+
+    const markup = renderToStaticMarkup(
+      <ArtifactDetail item={thread} onOpenDeepLink={vi.fn()} />,
+    );
+
+    expect(markup).toContain('data-message-direction="incoming"');
+    expect(markup).toContain('data-message-direction="outgoing"');
+    expect(markup).toContain('data-message-direction="system"');
+    expect(markup).toContain('>Ирсэн</span>');
+    expect(markup).toContain('>Илгээсэн</span>');
+    expect(markup).toContain('>Системийн</span>');
   });
 });

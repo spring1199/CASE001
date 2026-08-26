@@ -1,12 +1,13 @@
-import Image from 'next/image';
 import { useRef } from 'react';
 
 import { AudioNote } from '@/phone/components/AudioNote';
 import { MetadataDialog } from '@/phone/components/MetadataDialog';
+import { VisualDialog, VisualMedia } from '@/phone/components/VisualDialog';
 import type {
   DeepReadonly,
   PhoneDeepLinkTarget,
   PhoneItem,
+  PhoneVisual,
 } from '@/phone/data/schema';
 
 type ArtifactDetailProps = Readonly<{
@@ -14,24 +15,43 @@ type ArtifactDetailProps = Readonly<{
   onOpenDeepLink(target: DeepReadonly<PhoneDeepLinkTarget>): void;
 }>;
 
-type VisualArtifactData = Readonly<{
-  src?: string;
-  alt: string;
-  description: string;
+const MESSAGE_DIRECTION_LABELS = {
+  incoming: 'Ирсэн',
+  outgoing: 'Илгээсэн',
+  system: 'Системийн',
+} as const;
+
+type VisualArtifactProps = Readonly<{
+  visualId: string;
+  title: string;
+  visual: DeepReadonly<PhoneVisual>;
 }>;
 
-function VisualArtifact({ visual }: Readonly<{ visual: VisualArtifactData }>) {
+function VisualArtifact({ visualId, title, visual }: VisualArtifactProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
   return (
-    <figure>
-      {visual.src ? (
-        <Image src={visual.src} alt={visual.alt} width={320} height={240} unoptimized />
-      ) : (
-        <div role="img" aria-label={visual.alt}>
-          {visual.alt}
-        </div>
-      )}
-      <figcaption>{visual.description}</figcaption>
-    </figure>
+    <>
+      <figure>
+        <VisualMedia visual={visual} />
+        <figcaption>{visual.description}</figcaption>
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls={`${visualId}-visual-dialog`}
+          onClick={() => dialogRef.current?.showModal()}
+          style={{ minHeight: 44, minWidth: 44 }}
+        >
+          Зургийг томруулах
+        </button>
+      </figure>
+      <VisualDialog
+        dialogRef={dialogRef}
+        visualId={visualId}
+        title={title}
+        visual={visual}
+      />
+    </>
   );
 }
 
@@ -60,14 +80,24 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
         <ol aria-label="Зурвасын түүх">
           {item.messages.map((message) => (
             <li key={message.id}>
-              <article aria-label={`${message.senderLabel} · ${message.timestampLabel}`}>
+              <article
+                data-message-direction={message.direction}
+                aria-label={`${MESSAGE_DIRECTION_LABELS[message.direction]} зурвас · ${message.senderLabel} · ${message.timestampLabel}`}
+              >
                 <header>
                   <strong>{message.senderLabel}</strong>
+                  <span>{MESSAGE_DIRECTION_LABELS[message.direction]}</span>
                   <time>{message.timestampLabel}</time>
                   {!message.read ? <span>Уншаагүй</span> : null}
                 </header>
                 {message.body ? <BodyText body={message.body} /> : null}
-                {message.visual ? <VisualArtifact visual={message.visual} /> : null}
+                {message.visual ? (
+                  <VisualArtifact
+                    visualId={message.id}
+                    title={`${message.senderLabel} · ${message.timestampLabel}`}
+                    visual={message.visual}
+                  />
+                ) : null}
                 {message.audio ? (
                   <AudioNote audio={message.audio} label={`${message.senderLabel} · Дуут зурвас`} />
                 ) : null}
@@ -78,7 +108,9 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
       ) : (
         <>
           {item.body ? <BodyText body={item.body} /> : null}
-          {item.visual ? <VisualArtifact visual={item.visual} /> : null}
+          {item.visual ? (
+            <VisualArtifact visualId={item.id} title={item.title} visual={item.visual} />
+          ) : null}
           {item.audio ? <AudioNote audio={item.audio} /> : null}
         </>
       )}

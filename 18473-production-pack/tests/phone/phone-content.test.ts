@@ -163,6 +163,21 @@ describe('phone content boundary', () => {
     expect(() => parsePhoneContent(audioItem)).toThrow();
   });
 
+  it('requires paired intrinsic dimensions for sourced visual artifacts', () => {
+    const missingDimensions = mutableNeutralClone();
+    missingDimensions.apps[1]!.items[0]!.visual = {
+      src: '/images/neutral-photo.jpg',
+      alt: 'Борооны дараах зам',
+      description: 'Нойтон замын хүртээмжтэй тайлбар.',
+    };
+
+    expect(() => parsePhoneContent(missingDimensions)).toThrow(/intrinsic dimensions/i);
+    expect(neutralPhoneIndex.appsById.gallery.items[0]!.visual).toMatchObject({
+      width: 3024,
+      height: 4032,
+    });
+  });
+
   it('keeps audio transcripts and visual equivalents available in neutral seed data', () => {
     const items = neutralPhoneContent.apps.flatMap((app) => app.items);
     const audio = items.find((item) => item.audio !== undefined)?.audio;

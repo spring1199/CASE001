@@ -37,6 +37,17 @@ export const phoneVisualSchema = z.strictObject({
   src: nonEmptyTextSchema.optional(),
   alt: nonEmptyTextSchema,
   description: nonEmptyTextSchema,
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+}).superRefine((visual, context) => {
+  const hasWidth = visual.width !== undefined;
+  const hasHeight = visual.height !== undefined;
+  if (hasWidth !== hasHeight || (visual.src !== undefined && (!hasWidth || !hasHeight))) {
+    context.addIssue({
+      code: 'custom',
+      message: 'Sourced visuals require paired positive intrinsic dimensions.',
+    });
+  }
 });
 
 export const phoneAudioSchema = z.strictObject({
@@ -221,6 +232,7 @@ export const phoneContentSchema = z.strictObject({
 export type PhoneAppId = z.infer<typeof phoneAppIdSchema>;
 export type PhoneDeepLinkTarget = z.infer<typeof phoneDeepLinkTargetSchema>;
 export type PhoneDiscoveryEffects = z.infer<typeof phoneDiscoveryEffectsSchema>;
+export type PhoneVisual = z.infer<typeof phoneVisualSchema>;
 export type PhoneItem = z.infer<typeof phoneItemSchema>;
 export type PhoneAppDescriptor = z.infer<typeof phoneAppDescriptorSchema>;
 export type PhoneContent = z.infer<typeof phoneContentSchema>;
