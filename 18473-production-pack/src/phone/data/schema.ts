@@ -192,10 +192,18 @@ export type PhoneItem = z.infer<typeof phoneItemSchema>;
 export type PhoneAppDescriptor = z.infer<typeof phoneAppDescriptorSchema>;
 export type PhoneContent = z.infer<typeof phoneContentSchema>;
 
+export type DeepReadonly<T> = T extends (...args: never[]) => unknown
+  ? T
+  : T extends readonly (infer Item)[]
+    ? readonly DeepReadonly<Item>[]
+    : T extends object
+      ? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
+      : T;
+
 export type PhoneContentIndex = Readonly<{
-  content: PhoneContent;
-  appsById: Readonly<Record<PhoneAppId, PhoneAppDescriptor>>;
-  itemsById: Readonly<Record<string, PhoneItem>>;
+  content: DeepReadonly<PhoneContent>;
+  appsById: Readonly<Record<PhoneAppId, DeepReadonly<PhoneAppDescriptor>>>;
+  itemsById: Readonly<Record<string, DeepReadonly<PhoneItem>>>;
   itemAppIds: Readonly<Record<string, PhoneAppId>>;
 }>;
 
@@ -203,11 +211,20 @@ export function parsePhoneContent(input: unknown): PhoneContent {
   return phoneContentSchema.parse(input);
 }
 
+function deepFreeze<T>(value: T): DeepReadonly<T> {
+  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) {
+    return value as DeepReadonly<T>;
+  }
+
+  for (const child of Object.values(value)) deepFreeze(child);
+  return Object.freeze(value) as DeepReadonly<T>;
+}
+
 export function createPhoneContentIndex(input: unknown): PhoneContentIndex {
-  const content = parsePhoneContent(input);
+  const content = deepFreeze(parsePhoneContent(input));
   const appsById = Object.freeze(
     Object.fromEntries(content.apps.map((app) => [app.id, app])),
-  ) as Record<PhoneAppId, PhoneAppDescriptor>;
+  ) as Record<PhoneAppId, DeepReadonly<PhoneAppDescriptor>>;
   const itemEntries = content.apps.flatMap((app) => app.items.map((item) => [item.id, item] as const));
   const itemOwnerEntries = content.apps.flatMap((app) =>
     app.items.map((item) => [item.id, app.id] as const),
