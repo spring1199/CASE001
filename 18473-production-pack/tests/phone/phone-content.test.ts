@@ -184,4 +184,22 @@ describe('phone content boundary', () => {
     expect(waveBytes.subarray(8, 12).toString('ascii')).toBe('WAVE');
     expect(waveBytes.byteLength).toBeGreaterThan(44);
   });
+
+  it('authors an audio duration label that matches the embedded PCM duration', () => {
+    const audio = neutralPhoneContent.apps
+      .flatMap((app) => app.items)
+      .find((item) => item.audio !== undefined)?.audio;
+    if (audio === undefined) throw new Error('Expected neutral audio fixture.');
+
+    const waveBytes = Buffer.from(audio.src.split(',')[1]!, 'base64');
+    const channels = waveBytes.readUInt16LE(22);
+    const sampleRate = waveBytes.readUInt32LE(24);
+    const bitsPerSample = waveBytes.readUInt16LE(34);
+    const dataLength = waveBytes.readUInt32LE(40);
+    const actualSeconds = dataLength / (sampleRate * channels * (bitsPerSample / 8));
+    const [minutesLabel, secondsLabel] = audio.durationLabel.split(':').map(Number);
+    const labelledSeconds = minutesLabel! * 60 + secondsLabel!;
+
+    expect(labelledSeconds).toBe(actualSeconds);
+  });
 });

@@ -1,7 +1,38 @@
 import { createPhoneContentIndex } from '@/phone/data/schema';
 
-const NEUTRAL_AUDIO_SOURCE =
-  'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAh46TlpaTj4iBeXNta2pscXd/ho2SlZaUkImCe3Rua2pscHZ9hYyRlZaUkYuDfHVva2prb3V8g4uRlJaVkYyFfXZwbGprbnR7gomQlJaVko2Gf3dxbGprbXN5gYiPk5aWk46HgHlybWpqbXF4f4eNk5WWlI+JgXpzbmtqbHB3foWMkpWWlJCKg3t0b2tqbG91fYSLkZWWlZGLhH11b2xqa290e4OKkJSWlZKMhX53cGxqa25zeoGJj5SWlZONh394cW1qam1yeYCHjpOWlpOPiIF5c21ramxxd3+GjZKVlpSQiYJ7dG5ramxwdn2FjJGVlpSRi4N8dW9ramtvdXyDi5GUlpWRjIV9dnBsamtudHuCiZCUlpWSjYZ/d3Fsamttc3mBiI+TlpaTjoeAeXJtamptcXh/h42TlZaUj4mBenNua2pscHd+hYySlZaUkIqDe3Rva2psb3V9hIuRlZaVkYuEfXVvbGprb3R7g4qQlJaVkoyFfndwbGprbnN6gYmPlJaVk42Hf3hxbWpqbXJ5gIeOk5aWk4+IgXlzbWtqbHF3f4aNkpWWlJCJgnt0bmtqbHB2fYWMkZWWlJGLg3x1b2tqa291fIOLkZSWlZGMhX12cGxqa250e4KJkJSWlZKNhn93cWxqa21zeYGIj5OWlpOOh4B5cm1qam1xeH+HjZOVlpSPiYF6c25ramxwd36FjJKVlpSQioN7dG9ramxvdX2Ei5GVlpWRi4R9dW9samtvdHuDipCUlpWSjIV+d3Bsamtuc3qBiY+UlpWTjYd/eHFtamptcnmAh46TlpaTj4iBeXNta2pscXd/ho2SlZaUkImCe3Rua2pscHZ9hYyRlZaUkYuDfHVva2prb3V8g4uRlJaVkYyFfXZwbGprbnR7gomQlJaVko2Gf3dxbGprbXN5gYiPk5aWk46HgHlybWpqbXF4f4eNk5WWlI+JgXpzbmtqbHB3foWMkpWWlJCKg3t0b2tqbG91fYSLkZWWlZGLhH11b2xqa290e4OKkJSWlZKMhX53cGxqa25zeoGJj5SWlZONh394cW1qam1yeQ==';
+function createNeutralAudioSource(): string {
+  const sampleRate = 8_000;
+  const sampleCount = sampleRate;
+  const bytes = new Uint8Array(44 + sampleCount);
+  const view = new DataView(bytes.buffer);
+  const writeAscii = (offset: number, value: string): void => {
+    for (let index = 0; index < value.length; index += 1) {
+      bytes[offset + index] = value.charCodeAt(index);
+    }
+  };
+
+  writeAscii(0, 'RIFF');
+  view.setUint32(4, 36 + sampleCount, true);
+  writeAscii(8, 'WAVEfmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  writeAscii(36, 'data');
+  view.setUint32(40, sampleCount, true);
+  for (let index = 0; index < sampleCount; index += 1) {
+    bytes[44 + index] = 128 + Math.round(22 * Math.sin((2 * Math.PI * 440 * index) / sampleRate));
+  }
+
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return `data:audio/wav;base64,${btoa(binary)}`;
+}
+
+const NEUTRAL_AUDIO_SOURCE = createNeutralAudioSource();
 
 const neutralSeedInput = {
   version: 1,
