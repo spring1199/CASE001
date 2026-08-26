@@ -14,6 +14,7 @@ type ProtectedValue = {
 type DeliveredText = {
   source: string;
   body: string;
+  isJavaScript: boolean;
 };
 
 type CaptureResult = DeliveredText | {
@@ -23,60 +24,77 @@ type CaptureResult = DeliveredText | {
 
 function buildProtectedValues(): ProtectedValue[] {
   const values = new Map<string, Set<string>>();
-  const add = (value: string | undefined, reason: string) => {
-    if (value === undefined) return;
+  const add = (value: string, reason: string) => {
     const reasons = values.get(value) ?? new Set<string>();
     reasons.add(reason);
     values.set(value, reasons);
   };
 
-  const secretFactIds = new Set(
-    case001Seed.facts.filter(({ secret }) => secret).map(({ id }) => id),
-  );
-  const revealIds = new Set<string>();
+  const collectRecordStrings = (
+    record: unknown,
+    reason: string,
+    path = '',
+  ): void => {
+    if (typeof record === 'string') {
+      if (record.trim().length > 0) {
+        add(record, path === '' ? reason : `${reason} at ${path}`);
+      }
+      return;
+    }
 
-  case001Seed.facts.filter(({ secret }) => secret).forEach((fact) => {
-    add(fact.id, 'secret fact ID');
-    add(fact.reveal, `reveal gate for ${fact.id}`);
-    if (fact.reveal !== undefined) revealIds.add(fact.reveal);
+    if (Array.isArray(record)) {
+      record.forEach((value, index) => {
+        collectRecordStrings(value, reason, `${path}[${index}]`);
+      });
+      return;
+    }
+
+    if (typeof record !== 'object' || record === null) return;
+
+    Object.entries(record)
+      .sort(([left], [right]) => left.localeCompare(right, 'en'))
+      .forEach(([key, value]) => {
+        collectRecordStrings(value, reason, path === '' ? key : `${path}.${key}`);
+      });
+  };
+
+  const secretFacts = case001Seed.facts.filter(({ secret }) => secret);
+  const secretFactIds = new Set(secretFacts.map(({ id }) => id));
+  const revealIds = new Set(secretFacts.flatMap(({ reveal }) => (
+    reveal === undefined ? [] : [reveal]
+  )));
+
+  secretFacts.forEach((fact) => {
+    collectRecordStrings(fact, `secret fact record ${fact.id}`);
   });
 
   case001Seed.characters.forEach((character) => {
     if (character.hiddenUntilFact !== undefined) {
-      add(character.id, 'gated character ID');
-      add(character.name, `gated character label for ${character.id}`);
-      add(character.hiddenUntilFact, `character reveal gate for ${character.id}`);
+      collectRecordStrings(character, `gated character record ${character.id}`);
     }
 
     if (character.canonicalCharacterId !== undefined) {
-      add(character.canonicalCharacterId, `canonical character ID for ${character.id}`);
+      collectRecordStrings(character, `canonical alias record ${character.id}`);
       const canonicalCharacter = case001Seed.characters.find(
         ({ id }) => id === character.canonicalCharacterId,
       );
-      add(
-        canonicalCharacter?.name,
-        `referenced canonical character label for ${character.id}`,
+      collectRecordStrings(
+        canonicalCharacter,
+        `canonical character record referenced by ${character.id}`,
       );
     }
   });
 
   case001Seed.evidence.forEach((evidence) => {
     if (evidence.hiddenUntilFacts === undefined) return;
-    add(evidence.id, 'gated evidence ID');
-    add(evidence.title, `gated evidence title for ${evidence.id}`);
-    add(evidence.sourceArtifactId, `gated source artifact for ${evidence.id}`);
-    add(evidence.description, `gated evidence description for ${evidence.id}`);
-    evidence.hiddenUntilFacts.forEach((factId) => {
-      add(factId, `evidence reveal gate for ${evidence.id}`);
-    });
+    collectRecordStrings(evidence, `gated evidence record ${evidence.id}`);
   });
 
   case001Seed.deductions.forEach((deduction) => {
     const revealsSecret = revealIds.has(deduction.id)
       || deduction.grantsFacts.some((factId) => secretFactIds.has(factId));
     if (!revealsSecret) return;
-    add(deduction.id, 'secret-revealing deduction ID');
-    add(deduction.title, `secret-revealing deduction title for ${deduction.id}`);
+    collectRecordStrings(deduction, `secret-revealing deduction record ${deduction.id}`);
   });
 
   const conditionFactIds = (
@@ -85,43 +103,41 @@ function buildProtectedValues(): ProtectedValue[] {
 
   case001Seed.locks.forEach((lock) => {
     if (!conditionFactIds(lock.unlockWhen).some((factId) => secretFactIds.has(factId))) return;
-    add(lock.id, 'secret-gated lock ID');
-    add(lock.title, `secret-gated lock title for ${lock.id}`);
+    collectRecordStrings(lock, `secret-gated lock record ${lock.id}`);
   });
 
   case001Seed.triggers.forEach((trigger) => {
     if (!conditionFactIds(trigger.when).some((factId) => secretFactIds.has(factId))) return;
-    add(trigger.id, 'secret-gated trigger ID');
-    trigger.effects.forEach(({ target }) => {
-      add(target, `secret-gated trigger target for ${trigger.id}`);
-    });
+    collectRecordStrings(trigger, `secret-gated trigger record ${trigger.id}`);
   });
 
   case001Seed.objectives.filter(({ state }) => state === 'locked').forEach((objective) => {
-    add(objective.id, 'locked objective ID');
-    add(objective.title, `locked objective title for ${objective.id}`);
+    collectRecordStrings(objective, `locked objective record ${objective.id}`);
   });
 
-  add(case001Seed.manifest.canonEndingId, 'canonical ending ID');
   const canonicalEnding = case001Seed.endings.find(
     ({ id }) => id === case001Seed.manifest.canonEndingId,
   );
-  add(canonicalEnding?.description, 'canonical ending description');
+  collectRecordStrings(canonicalEnding, 'canonical ending record');
 
   return [...values.entries()]
     .map(([value, reasons]) => ({ value, reasons: [...reasons].sort() }))
     .sort((left, right) => left.value.localeCompare(right.value, 'en'));
 }
 
-function isBrowserDeliveredText(response: Response): boolean {
-  const contentType = response.headers()['content-type']?.split(';')[0].trim().toLowerCase();
-  const resourceType = response.request().resourceType();
+function isJavaScriptResponse(response: Response): boolean {
   const pathname = new URL(response.url()).pathname;
 
-  return resourceType === 'document'
-    || resourceType === 'script'
+  return response.request().resourceType() === 'script'
     || pathname.endsWith('.js')
-    || pathname.endsWith('.mjs')
+    || pathname.endsWith('.mjs');
+}
+
+function isBrowserDeliveredText(response: Response): boolean {
+  const contentType = response.headers()['content-type']?.split(';')[0].trim().toLowerCase();
+
+  return response.request().resourceType() === 'document'
+    || isJavaScriptResponse(response)
     || contentType === 'text/html'
     || contentType === 'text/javascript'
     || contentType === 'application/javascript'
@@ -129,10 +145,44 @@ function isBrowserDeliveredText(response: Response): boolean {
     || contentType === 'text/x-component';
 }
 
+function firstPartyModuleText(delivered: DeliveredText): string {
+  if (!delivered.isJavaScript) return delivered.body;
+
+  const markers = [...delivered.body.matchAll(/^"\[project\]\/[^\r\n]+/gm)];
+  if (markers.length === 0) return delivered.body;
+
+  return markers.flatMap((marker, index) => {
+    const header = marker[0];
+    if (!header.startsWith('"[project]/src/') && !header.startsWith('"[project]/content/')) {
+      return [];
+    }
+    const start = marker.index ?? 0;
+    const end = markers[index + 1]?.index ?? delivered.body.length;
+    return [delivered.body.slice(start, end)];
+  }).join('\n');
+}
+
+function isDistinctiveProtectedValue(value: string): boolean {
+  return value.length >= 12 || /[_\s]/u.test(value) || /[^\x00-\x7F]/u.test(value);
+}
+
+function containsShortProtectedValue(body: string, value: string): boolean {
+  const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(
+    `(?<![\\p{L}\\p{N}_])${escapedValue}(?![\\p{L}\\p{N}_])`,
+    'u',
+  ).test(body);
+}
+
 const protectedValues = buildProtectedValues();
 
 test('renders only the Case #001 public manifest summary', async ({ page, baseURL }) => {
   if (baseURL === undefined) throw new Error('Playwright baseURL is required for leak detection');
+
+  expect(
+    protectedValues.map(({ value }) => value),
+    'Protected records must contribute nested tag and canonical choice values',
+  ).toEqual(expect.arrayContaining(['winter47', 'SEVER']));
 
   const appOrigin = new URL(baseURL).origin;
   const responseCaptures: Promise<CaptureResult>[] = [];
@@ -144,7 +194,7 @@ test('renders only the Case #001 public manifest summary', async ({ page, baseUR
 
     const source = response.url();
     responseCaptures.push(response.text()
-      .then((body) => ({ source, body }))
+      .then((body) => ({ source, body, isJavaScript: isJavaScriptResponse(response) }))
       .catch((error: unknown) => ({
         source,
         error: error instanceof Error ? error.message : String(error),
@@ -167,19 +217,24 @@ test('renders only the Case #001 public manifest summary', async ({ page, baseUR
   expect(captureFailures, 'Every same-origin HTML/RSC/JS response must be inspectable').toEqual([]);
 
   const deliveredText: DeliveredText[] = [
-    { source: 'page.content()', body: await page.content() },
+    { source: 'page.content()', body: await page.content(), isJavaScript: false },
     ...captureResults.filter(
       (result): result is DeliveredText => 'body' in result,
     ),
   ];
 
-  for (const protectedValue of protectedValues) {
-    const leakingSources = deliveredText
-      .filter(({ body }) => body.includes(protectedValue.value))
+  const leaks = protectedValues.flatMap((protectedValue) => {
+    const sources = deliveredText
+      .filter((delivered) => {
+        const searchableBody = isDistinctiveProtectedValue(protectedValue.value)
+          ? delivered.body
+          : firstPartyModuleText(delivered);
+        return isDistinctiveProtectedValue(protectedValue.value)
+          ? searchableBody.includes(protectedValue.value)
+          : containsShortProtectedValue(searchableBody, protectedValue.value);
+      })
       .map(({ source }) => source);
-    expect(
-      leakingSources,
-      `Protected value ${JSON.stringify(protectedValue.value)} (${protectedValue.reasons.join('; ')}) leaked via ${leakingSources.join(', ')}`,
-    ).toEqual([]);
-  }
+    return sources.length === 0 ? [] : [{ ...protectedValue, sources }];
+  });
+  expect(leaks, 'Protected authored values must not reach browser-delivered text').toEqual([]);
 });
