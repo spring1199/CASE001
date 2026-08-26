@@ -1,17 +1,26 @@
-export type RevealProtectedArtifact = {
+import type { Evidence } from '@/game/schema/case';
+
+export type VisibleArtifact = Readonly<{
   id: string;
-  hiddenUntilFacts?: readonly string[];
-};
+  title: string;
+  sourceArtifactId: string;
+  description: string;
+  tags: readonly string[];
+}>;
 
-export function projectVisibleArtifact<T extends RevealProtectedArtifact>(
-  artifact: T,
+export function projectVisibleArtifact(
+  artifact: Evidence,
   knownFactIds: ReadonlySet<string>,
-): Omit<T, 'hiddenUntilFacts'> | null {
-  const { hiddenUntilFacts, ...projection } = artifact;
-
-  if (hiddenUntilFacts?.some((factId) => !knownFactIds.has(factId))) {
+): VisibleArtifact | null {
+  if (artifact.hiddenUntilFacts?.some((factId) => !knownFactIds.has(factId))) {
     return null;
   }
 
-  return projection;
+  return Object.freeze({
+    id: artifact.id,
+    title: artifact.title,
+    sourceArtifactId: artifact.sourceArtifactId,
+    description: artifact.description,
+    tags: Object.freeze([...artifact.tags]),
+  });
 }

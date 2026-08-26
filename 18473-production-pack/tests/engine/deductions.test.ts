@@ -51,23 +51,26 @@ describe('evaluateDeduction', () => {
     });
   });
 
-  it('counts distinct threshold candidates in authored order', () => {
-    const overlappingGroups = {
-      ...deduction,
-      requiredAnyGroups: [['a', 'b'], ['b', 'c']],
-      minimumFromAnyGroup: 3,
+  it('uses the authored group count as the default threshold', () => {
+    const multiGroupDeduction = {
+      id: 'ded_multi_group',
+      title: 'multi group',
+      requiredAll: ['anchor'],
+      requiredAnyGroups: [['a', 'b'], ['c', 'd']],
+      prerequisiteFacts: ['opened'],
+      grantsFacts: ['done'],
     };
     const state = {
-      evidenceIds: new Set(['anchor', 'a', 'b']),
+      evidenceIds: new Set(['anchor', 'a', 'c']),
       factIds: new Set(['opened']),
     };
 
-    expect(evaluateDeduction(overlappingGroups, state).threshold).toEqual({
-      candidateEvidenceIds: ['a', 'b', 'c'],
-      matchedEvidenceIds: ['a', 'b'],
+    expect(evaluateDeduction(multiGroupDeduction, state).threshold).toEqual({
+      candidateEvidenceIds: ['a', 'b', 'c', 'd'],
+      matchedEvidenceIds: ['a', 'c'],
       matched: 2,
-      required: 3,
-      remaining: 1,
+      required: 2,
+      remaining: 0,
     });
   });
 

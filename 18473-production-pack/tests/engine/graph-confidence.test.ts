@@ -57,6 +57,16 @@ describe('computeGraphConfidence', () => {
     )).toThrowError(/finite number/);
   });
 
+  it('rejects overflow from finite authored weights', () => {
+    expect(() => computeGraphConfidence(
+      [
+        { evidenceId: 'ev_max_a', weight: Number.MAX_VALUE },
+        { evidenceId: 'ev_max_b', weight: Number.MAX_VALUE },
+      ],
+      new Set(['ev_max_a', 'ev_max_b']),
+    )).toThrowError(/aggregate.*finite/);
+  });
+
   it('is deterministic and does not mutate contributions or discovered evidence', () => {
     const authored = structuredClone(contributions);
     const discovered = new Set(['ev_alpha', 'ev_beta']);

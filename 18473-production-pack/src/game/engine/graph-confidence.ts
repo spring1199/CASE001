@@ -32,7 +32,14 @@ export function computeGraphConfidence(
   }
 
   const rawConfidence = appliedSources.reduce(
-    (total, source) => total + source.weight,
+    (total, source) => {
+      const nextTotal = total + source.weight;
+      if (!Number.isFinite(nextTotal)) {
+        throw new RangeError('Graph confidence aggregate must remain finite');
+      }
+
+      return nextTotal;
+    },
     0,
   );
 
