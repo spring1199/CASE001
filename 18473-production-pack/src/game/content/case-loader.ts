@@ -163,6 +163,29 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
     bundle.manifest.id,
     'canonEndingId',
   );
+
+  const canonicalEndings = bundle.endings.flatMap((ending, endingIndex) => (
+    ending.canon ? [{ ending, endingIndex }] : []
+  ));
+  if (canonicalEndings.length === 0) {
+    throw new Error(
+      `Invalid authored case reference:\n${sources.manifest.sourcePath} (record "${bundle.manifest.id}") at canonEndingId: expected exactly one canon ending, found 0`,
+    );
+  }
+  if (canonicalEndings.length > 1) {
+    const [firstCanonical, secondCanonical] = canonicalEndings;
+    throw new Error(
+      `Invalid authored case data:\n${sources.endings.sourcePath} (record "${secondCanonical.ending.id}") at [${secondCanonical.endingIndex}].canon: expected exactly one canon ending; "${firstCanonical.ending.id}" is already marked canon`,
+    );
+  }
+
+  const [canonicalEnding] = canonicalEndings;
+  if (bundle.manifest.canonEndingId !== canonicalEnding.ending.id) {
+    throw new Error(
+      `Invalid authored case reference:\n${sources.manifest.sourcePath} (record "${bundle.manifest.id}") at canonEndingId: "${bundle.manifest.canonEndingId}" does not match canon ending "${canonicalEnding.ending.id}"`,
+    );
+  }
+
   assertKnownReferences(
     objectiveIds,
     'objective',

@@ -315,4 +315,51 @@ describe('case bundle loading', () => {
       /deductions\.json.*ded_test.*\[0\]\.minimumFromAnyGroup.*threshold 2 exceeds 1 distinct candidate/s,
     );
   });
+
+  it('rejects a manifest ending that exists but is not the canonical ending', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'endings', [
+      { ...sources.endings.data[0], canon: false },
+      {
+        id: 'ending_actual',
+        title: 'Actual ending',
+        choiceLabel: 'ACTUAL',
+        description: 'Canonical ending',
+        canon: true,
+      },
+    ]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /case\.json.*case_test.*canonEndingId.*ending_test.*canon ending.*ending_actual/s,
+    );
+  });
+
+  it('rejects multiple canonical endings at the second canonical record', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'endings', [
+      sources.endings.data[0],
+      {
+        id: 'ending_other',
+        title: 'Other ending',
+        choiceLabel: 'OTHER',
+        description: 'Another canonical ending',
+        canon: true,
+      },
+    ]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /endings\.json.*ending_other.*\[1\]\.canon.*exactly one canon ending.*ending_test/s,
+    );
+  });
+
+  it('rejects a bundle with no canonical ending', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'endings', [
+      { ...sources.endings.data[0], canon: false },
+    ]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /case\.json.*case_test.*canonEndingId.*exactly one canon ending.*found 0/s,
+    );
+  });
 });
