@@ -1,0 +1,172 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  LocalStoragePersistenceAdapter,
+  type StorageLike,
+} from '@/game/persistence/adapter';
+import { CURRENT_SAVE_VERSION } from '@/game/persistence/save';
+import { createInitialPlayerState, type PlayerState } from '@/game/state/types';
+
+class MemoryStorage implements StorageLike {
+  readonly values = new Map<string, string>();
+
+  getItem(key: string): string | null {
+    return this.values.get(key) ?? null;
+  }
+
+  setItem(key: string, value: string): void {
+    this.values.set(key, value);
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
+  }
+}
+
+const NOW = '2026-08-26T01:02:03.000Z';
+
+function completeState(caseId = 'case_alpha'): PlayerState {
+  return {
+    ...createInitialPlayerState(caseId, NOW),
+    discoveredArtifactIds: ['artifact_2', 'artifact_1'],
+    discoveredEvidenceIds: ['evidence_2', 'evidence_1'],
+    unlockedAppIds: ['app_messages', 'app_graph'],
+    unlockedContentIds: ['thread_2', 'file_9'],
+    completedDeductionIds: ['deduction_3'],
+    knownFactIds: ['fact_7', 'fact_4'],
+    objectiveStates: {
+      objective_locked: 'locked',
+      objective_active: 'active',
+      objective_done: 'completed',
+    },
+    timelinePlacements: [
+      { eventId: 'event_b', positionId: 'slot_2' },
+      { eventId: 'event_a', positionId: 'slot_1' },
+    ],
+    confirmedGraphEdgeIds: ['edge_confirmed'],
+    severedGraphEdgeIds: ['edge_severed'],
+    flags: {
+      bool_flag: true,
+      number_flag: 47,
+      string_flag: 'value',
+    },
+    endingBranchId: 'branch_custom',
+    endingId: 'ending_custom',
+    timestamps: {
+      startedAt: NOW,
+      updatedAt: '2026-08-26T01:12:03.000Z',
+      lastPlayedAt: '2026-08-26T01:11:03.000Z',
+      lastSavedAt: '2026-08-26T01:10:03.000Z',
+    },
+  };
+}
+
+describe('LocalStoragePersistenceAdapter', () => {
+  it('round-trips every player progress field in a versioned envelope', async () => {
+    const storage = new MemoryStorage();
+    const adapter = new LocalStoragePersistenceAdapter({
+      storage: () => storage,
+      now: () => NOW,
+    });
+    const state = completeState();
+
+    await adapter.save(state);
+
+    expect(await adapter.load(state.caseId)).toEqual(state);
+    expect(JSON.parse(storage.values.get('18473:save:case_alpha') ?? '')).toMatchObject({
+      version: CURRENT_SAVE_VERSION,
+      savedAt: NOW,
+      state,
+    });
+  });
+
+  it('migrates the legacy unversioned player state deterministically', async () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      '18473:save:legacy_case',
+      JSON.stringify({
+        caseId: 'legacy_case',
+        discoveredEvidenceIds: ['ev_1'],
+        knownFactIds: ['fact_1'],
+        completedDeductionIds: ['ded_1'],
+        unlockedContentIds: ['content_1'],
+        completedObjectiveIds: ['objective_1'],
+        flags: { seen: true, score: 2, route: 'quiet' },
+        endingId: 'ending_old',
+      }),
+    );
+    const adapter = new LocalStoragePersistenceAdapter({
+      storage: () => storage,
+      now: () => NOW,
+    });
+
+    expect(await adapter.load('legacy_case')).toEqual({
+      ...createInitialPlayerState('legacy_case', NOW),
+      discoveredEvidenceIds: ['ev_1'],
+      knownFactIds: ['fact_1'],
+      completedDeductionIds: ['ded_1'],
+      unlockedContentIds: ['content_1'],
+      objectiveStates: { objective_1: 'completed' },
+      flags: { seen: true, score: 2, route: 'quiet' },
+      endingId: 'ending_old',
+    });
+  });
+
+  it.each([
+    ['corrupt JSON', '{nope', 'CORRUPT_SAVE'],
+    [
+      'a future version',
+      JSON.stringify({ version: CURRENT_SAVE_VERSION + 1, savedAt: NOW, state: completeState() }),
+      'UNSUPPORTED_VERSION',
+    ],
+    [
+      'an invalid current envelope',
+      JSON.stringify({ version: CURRENT_SAVE_VERSION, savedAt: NOW, state: { nope: true } }),
+      'INVALID_SAVE',
+    ],
+  ])('rejects %s with a contextual error', async (_label, raw, code) => {
+    const storage = new MemoryStorage();
+    storage.setItem('18473:save:case_alpha', raw);
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => storage });
+
+    await expect(adapter.load('case_alpha')).rejects.toMatchObject({
+      code,
+      caseId: 'case_alpha',
+    });
+  });
+
+  it('rejects a save stored under a mismatched case ID', async () => {
+    const storage = new MemoryStorage();
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => storage, now: () => NOW });
+    await adapter.save(completeState('other_case'));
+    storage.setItem(
+      '18473:save:expected_case',
+      storage.getItem('18473:save:other_case') ?? '',
+    );
+
+    await expect(adapter.load('expected_case')).rejects.toMatchObject({
+      code: 'CASE_ID_MISMATCH',
+      caseId: 'expected_case',
+    });
+  });
+
+  it('clears only the targeted case namespace', async () => {
+    const storage = new MemoryStorage();
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => storage, now: () => NOW });
+    await adapter.save(completeState('case_a'));
+    await adapter.save(completeState('case_b'));
+
+    await adapter.clear('case_a');
+
+    expect(await adapter.load('case_a')).toBeNull();
+    expect(await adapter.load('case_b')).toEqual(completeState('case_b'));
+  });
+
+  it('is safe when no browser storage is available', async () => {
+    const adapter = new LocalStoragePersistenceAdapter({ storage: () => null, now: () => NOW });
+
+    await expect(adapter.load('case_ssr')).resolves.toBeNull();
+    await expect(adapter.save(createInitialPlayerState('case_ssr', NOW))).resolves.toBeUndefined();
+    await expect(adapter.clear('case_ssr')).resolves.toBeUndefined();
+  });
+});
