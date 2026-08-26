@@ -998,4 +998,87 @@ describe('createPlayerStore', () => {
       'fact_pre_hydrate',
     ]);
   });
+
+  it('waits for an authoritative clear when hydrate is requested after invalidation', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_hydrate_clear_hydrate', {
+      ...createInitialPlayerState('case_hydrate_clear_hydrate', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({
+      caseId: 'case_hydrate_clear_hydrate',
+      adapter,
+      now: () => T1,
+    });
+
+    const firstHydration = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 1);
+    const clear = store.getState().actions.clear();
+    let secondHydrationResolved = false;
+    const secondHydration = store.getState().actions.hydrate().then(() => {
+      secondHydrationResolved = true;
+    });
+
+    adapter.releaseNextLoad();
+    await waitForCount(adapter.clearStarts, 1);
+    expect(secondHydrationResolved).toBe(false);
+    expect(store.getState().hydrationStatus).toBe('hydrating');
+
+    adapter.releaseNextClear();
+    await clear;
+    await Promise.all([firstHydration, secondHydration]);
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([]);
+    expect(adapter.loadStarts).toEqual(['case_hydrate_clear_hydrate']);
+    adapter.pauseLoads = false;
+    expect(await adapter.load('case_hydrate_clear_hydrate')).toBeNull();
+  });
+
+  it('hydrates the current generation when the invalidating clear rejects', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseLoads = true;
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    adapter.saved.set('case_hydrate_clear_reject', {
+      ...createInitialPlayerState('case_hydrate_clear_reject', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({
+      caseId: 'case_hydrate_clear_reject',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_pre_hydrate']);
+
+    const firstHydration = store.getState().actions.hydrate();
+    await waitForCount(adapter.loadStarts, 1);
+    const clear = store.getState().actions.clear();
+    let secondHydrationResolved = false;
+    const secondHydration = store.getState().actions.hydrate().then(() => {
+      secondHydrationResolved = true;
+    });
+
+    adapter.releaseNextLoad();
+    await waitForCount(adapter.clearStarts, 1);
+    expect(secondHydrationResolved).toBe(false);
+    adapter.rejectNextClear();
+    await expect(clear).rejects.toThrow('clear failed');
+    await waitForCount(adapter.loadStarts, 2);
+    expect(secondHydrationResolved).toBe(false);
+
+    adapter.releaseNextLoad();
+    await Promise.all([firstHydration, secondHydration]);
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([
+      'fact_persisted',
+      'fact_pre_hydrate',
+    ]);
+    adapter.pauseLoads = false;
+    expect((await adapter.load('case_hydrate_clear_reject'))?.knownFactIds).toEqual([
+      'fact_persisted',
+    ]);
+  });
 });

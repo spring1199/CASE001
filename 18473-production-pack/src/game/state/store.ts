@@ -54,6 +54,11 @@ const defaultClock = (): string => new Date().toISOString();
 
 type PlayerMutation = (state: PlayerState) => PlayerState;
 
+type ActiveHydration = {
+  generation: number;
+  operation: Promise<void>;
+};
+
 function latestIsoInstant(values: Array<string | null>): string {
   let latestValue: string | null = null;
   let latestInstant = Number.NEGATIVE_INFINITY;
@@ -127,7 +132,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
   const mutationCaptures = new Set<PlayerMutation[]>();
   const initialHydrationMutations: PlayerMutation[] = [];
   mutationCaptures.add(initialHydrationMutations);
-  let activeHydration: Promise<void> | null = null;
+  let activeHydration: ActiveHydration | null = null;
 
   return createStore<PlayerStoreState>((set, get) => {
     const enqueueLifecycle = (operation: () => Promise<void>): Promise<void> => {
@@ -262,12 +267,16 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
 
     const hydrateInitialState = (): Promise<void> => {
       if (get().hydrationStatus === 'hydrated') return Promise.resolve();
-      if (activeHydration !== null) return activeHydration;
 
       const requestedGeneration = lifecycleGeneration;
+      if (activeHydration?.generation === requestedGeneration) {
+        return activeHydration.operation;
+      }
+
       set({ hydrationStatus: 'hydrating' });
-      const hydration = enqueueLifecycle(async () => {
+      const operation = enqueueLifecycle(async () => {
         try {
+          if (requestedGeneration !== lifecycleGeneration) return;
           if (get().hydrationStatus === 'hydrated') return;
           const loadedInput = await options.adapter.load(options.caseId);
           if (requestedGeneration !== lifecycleGeneration) return;
@@ -302,8 +311,9 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
           throw error;
         }
       });
+      const hydration: ActiveHydration = { generation: requestedGeneration, operation };
       activeHydration = hydration;
-      void hydration.then(
+      void operation.then(
         () => {
           if (activeHydration === hydration) activeHydration = null;
         },
@@ -311,7 +321,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
           if (activeHydration === hydration) activeHydration = null;
         },
       );
-      return hydration;
+      return operation;
     };
 
     const actions: PlayerStoreActions = {
