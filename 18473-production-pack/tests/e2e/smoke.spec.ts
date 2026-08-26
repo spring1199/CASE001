@@ -115,10 +115,9 @@ function buildProtectedValues(): ProtectedValue[] {
     collectRecordStrings(objective, `locked objective record ${objective.id}`);
   });
 
-  const canonicalEnding = case001Seed.endings.find(
-    ({ id }) => id === case001Seed.manifest.canonEndingId,
-  );
-  collectRecordStrings(canonicalEnding, 'canonical ending record');
+  case001Seed.endings.forEach((ending) => {
+    collectRecordStrings(ending, `ending record ${ending.id}`);
+  });
 
   return [...values.entries()]
     .map(([value, reasons]) => ({ value, reasons: [...reasons].sort() }))
@@ -133,16 +132,47 @@ function isJavaScriptResponse(response: Response): boolean {
     || pathname.endsWith('.mjs');
 }
 
+function isTextualContentType(contentTypeHeader: string | undefined): boolean {
+  const contentType = contentTypeHeader?.split(';')[0].trim().toLowerCase();
+
+  return contentType?.startsWith('text/') === true
+    || contentType === 'application/json'
+    || contentType?.endsWith('+json') === true
+    || contentType === 'application/javascript'
+    || contentType === 'application/x-javascript'
+    || contentType === 'application/ecmascript'
+    || contentType === 'application/x-ecmascript'
+    || contentType === 'application/xml'
+    || contentType?.endsWith('+xml') === true;
+}
+
+function isKnownBinaryContentType(contentTypeHeader: string | undefined): boolean {
+  const contentType = contentTypeHeader?.split(';')[0].trim().toLowerCase();
+  if (contentType === undefined) return false;
+
+  return contentType.startsWith('image/')
+    || contentType.startsWith('audio/')
+    || contentType.startsWith('video/')
+    || contentType.startsWith('font/')
+    || contentType.startsWith('model/')
+    || contentType.startsWith('application/font-')
+    || contentType.startsWith('application/x-font-')
+    || contentType === 'application/vnd.ms-fontobject'
+    || contentType === 'application/octet-stream'
+    || contentType === 'application/pdf'
+    || contentType === 'application/wasm'
+    || contentType === 'application/zip'
+    || contentType === 'application/gzip'
+    || contentType === 'application/x-gzip';
+}
+
 function isBrowserDeliveredText(response: Response): boolean {
-  const contentType = response.headers()['content-type']?.split(';')[0].trim().toLowerCase();
+  const contentType = response.headers()['content-type'];
+  if (isKnownBinaryContentType(contentType)) return false;
 
   return response.request().resourceType() === 'document'
     || isJavaScriptResponse(response)
-    || contentType === 'text/html'
-    || contentType === 'text/javascript'
-    || contentType === 'application/javascript'
-    || contentType === 'application/x-javascript'
-    || contentType === 'text/x-component';
+    || isTextualContentType(contentType);
 }
 
 function firstPartyModuleText(delivered: DeliveredText): string {
@@ -179,10 +209,20 @@ const protectedValues = buildProtectedValues();
 test('renders only the Case #001 public manifest summary', async ({ page, baseURL }) => {
   if (baseURL === undefined) throw new Error('Playwright baseURL is required for leak detection');
 
+  expect(isTextualContentType('application/json; charset=utf-8')).toBe(true);
+  expect(isTextualContentType('application/problem+json')).toBe(true);
+
   expect(
     protectedValues.map(({ value }) => value),
     'Protected records must contribute nested tag and canonical choice values',
   ).toEqual(expect.arrayContaining(['winter47', 'SEVER']));
+
+  const alternateEnding = case001Seed.endings.find(({ canon }) => !canon);
+  if (alternateEnding === undefined) throw new Error('An alternate ending is required');
+  expect(
+    protectedValues.map(({ value }) => value),
+    'Every alternate ending string must be protected',
+  ).toEqual(expect.arrayContaining([alternateEnding.id, alternateEnding.description]));
 
   const appOrigin = new URL(baseURL).origin;
   const responseCaptures: Promise<CaptureResult>[] = [];
