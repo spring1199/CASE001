@@ -47,6 +47,8 @@ function appendUnique(existing: string[], incoming: string[]): string[] {
 
 export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<PlayerStoreState> {
   const now = options.now ?? defaultClock;
+  let progressRevision = 0;
+  let activeSave: Promise<void> | null = null;
 
   return createStore<PlayerStoreState>((set, get) => {
     const updateProgress = (change: (state: PlayerState) => PlayerState): void => {
@@ -54,6 +56,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
       const changed = change(current);
       if (changed === current) return;
       const changedAt = now();
+      progressRevision += 1;
       set({
         playerState: {
           ...changed,
@@ -64,6 +67,38 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
           },
         },
       });
+    };
+
+    const drainSave = async (): Promise<void> => {
+      while (true) {
+        const revisionToSave = progressRevision;
+        const savedAt = now();
+        const current = get().playerState;
+        const savedState: PlayerState = {
+          ...current,
+          timestamps: {
+            ...current.timestamps,
+            updatedAt: savedAt,
+            lastSavedAt: savedAt,
+          },
+        };
+
+        await options.adapter.save(savedState);
+        if (progressRevision !== revisionToSave) continue;
+
+        set({ playerState: savedState });
+        if (progressRevision === revisionToSave) return;
+      }
+    };
+
+    const saveLatestProgress = (): Promise<void> => {
+      if (activeSave !== null) return activeSave;
+
+      const trackedSave = drainSave().finally(() => {
+        if (activeSave === trackedSave) activeSave = null;
+      });
+      activeSave = trackedSave;
+      return trackedSave;
     };
 
     const appendIds = (
@@ -152,32 +187,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
         const loaded = await options.adapter.load(options.caseId);
         if (loaded !== null) set({ playerState: loaded });
       },
-      save: async () => {
-        const savedAt = now();
-        const current = get().playerState;
-        const playerState: PlayerState = {
-          ...current,
-          timestamps: {
-            ...current.timestamps,
-            updatedAt: savedAt,
-            lastSavedAt: savedAt,
-          },
-        };
-        await options.adapter.save(playerState);
-        set((state) =>
-          state.playerState === current
-            ? { playerState }
-            : {
-                playerState: {
-                  ...state.playerState,
-                  timestamps: {
-                    ...state.playerState.timestamps,
-                    lastSavedAt: savedAt,
-                  },
-                },
-              },
-        );
-      },
+      save: saveLatestProgress,
       clear: async () => {
         await options.adapter.clear(options.caseId);
         set({ playerState: createInitialPlayerState(options.caseId, now()) });

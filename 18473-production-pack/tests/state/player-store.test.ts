@@ -31,18 +31,31 @@ class MemoryAdapter implements PersistenceAdapter {
 }
 
 class PausedSaveAdapter extends MemoryAdapter {
-  private releaseSave: (() => void) | null = null;
+  readonly saveStarts: PlayerState[] = [];
+  private readonly pendingReleases: Array<() => void> = [];
 
   override async save(state: PlayerState): Promise<void> {
+    const snapshot = structuredClone(state);
+    this.saveStarts.push(snapshot);
     await new Promise<void>((resolve) => {
-      this.releaseSave = resolve;
+      this.pendingReleases.push(resolve);
     });
-    await super.save(state);
+    this.saveCalls.push(snapshot);
+    this.saved.set(snapshot.caseId, snapshot);
   }
 
-  release(): void {
-    this.releaseSave?.();
+  releaseNext(): void {
+    const release = this.pendingReleases.shift();
+    if (release === undefined) throw new Error('No save is pending.');
+    release();
   }
+}
+
+async function waitForSaveStarts(adapter: PausedSaveAdapter, count: number): Promise<void> {
+  for (let attempt = 0; attempt < 10 && adapter.saveStarts.length < count; attempt += 1) {
+    await Promise.resolve();
+  }
+  expect(adapter.saveStarts).toHaveLength(count);
 }
 
 function sequenceClock(...values: string[]): () => string {
@@ -197,16 +210,47 @@ describe('createPlayerStore', () => {
     expect(second.getState().playerState).toEqual(expected);
   });
 
-  it('does not overwrite progress made while an asynchronous save is pending', async () => {
+  it('persists progress made while an asynchronous save is pending before resolving', async () => {
     const adapter = new PausedSaveAdapter();
     const store = createPlayerStore({ caseId: 'case_concurrent', adapter, now: () => T1 });
 
     const save = store.getState().actions.save();
+    let saveResolved = false;
+    void save.then(() => {
+      saveResolved = true;
+    });
     store.getState().actions.learnFacts(['fact_during_save']);
-    adapter.release();
+    adapter.releaseNext();
+    await waitForSaveStarts(adapter, 2);
+    expect(saveResolved).toBe(false);
+    adapter.releaseNext();
     await save;
 
-    expect(store.getState().playerState.knownFactIds).toEqual(['fact_during_save']);
-    expect(store.getState().playerState.timestamps.lastSavedAt).toBe(T1);
+    const reloaded = createPlayerStore({ caseId: 'case_concurrent', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_during_save']);
+    expect(reloaded.getState().playerState.timestamps.lastSavedAt).toBe(T1);
+  });
+
+  it('serializes concurrent saves so an older snapshot cannot finish last', async () => {
+    const adapter = new PausedSaveAdapter();
+    const store = createPlayerStore({ caseId: 'case_ordered', adapter, now: () => T1 });
+
+    const firstSave = store.getState().actions.save();
+    store.getState().actions.learnFacts(['fact_1']);
+    const secondSave = store.getState().actions.save();
+    store.getState().actions.learnFacts(['fact_2']);
+
+    expect(adapter.saveStarts).toHaveLength(1);
+    adapter.releaseNext();
+    await waitForSaveStarts(adapter, 2);
+    expect(adapter.saveStarts[1]?.knownFactIds).toEqual(['fact_1', 'fact_2']);
+    adapter.releaseNext();
+    await Promise.all([firstSave, secondSave]);
+
+    const reloaded = createPlayerStore({ caseId: 'case_ordered', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual(['fact_1', 'fact_2']);
+    expect(adapter.saveCalls).toHaveLength(2);
   });
 });
