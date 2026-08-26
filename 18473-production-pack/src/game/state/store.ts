@@ -60,6 +60,12 @@ type ActiveHydration = {
   operation: Promise<void>;
 };
 
+type ActiveClear = {
+  generation: number;
+  owner: symbol;
+  operation: Promise<void>;
+};
+
 function latestIsoInstant(values: Array<string | null>): string {
   let latestValue: string | null = null;
   let latestInstant = Number.NEGATIVE_INFINITY;
@@ -134,6 +140,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
   const initialHydrationMutations: PlayerMutation[] = [];
   mutationCaptures.add(initialHydrationMutations);
   let activeHydration: ActiveHydration | null = null;
+  let activeClear: ActiveClear | null = null;
 
   return createStore<PlayerStoreState>((set, get) => {
     const enqueueLifecycle = (operation: () => Promise<void>): Promise<void> => {
@@ -386,13 +393,16 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
         return hydrateInitialState().then(() => saveLatestProgress(requestedGeneration));
       },
       clear: () => {
+        if (activeClear?.generation === lifecycleGeneration) return activeClear.operation;
+
         const requestedAt = now();
         const hydrationStatusAtRequest = get().hydrationStatus;
         lifecycleGeneration += 1;
         const requestedGeneration = lifecycleGeneration;
         const capturedMutations: PlayerMutation[] = [];
         mutationCaptures.add(capturedMutations);
-        return enqueueLifecycle(async () => {
+        const owner = Symbol('player-store-clear');
+        const operation = enqueueLifecycle(async () => {
           try {
             await options.adapter.clear(options.caseId);
             if (requestedGeneration !== lifecycleGeneration) return;
@@ -401,22 +411,37 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
               (state, mutation) => mutation(state),
               createInitialPlayerState(options.caseId, requestedAt),
             );
-            set({ playerState, hydrationStatus: 'hydrated' });
             persistedFingerprint = null;
             mutationCaptures.delete(initialHydrationMutations);
             initialHydrationMutations.length = 0;
+            if (activeClear?.owner === owner) activeClear = null;
+            set({ playerState, hydrationStatus: 'hydrated' });
           } catch (error) {
-            if (
-              requestedGeneration === lifecycleGeneration &&
-              hydrationStatusAtRequest !== 'hydrated'
-            ) {
-              set({ hydrationStatus: 'idle' });
+            if (activeClear?.owner === owner) {
+              activeClear = null;
+              if (
+                requestedGeneration === lifecycleGeneration &&
+                hydrationStatusAtRequest !== 'hydrated'
+              ) {
+                set({ hydrationStatus: 'idle' });
+              }
             }
             throw error;
           } finally {
             mutationCaptures.delete(capturedMutations);
           }
         });
+        const clearOperation: ActiveClear = { generation: requestedGeneration, owner, operation };
+        activeClear = clearOperation;
+        void operation.then(
+          () => {
+            if (activeClear === clearOperation) activeClear = null;
+          },
+          () => {
+            if (activeClear === clearOperation) activeClear = null;
+          },
+        );
+        return operation;
       },
     };
 

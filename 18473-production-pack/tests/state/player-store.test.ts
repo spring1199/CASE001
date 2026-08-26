@@ -144,6 +144,41 @@ class FinalizationGapAdapter extends MemoryAdapter {
   }
 }
 
+class FailOnSecondClearAdapter extends MemoryAdapter {
+  readonly clearStarts: string[] = [];
+  private releaseFirst: (() => void) | null = null;
+
+  override async clear(caseId: string): Promise<void> {
+    this.clearCalls.push(caseId);
+    this.clearStarts.push(caseId);
+    if (this.clearStarts.length > 1) throw new Error('second clear failed');
+    await new Promise<void>((resolve) => {
+      this.releaseFirst = resolve;
+    });
+    this.saved.delete(caseId);
+  }
+
+  releaseFirstClear(): void {
+    if (this.releaseFirst === null) throw new Error('First clear is not pending.');
+    const release = this.releaseFirst;
+    this.releaseFirst = null;
+    release();
+  }
+}
+
+class FailFirstClearAdapter extends MemoryAdapter {
+  private shouldFail = true;
+
+  override async clear(caseId: string): Promise<void> {
+    this.clearCalls.push(caseId);
+    if (this.shouldFail) {
+      this.shouldFail = false;
+      throw new Error('first clear failed');
+    }
+    this.saved.delete(caseId);
+  }
+}
+
 async function waitForCount(values: unknown[], count: number): Promise<void> {
   for (let attempt = 0; attempt < 10 && values.length < count; attempt += 1) {
     await Promise.resolve();
@@ -1125,5 +1160,124 @@ describe('createPlayerStore', () => {
     expect((await adapter.load('case_hydrate_clear_reject'))?.knownFactIds).toEqual([
       'fact_persisted',
     ]);
+  });
+
+  it('coalesces overlapping clears so a hypothetical second failure cannot win', async () => {
+    const adapter = new FailOnSecondClearAdapter();
+    adapter.saved.set('case_coalesced_clear', {
+      ...createInitialPlayerState('case_coalesced_clear', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({
+      caseId: 'case_coalesced_clear',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_live']);
+
+    const firstClear = store.getState().actions.clear();
+    const secondClear = store.getState().actions.clear();
+    const clearResults = Promise.allSettled([firstClear, secondClear]);
+    await waitForCount(adapter.clearStarts, 1);
+    adapter.releaseFirstClear();
+    const results = await clearResults;
+
+    expect(secondClear).toBe(firstClear);
+    expect(results.map((result) => result.status)).toEqual(['fulfilled', 'fulfilled']);
+    expect(adapter.clearCalls).toEqual(['case_coalesced_clear']);
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([]);
+    expect(await adapter.load('case_coalesced_clear')).toBeNull();
+
+    await store.getState().actions.save();
+    await store.getState().actions.save();
+    expect(adapter.saveCalls).toHaveLength(1);
+    expect(adapter.saveCalls[0]?.knownFactIds).toEqual([]);
+    const reloaded = createPlayerStore({
+      caseId: 'case_coalesced_clear',
+      adapter,
+      now: () => T2,
+    });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([]);
+  });
+
+  it('coalesces a rejected clear and releases ownership for retry', async () => {
+    const adapter = new FailFirstClearAdapter();
+    adapter.saved.set('case_coalesced_clear_retry', {
+      ...createInitialPlayerState('case_coalesced_clear_retry', T0),
+      knownFactIds: ['fact_persisted'],
+    });
+    const store = createPlayerStore({
+      caseId: 'case_coalesced_clear_retry',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_live']);
+
+    const firstClear = store.getState().actions.clear();
+    const secondClear = store.getState().actions.clear();
+    const results = await Promise.allSettled([firstClear, secondClear]);
+
+    expect(secondClear).toBe(firstClear);
+    expect(results.map((result) => result.status)).toEqual(['rejected', 'rejected']);
+    expect(adapter.clearCalls).toEqual(['case_coalesced_clear_retry']);
+    expect(store.getState().hydrationStatus).toBe('idle');
+    expect(store.getState().playerState.knownFactIds).toEqual(['fact_live']);
+    expect((await adapter.load('case_coalesced_clear_retry'))?.knownFactIds).toEqual([
+      'fact_persisted',
+    ]);
+
+    await store.getState().actions.clear();
+    expect(adapter.clearCalls).toEqual([
+      'case_coalesced_clear_retry',
+      'case_coalesced_clear_retry',
+    ]);
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([]);
+    expect(await adapter.load('case_coalesced_clear_retry')).toBeNull();
+  });
+
+  it('releases clear ownership before a reset subscriber starts another clear', async () => {
+    const adapter = new ControlledAdapter();
+    adapter.pauseClears = true;
+    adapter.pauseSaves = false;
+    const store = createPlayerStore({
+      caseId: 'case_clear_subscriber_retry',
+      adapter,
+      now: () => T1,
+    });
+    store.getState().actions.learnFacts(['fact_before_clear']);
+
+    let subscriberClear: Promise<void> | null = null;
+    let subscriberTriggered = false;
+    const unsubscribe = store.subscribe((state, previousState) => {
+      if (
+        !subscriberTriggered &&
+        previousState.hydrationStatus === 'idle' &&
+        state.hydrationStatus === 'hydrated'
+      ) {
+        subscriberTriggered = true;
+        subscriberClear = state.actions.clear();
+        void subscriberClear.catch(() => undefined);
+      }
+    });
+
+    const firstClear = store.getState().actions.clear();
+    await waitForCount(adapter.clearStarts, 1);
+    adapter.releaseNextClear();
+    await firstClear;
+    await waitForCount(adapter.clearStarts, 2);
+    adapter.releaseNextClear();
+    if (subscriberClear === null) throw new Error('Reset subscriber did not start clear.');
+    await subscriberClear;
+    unsubscribe();
+
+    expect(adapter.clearCalls).toEqual([
+      'case_clear_subscriber_retry',
+      'case_clear_subscriber_retry',
+    ]);
+    expect(store.getState().hydrationStatus).toBe('hydrated');
+    expect(store.getState().playerState.knownFactIds).toEqual([]);
   });
 });
