@@ -26,7 +26,11 @@ describe('public case summary', () => {
     });
     expect(markup).toContain('CASE 777');
     expect(markup).toContain('Синтетик хэрэг');
+    expect(markup).toContain('Хэргийн мэдээллийг ачааллаа.');
     expect(markup).not.toContain('CASE 001');
     expect(markup).not.toContain('18473');
+    expect(markup).not.toContain('Starter shell');
+    expect(markup).not.toContain('Phase 02');
+    expect(markup).not.toContain('fake phone OS');
   });
 });
