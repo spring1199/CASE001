@@ -1,10 +1,10 @@
 import type { PlayerStoreActions } from '@/game/state/store';
-import type { PhoneDiscoveryEffects } from '@/phone/data/schema';
+import type { PhoneAppId, PhoneDiscoveryEffects } from '@/phone/data/schema';
 
 export type NormalizedPhoneDiscoveryEffects = Readonly<{
   artifactIds: string[];
   evidenceIds: string[];
-  unlockAppIds: string[];
+  unlockAppIds: PhoneAppId[];
   unlockContentIds: string[];
 }>;
 
@@ -13,7 +13,7 @@ export type PhoneDiscoveryActions = Pick<
   'discoverArtifacts' | 'discoverEvidence' | 'unlockApps' | 'unlockContent'
 >;
 
-function stableUnique(values: readonly string[] | undefined): string[] {
+function stableUnique<Value>(values: readonly Value[] | undefined): Value[] {
   return [...new Set(values ?? [])];
 }
 

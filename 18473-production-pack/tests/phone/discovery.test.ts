@@ -5,22 +5,25 @@ import {
   mergeDiscoveryEffects,
   normalizeDiscoveryEffects,
 } from '@/phone/discovery';
+import type { PhoneAppId } from '@/phone/data/schema';
 
 describe('phone discovery effects', () => {
   it('stably de-duplicates every discovery ID', () => {
-    expect(
-      normalizeDiscoveryEffects({
-        artifactIds: ['artifact-a', 'artifact-a', 'artifact-b'],
-        evidenceIds: ['evidence-b', 'evidence-a', 'evidence-b'],
-        unlockAppIds: ['files', 'files'],
-        unlockContentIds: ['content-a', 'content-a', 'content-b'],
-      }),
-    ).toEqual({
+    const normalized = normalizeDiscoveryEffects({
+      artifactIds: ['artifact-a', 'artifact-a', 'artifact-b'],
+      evidenceIds: ['evidence-b', 'evidence-a', 'evidence-b'],
+      unlockAppIds: ['files', 'files'],
+      unlockContentIds: ['content-a', 'content-a', 'content-b'],
+    });
+    const appIds: readonly PhoneAppId[] = normalized.unlockAppIds;
+
+    expect(normalized).toEqual({
       artifactIds: ['artifact-a', 'artifact-b'],
       evidenceIds: ['evidence-b', 'evidence-a'],
       unlockAppIds: ['files'],
       unlockContentIds: ['content-a', 'content-b'],
     });
+    expect(appIds).toEqual(['files']);
   });
 
   it('merges effects without changing first-seen order', () => {

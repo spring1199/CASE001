@@ -153,6 +153,22 @@ export const phoneContentSchema = z.strictObject({
       } else {
         itemOwnerById.set(item.id, app.id);
       }
+
+      if (item.kind === 'message-thread') {
+        const firstMessageIndexById = new Map<string, number>();
+        item.messages.forEach((message, messageIndex) => {
+          const firstMessageIndex = firstMessageIndexById.get(message.id);
+          if (firstMessageIndex !== undefined) {
+            context.addIssue({
+              code: 'custom',
+              path: ['apps', appIndex, 'items', itemIndex, 'messages', messageIndex, 'id'],
+              message: `Duplicate message ID "${message.id}" in thread "${item.id}" (first declared at messages.${firstMessageIndex}).`,
+            });
+          } else {
+            firstMessageIndexById.set(message.id, messageIndex);
+          }
+        });
+      }
     });
   });
 
@@ -181,6 +197,23 @@ export const phoneContentSchema = z.strictObject({
           });
         }
       });
+      item.discovery?.unlockContentIds?.forEach((contentId, contentIndex) => {
+        if (!itemOwnerById.has(contentId)) {
+          context.addIssue({
+            code: 'custom',
+            path: [
+              'apps',
+              appIndex,
+              'items',
+              itemIndex,
+              'discovery',
+              'unlockContentIds',
+              contentIndex,
+            ],
+            message: `Broken content unlock target "${contentId}".`,
+          });
+        }
+      });
     });
   });
 });
@@ -203,8 +236,8 @@ export type DeepReadonly<T> = T extends (...args: never[]) => unknown
 export type PhoneContentIndex = Readonly<{
   content: DeepReadonly<PhoneContent>;
   appsById: Readonly<Record<PhoneAppId, DeepReadonly<PhoneAppDescriptor>>>;
-  itemsById: Readonly<Record<string, DeepReadonly<PhoneItem>>>;
-  itemAppIds: Readonly<Record<string, PhoneAppId>>;
+  itemsById: Readonly<Record<string, DeepReadonly<PhoneItem> | undefined>>;
+  itemAppIds: Readonly<Record<string, PhoneAppId | undefined>>;
 }>;
 
 export function parsePhoneContent(input: unknown): PhoneContent {
@@ -220,11 +253,19 @@ function deepFreeze<T>(value: T): DeepReadonly<T> {
   return Object.freeze(value) as DeepReadonly<T>;
 }
 
+function createFrozenLookup<Value>(
+  entries: readonly (readonly [string, Value])[],
+): Readonly<Record<string, Value | undefined>> {
+  const lookup = Object.create(null) as Record<string, Value | undefined>;
+  for (const [key, value] of entries) lookup[key] = value;
+  return Object.freeze(lookup);
+}
+
 export function createPhoneContentIndex(input: unknown): PhoneContentIndex {
   const content = deepFreeze(parsePhoneContent(input));
-  const appsById = Object.freeze(
-    Object.fromEntries(content.apps.map((app) => [app.id, app])),
-  ) as Record<PhoneAppId, DeepReadonly<PhoneAppDescriptor>>;
+  const appsById = createFrozenLookup(
+    content.apps.map((app) => [app.id, app] as const),
+  ) as Readonly<Record<PhoneAppId, DeepReadonly<PhoneAppDescriptor>>>;
   const itemEntries = content.apps.flatMap((app) => app.items.map((item) => [item.id, item] as const));
   const itemOwnerEntries = content.apps.flatMap((app) =>
     app.items.map((item) => [item.id, app.id] as const),
@@ -233,7 +274,7 @@ export function createPhoneContentIndex(input: unknown): PhoneContentIndex {
   return Object.freeze({
     content,
     appsById,
-    itemsById: Object.freeze(Object.fromEntries(itemEntries)),
-    itemAppIds: Object.freeze(Object.fromEntries(itemOwnerEntries)),
+    itemsById: createFrozenLookup(itemEntries),
+    itemAppIds: createFrozenLookup(itemOwnerEntries),
   });
 }

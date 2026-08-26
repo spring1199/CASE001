@@ -4,6 +4,7 @@ import {
   REQUIRED_PHONE_APP_IDS,
   createPhoneContentIndex,
   parsePhoneContent,
+  type DeepReadonly,
   type PhoneAppDescriptor,
   type PhoneContent,
   type PhoneItem,
@@ -76,6 +77,27 @@ describe('phone content boundary', () => {
     );
   });
 
+  it('builds null-prototype lookup records that safely return undefined for missing keys', () => {
+    const constructorKeyContent = mutableNeutralClone();
+    constructorKeyContent.apps[1]!.items[0]!.id = 'constructor';
+    const constructorKeyIndex = createPhoneContentIndex(constructorKeyContent);
+    const missingItem: DeepReadonly<PhoneItem> | undefined =
+      neutralPhoneIndex.itemsById['missing-item'];
+    const missingOwner = neutralPhoneIndex.itemAppIds['missing-item'];
+    const constructorKey: string = 'constructor';
+
+    expect(Object.getPrototypeOf(neutralPhoneIndex.appsById)).toBeNull();
+    expect(Object.getPrototypeOf(neutralPhoneIndex.itemsById)).toBeNull();
+    expect(Object.getPrototypeOf(neutralPhoneIndex.itemAppIds)).toBeNull();
+    expect(missingItem).toBeUndefined();
+    expect(missingOwner).toBeUndefined();
+    expect(constructorKeyIndex.itemsById[constructorKey]?.id).toBe('constructor');
+    expect(constructorKeyIndex.itemAppIds[constructorKey]).toBe('gallery');
+    expect(
+      (neutralPhoneIndex.itemsById as Readonly<Record<string, unknown>>).constructor,
+    ).toBeUndefined();
+  });
+
   it('rejects duplicate app IDs', () => {
     const duplicate = mutableNeutralClone();
     duplicate.apps[1]!.id = duplicate.apps[0]!.id;
@@ -100,6 +122,24 @@ describe('phone content boundary', () => {
     ];
 
     expect(() => parsePhoneContent(broken)).toThrow(/Broken deep link/);
+  });
+
+  it('rejects discovery content unlocks that do not target authored phone items', () => {
+    const broken = mutableNeutralClone();
+    broken.apps[0]!.items[0]!.discovery = {
+      unlockContentIds: ['missing-neutral-item'],
+    };
+
+    expect(() => parsePhoneContent(broken)).toThrow(/Broken content unlock/);
+  });
+
+  it('rejects duplicate message IDs within a thread', () => {
+    const duplicate = mutableNeutralClone();
+    const thread = duplicate.apps[0]!.items[0]!;
+    if (thread.kind !== 'message-thread') throw new Error('Expected message-thread fixture.');
+    thread.messages[1]!.id = thread.messages[0]!.id;
+
+    expect(() => parsePhoneContent(duplicate)).toThrow(/Duplicate message ID/);
   });
 
   it('requires accessible visual descriptions, metadata labels, and audio transcripts', () => {
@@ -131,5 +171,17 @@ describe('phone content boundary', () => {
     expect(audio?.transcript.length).toBeGreaterThan(0);
     expect(visual?.alt.length).toBeGreaterThan(0);
     expect(visual?.description.length).toBeGreaterThan(0);
+  });
+
+  it('embeds a valid playable WAVE source instead of referencing a missing asset', () => {
+    const audio = neutralPhoneContent.apps
+      .flatMap((app) => app.items)
+      .find((item) => item.audio !== undefined)?.audio;
+    expect(audio?.src).toMatch(/^data:audio\/wav;base64,/);
+
+    const waveBytes = Buffer.from(audio!.src.split(',')[1]!, 'base64');
+    expect(waveBytes.subarray(0, 4).toString('ascii')).toBe('RIFF');
+    expect(waveBytes.subarray(8, 12).toString('ascii')).toBe('WAVE');
+    expect(waveBytes.byteLength).toBeGreaterThan(44);
   });
 });

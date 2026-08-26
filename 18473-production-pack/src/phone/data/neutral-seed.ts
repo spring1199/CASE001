@@ -1,5 +1,8 @@
 import { createPhoneContentIndex } from '@/phone/data/schema';
 
+const NEUTRAL_AUDIO_SOURCE =
+  'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAh46TlpaTj4iBeXNta2pscXd/ho2SlZaUkImCe3Rua2pscHZ9hYyRlZaUkYuDfHVva2prb3V8g4uRlJaVkYyFfXZwbGprbnR7gomQlJaVko2Gf3dxbGprbXN5gYiPk5aWk46HgHlybWpqbXF4f4eNk5WWlI+JgXpzbmtqbHB3foWMkpWWlJCKg3t0b2tqbG91fYSLkZWWlZGLhH11b2xqa290e4OKkJSWlZKMhX53cGxqa25zeoGJj5SWlZONh394cW1qam1yeYCHjpOWlpOPiIF5c21ramxxd3+GjZKVlpSQiYJ7dG5ramxwdn2FjJGVlpSRi4N8dW9ramtvdXyDi5GUlpWRjIV9dnBsamtudHuCiZCUlpWSjYZ/d3Fsamttc3mBiI+TlpaTjoeAeXJtamptcXh/h42TlZaUj4mBenNua2pscHd+hYySlZaUkIqDe3Rva2psb3V9hIuRlZaVkYuEfXVvbGprb3R7g4qQlJaVkoyFfndwbGprbnN6gYmPlJaVk42Hf3hxbWpqbXJ5gIeOk5aWk4+IgXlzbWtqbHF3f4aNkpWWlJCJgnt0bmtqbHB2fYWMkZWWlJGLg3x1b2tqa291fIOLkZSWlZGMhX12cGxqa250e4KJkJSWlZKNhn93cWxqa21zeYGIj5OWlpOOh4B5cm1qam1xeH+HjZOVlpSPiYF6c25ramxwd36FjJKVlpSQioN7dG9ramxvdX2Ei5GVlpWRi4R9dW9samtvdHuDipCUlpWSjIV+d3Bsamtuc3qBiY+UlpWTjYd/eHFtamptcnmAh46TlpaTj4iBeXNta2pscXd/ho2SlZaUkImCe3Rua2pscHZ9hYyRlZaUkYuDfHVva2prb3V8g4uRlJaVkYyFfXZwbGprbnR7gomQlJaVko2Gf3dxbGprbXN5gYiPk5aWk46HgHlybWpqbXF4f4eNk5WWlI+JgXpzbmtqbHB3foWMkpWWlJCKg3t0b2tqbG91fYSLkZWWlZGLhH11b2xqa290e4OKkJSWlZKMhX53cGxqa25zeoGJj5SWlZONh394cW1qam1yeQ==';
+
 const neutralSeedInput = {
   version: 1,
   locale: 'mn',
@@ -47,15 +50,15 @@ const neutralSeedInput = {
               timestampLabel: '18:31',
               read: false,
               audio: {
-                src: '/media/neutral-voice-note.mp3',
-                durationLabel: '0:08',
+                src: NEUTRAL_AUDIO_SOURCE,
+                durationLabel: '0:01',
                 transcript: 'Бороотой бол кофе шопт уулзаж болно шүү.',
               },
             },
           ],
           audio: {
-            src: '/media/neutral-voice-note.mp3',
-            durationLabel: '0:08',
+            src: NEUTRAL_AUDIO_SOURCE,
+            durationLabel: '0:01',
             transcript: 'Бороотой бол кофе шопт уулзаж болно шүү.',
           },
           discovery: {

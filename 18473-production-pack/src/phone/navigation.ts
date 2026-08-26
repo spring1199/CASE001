@@ -38,14 +38,14 @@ function pushRoute(state: PhoneNavigationState, route: PhoneRoute): PhoneNavigat
 }
 
 export function unlockPhone(state: PhoneNavigationState): PhoneNavigationState {
-  return state.current.screen === 'lock' ? pushRoute(state, HOME_ROUTE) : state;
+  return state.current.screen === 'lock' ? { current: HOME_ROUTE, history: [] } : state;
 }
 
 export function navigateToApp(
   state: PhoneNavigationState,
   appId: PhoneAppId,
   index: PhoneContentIndex,
-  unlockedAppIds: ReadonlySet<string>,
+  unlockedAppIds: ReadonlySet<PhoneAppId>,
 ): PhoneNavigationState {
   if (state.current.screen === 'lock') return state;
   if (!index.appsById[appId] || !unlockedAppIds.has(appId)) return state;
@@ -57,7 +57,7 @@ export function navigateToItem(
   appId: PhoneAppId,
   itemId: string,
   index: PhoneContentIndex,
-  unlockedAppIds: ReadonlySet<string>,
+  unlockedAppIds: ReadonlySet<PhoneAppId>,
 ): PhoneNavigationState {
   if (state.current.screen === 'lock') return state;
   if (!unlockedAppIds.has(appId) || index.itemAppIds[itemId] !== appId) return state;
@@ -68,7 +68,7 @@ export function navigateToDeepLink(
   state: PhoneNavigationState,
   target: PhoneDeepLinkTarget,
   index: PhoneContentIndex,
-  unlockedAppIds: ReadonlySet<string>,
+  unlockedAppIds: ReadonlySet<PhoneAppId>,
 ): PhoneNavigationState {
   return target.itemId === undefined
     ? navigateToApp(state, target.appId, index, unlockedAppIds)
@@ -83,6 +83,5 @@ export function goBack(state: PhoneNavigationState): PhoneNavigationState {
 
 export function goHome(state: PhoneNavigationState): PhoneNavigationState {
   if (state.current.screen === 'lock' || state.current.screen === 'home') return state;
-  const lockRoute = state.history.find((route) => route.screen === 'lock');
-  return { current: HOME_ROUTE, history: lockRoute ? [lockRoute] : [] };
+  return { current: HOME_ROUTE, history: [] };
 }

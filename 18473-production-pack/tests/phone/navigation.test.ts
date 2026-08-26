@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { neutralPhoneIndex } from '@/phone/data/neutral-seed';
+import type { PhoneAppId } from '@/phone/data/schema';
 import {
   createPhoneNavigationState,
   goBack,
@@ -11,7 +12,7 @@ import {
   unlockPhone,
 } from '@/phone/navigation';
 
-const initiallyUnlocked = new Set(
+const initiallyUnlocked: ReadonlySet<PhoneAppId> = new Set(
   Object.values(neutralPhoneIndex.appsById)
     .filter((app) => !app.lockedInitially)
     .map((app) => app.id),
@@ -34,10 +35,16 @@ describe('phone navigation', () => {
 
     expect(state.current).toEqual({ screen: 'item', appId: 'messages', itemId: messageItemId });
     expect(state.history).toEqual([
-      { screen: 'lock' },
       { screen: 'home' },
       { screen: 'app', appId: 'messages' },
     ]);
+  });
+
+  it('does not keep the lock route in history and Back from Home is a no-op', () => {
+    const unlocked = unlockPhone(createPhoneNavigationState());
+
+    expect(unlocked).toEqual({ current: { screen: 'home' }, history: [] });
+    expect(goBack(unlocked)).toBe(unlocked);
   });
 
   it('moves back through history and sends Home directly to the launcher', () => {
@@ -56,7 +63,7 @@ describe('phone navigation', () => {
     expect(state.current).toEqual({ screen: 'app', appId: 'messages' });
     expect(goHome(state)).toEqual({
       current: { screen: 'home' },
-      history: [{ screen: 'lock' }],
+      history: [],
     });
   });
 
@@ -70,7 +77,7 @@ describe('phone navigation', () => {
 
   it('resolves an accessible deep link to its target item', () => {
     const source = Object.values(neutralPhoneIndex.itemsById).find(
-      (item) => item.deepLinks && item.deepLinks.length > 0,
+      (item) => item !== undefined && item.deepLinks && item.deepLinks.length > 0,
     );
     const link = source?.deepLinks?.[0];
     expect(link).toBeDefined();
