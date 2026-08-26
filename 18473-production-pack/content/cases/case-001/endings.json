@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ending_trace",
+    "title": "TRACE",
+    "choiceLabel": "TRACE",
+    "description": "Final relationship edge-ийг баталгаажуулж Тэнүүний байршлыг ил гаргана.",
+    "canon": false
+  },
+  {
+    "id": "ending_sever",
+    "title": "SEVER",
+    "choiceLabel": "SEVER",
+    "description": "Final relationship edge-ийг устгаж Тэнүүний байршлыг UNKNOWN хэвээр үлдээнэ.",
+    "canon": true
+  }
+]

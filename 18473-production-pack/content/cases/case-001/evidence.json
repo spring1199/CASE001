@@ -1,0 +1,204 @@
+[
+  {
+    "id": "ev_18473_paper",
+    "title": "18473 гэсэн цаас",
+    "sourceArtifactId": "art_package_note",
+    "description": "Илгээгчгүй хайрцаг дотор байсан ганц тоо.",
+    "tags": [
+      "opening",
+      "18473"
+    ]
+  },
+  {
+    "id": "ev_ceo_threat",
+    "title": "Оргилын сүрдүүлэг мэт мессеж",
+    "sourceArtifactId": "msg_orgil_public",
+    "description": "'Энэ нийтэд гарвал компани үлдэхгүй.'",
+    "tags": [
+      "orgil",
+      "suspect"
+    ]
+  },
+  {
+    "id": "ev_graph_confidence_tutorial",
+    "title": "GRAPH confidence тайлбар",
+    "sourceArtifactId": "doc_graph_help",
+    "description": "Шинэ баталгаажсан холбоос бүр identity confidence-ийг дахин тооцдог.",
+    "tags": [
+      "graph",
+      "finale"
+    ],
+    "grantsFacts": [
+      "fact_graph_recalculates"
+    ]
+  },
+  {
+    "id": "ev_f17_edge",
+    "title": "F17 хамгаалагдсан edge",
+    "sourceArtifactId": "graph_f17",
+    "description": "Тэнүүн F17 гэсэн нэргүй хүний холбоосыг зориуд бүдгэрүүлсэн.",
+    "tags": [
+      "f17"
+    ]
+  },
+  {
+    "id": "ev_f17_coriander",
+    "title": "F17 кориандерт дургүй",
+    "sourceArtifactId": "msg_18473_food",
+    "description": "18473 ярианы жижиг preference.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_scar",
+    "title": "Бугуйн сорви",
+    "sourceArtifactId": "photo_cafe_reflection",
+    "description": "Кафены зурагт үл таних эмэгтэйн бугуйн жижиг сорви харагдана.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_laugh",
+    "title": "18473 дуудлагын инээд",
+    "sourceArtifactId": "call_18473_03",
+    "description": "Тоглогчид хачин танил сонсогдох эмэгтэйн инээд.",
+    "tags": [
+      "f17",
+      "identity",
+      "romance"
+    ]
+  },
+  {
+    "id": "ev_winter47_operator",
+    "title": "Winter 47 operator",
+    "sourceArtifactId": "audit_winter47",
+    "description": "Unauthorized query operator attribution.",
+    "tags": [
+      "winter47"
+    ],
+    "hiddenUntilFacts": [
+      "fact_f17_is_maral"
+    ]
+  },
+  {
+    "id": "ev_decoy_topology",
+    "title": "Decoy topology",
+    "sourceArtifactId": "graph_decoy",
+    "description": "Сэжигтэй edge-үүд Тэнүүн дээр зориуд төвлөрсөн pattern.",
+    "tags": [
+      "decoy"
+    ]
+  },
+  {
+    "id": "ev_live_signal",
+    "title": "Fresh live signal",
+    "sourceArtifactId": "graph_live_signal",
+    "description": "Cache, proxy, Bilguun-аар тайлбарлагдахгүй шинэхэн activity.",
+    "tags": [
+      "hope3",
+      "finale"
+    ]
+  },
+  {
+    "id": "ev_maral_voice",
+    "title": "Маралын хуучин voice message",
+    "sourceArtifactId": "voice_maral_autonomy",
+    "description": "'Миний өмнөөс битгий шийд.' гэсэн утгатай ослын өмнөх зурвас.",
+    "tags": [
+      "autonomy",
+      "finale"
+    ]
+  },
+  {
+    "id": "ev_f17_thumb_habit",
+    "title": "F17 стрессдэхдээ эрхий хуруугаа мааждаг",
+    "sourceArtifactId": "msg_18473_habit",
+    "description": "Тэнүүн F17-ийн айх үедээ хийдэг жижиг зуршлыг дурдсан.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_punctuation",
+    "title": "F17-ийн бичлэгийн хэв маяг",
+    "sourceArtifactId": "msg_18473_style",
+    "description": "Цэг таслал, богино өгүүлбэрийн хэв маяг Маралын одоогийн бичлэгтэй давхцана.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_ministry",
+    "title": "F17 яаманд ажилладаг гэсэн мөр",
+    "sourceArtifactId": "msg_18473_work_hint",
+    "description": "Нэр хэлэлгүйгээр яамны ажил, гадаад зочдын хөтөлбөрийн талаар дурдсан.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_cafe_route",
+    "title": "Кафены өдрийн route overlap",
+    "sourceArtifactId": "loc_cafe_day",
+    "description": "Кафены зураг авсан өдөр Маралын хуучин calendar/route record ижил замтай давхцана.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_bank_hope1",
+    "title": "Алга болсны дараах банкны activity",
+    "sourceArtifactId": "txn_post_missing",
+    "description": "Тэнүүн амьд байж магадгүй мэт харагдах боловч шууд баталгаа биш.",
+    "tags": [
+      "hope1"
+    ]
+  },
+  {
+    "id": "ev_device_hope2",
+    "title": "Алга болсны дараах device activity",
+    "sourceArtifactId": "device_post_missing",
+    "description": "Дараа нь Билгүүн асаасан болох нь тогтоогдоно.",
+    "tags": [
+      "hope2"
+    ]
+  },
+  {
+    "id": "ev_bilguun_device",
+    "title": "Билгүүн device-ийг хөдөлгөсөн",
+    "sourceArtifactId": "msg_bilguun_admission",
+    "description": "Hope #2-г тайлбарлах үнэн.",
+    "tags": [
+      "hope2",
+      "family"
+    ]
+  },
+  {
+    "id": "ev_tenuun_laugh_note",
+    "title": "Инээдний тухай private note",
+    "sourceArtifactId": "note_laugh",
+    "description": "'Тэр инээхээр хэдхэн секунд бүх юм зүгээр юм шиг.'",
+    "tags": [
+      "romance",
+      "18473"
+    ]
+  },
+  {
+    "id": "ev_raspberry_plan",
+    "title": "Raspberry — 6",
+    "sourceArtifactId": "file_cabin_budget",
+    "description": "Cabin budget-ийн жижиг мөр; төгсгөлд café memory-тэй нийлнэ.",
+    "tags": [
+      "raspberry",
+      "ending"
+    ]
+  }
+]

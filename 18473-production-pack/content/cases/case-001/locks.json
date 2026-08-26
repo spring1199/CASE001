@@ -1,0 +1,30 @@
+[
+  {
+    "id": "lock_18473_archive",
+    "title": "18473 archive",
+    "unlockWhen": {
+      "fact": "fact_18473_archive_open"
+    }
+  },
+  {
+    "id": "lock_winter47_operator",
+    "title": "Winter 47 operator attribution",
+    "unlockWhen": {
+      "fact": "fact_f17_is_maral"
+    }
+  },
+  {
+    "id": "lock_final_choice",
+    "title": "TRACE / SEVER",
+    "unlockWhen": {
+      "allFacts": [
+        "fact_tenuun_decoy",
+        "fact_tenuun_alive"
+      ]
+    },
+    "requiredEvidence": [
+      "ev_maral_voice",
+      "ev_graph_confidence_tutorial"
+    ]
+  }
+]

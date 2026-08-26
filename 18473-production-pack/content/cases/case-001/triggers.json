@@ -1,0 +1,29 @@
+[
+  {
+    "id": "tr_unlock_winter47",
+    "when": {
+      "fact": "fact_f17_is_maral"
+    },
+    "effects": [
+      {
+        "type": "unlock",
+        "target": "audit_winter47"
+      }
+    ]
+  },
+  {
+    "id": "tr_unlock_final",
+    "when": {
+      "allFacts": [
+        "fact_tenuun_decoy",
+        "fact_tenuun_alive"
+      ]
+    },
+    "effects": [
+      {
+        "type": "unlock",
+        "target": "choice_final"
+      }
+    ]
+  }
+]

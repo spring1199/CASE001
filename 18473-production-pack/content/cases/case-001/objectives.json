@@ -1,0 +1,27 @@
+[
+  {
+    "id": "obj_find_sender",
+    "title": "Яагаад энэ утас надад ирснийг ол",
+    "state": "active"
+  },
+  {
+    "id": "obj_understand_graph",
+    "title": "GRAPH гэж юу болохыг ойлго",
+    "state": "locked"
+  },
+  {
+    "id": "obj_identify_f17",
+    "title": "F17 хэн болохыг тогтоо",
+    "state": "locked"
+  },
+  {
+    "id": "obj_reconstruct_winter47",
+    "title": "Winter 47-г сэргээ",
+    "state": "locked"
+  },
+  {
+    "id": "obj_find_tenuun",
+    "title": "Тэнүүний жинхэнэ мөрийг ол",
+    "state": "locked"
+  }
+]

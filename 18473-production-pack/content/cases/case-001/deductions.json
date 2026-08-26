@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ded_f17_identity",
+    "title": "F17 бол Марал",
+    "requiredAll": [
+      "ev_f17_edge"
+    ],
+    "requiredAnyGroups": [
+      [
+        "ev_f17_coriander",
+        "ev_f17_scar",
+        "ev_f17_thumb_habit",
+        "ev_f17_punctuation",
+        "ev_f17_ministry",
+        "ev_f17_laugh",
+        "ev_f17_cafe_route"
+      ]
+    ],
+    "minimumFromAnyGroup": 4,
+    "prerequisiteFacts": [
+      "fact_18473_archive_open"
+    ],
+    "grantsFacts": [
+      "fact_f17_is_maral"
+    ]
+  },
+  {
+    "id": "ded_maral_winter47",
+    "title": "Winter 47 query-г Марал хийсэн",
+    "requiredAll": [
+      "ev_winter47_operator"
+    ],
+    "prerequisiteFacts": [
+      "fact_f17_is_maral"
+    ],
+    "grantsFacts": [
+      "fact_maral_winter47_operator"
+    ]
+  },
+  {
+    "id": "ded_tenuun_decoy",
+    "title": "Тэнүүн өөрийгөө decoy node болгосон",
+    "requiredAll": [
+      "ev_decoy_topology"
+    ],
+    "prerequisiteFacts": [
+      "fact_maral_winter47_operator"
+    ],
+    "grantsFacts": [
+      "fact_tenuun_decoy"
+    ]
+  },
+  {
+    "id": "ded_tenuun_alive",
+    "title": "Тэнүүн одоо амьд",
+    "requiredAll": [
+      "ev_live_signal"
+    ],
+    "prerequisiteFacts": [
+      "fact_tenuun_decoy"
+    ],
+    "grantsFacts": [
+      "fact_tenuun_alive"
+    ]
+  }
+]

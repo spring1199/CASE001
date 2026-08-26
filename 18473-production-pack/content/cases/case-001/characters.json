@@ -1,0 +1,55 @@
+[
+  {
+    "id": "char_maral",
+    "name": "Марал Энхтүвшин",
+    "age": 25,
+    "role": "protagonist",
+    "playerVisibleAtStart": true
+  },
+  {
+    "id": "char_tenuun",
+    "name": "Тэнүүн Батзориг",
+    "age": 25,
+    "role": "missing_person",
+    "playerVisibleAtStart": true
+  },
+  {
+    "id": "char_orgil",
+    "name": "Оргил Содном",
+    "role": "suspect"
+  },
+  {
+    "id": "char_tselmeg",
+    "name": "Цэлмэг",
+    "role": "suspect"
+  },
+  {
+    "id": "char_saruul",
+    "name": "Саруул",
+    "role": "suspect"
+  },
+  {
+    "id": "char_tuya",
+    "name": "Туяа Батзориг",
+    "age": 21,
+    "role": "family"
+  },
+  {
+    "id": "char_bilguun",
+    "name": "Билгүүн Батзориг",
+    "age": 18,
+    "role": "family"
+  },
+  {
+    "id": "char_munkh",
+    "name": "Мөнх",
+    "role": "suspect"
+  },
+  {
+    "id": "char_f17",
+    "name": "F17",
+    "role": "unknown",
+    "canonicalCharacterId": "char_maral",
+    "hiddenUntilFact": "fact_f17_is_maral"
+  }
+]

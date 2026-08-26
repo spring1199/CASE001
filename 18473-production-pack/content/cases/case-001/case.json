@@ -1,0 +1,20 @@
+{
+  "id": "case_001",
+  "title": "18473",
+  "version": 1,
+  "locale": "mn",
+  "targetMinutes": 145,
+  "initialObjectiveIds": [
+    "obj_find_sender"
+  ],
+  "appIds": [
+    "messages",
+    "gallery",
+    "calls",
+    "mail",
+    "browser",
+    "notes",
+    "files"
+  ],
+  "canonEndingId": "ending_sever"
+}

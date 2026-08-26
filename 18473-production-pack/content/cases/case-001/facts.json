@@ -1,0 +1,30 @@
+[
+  {
+    "id": "fact_18473_archive_open",
+    "secret": false
+  },
+  {
+    "id": "fact_graph_recalculates",
+    "secret": false
+  },
+  {
+    "id": "fact_f17_is_maral",
+    "secret": true,
+    "reveal": "ded_f17_identity"
+  },
+  {
+    "id": "fact_maral_winter47_operator",
+    "secret": true,
+    "reveal": "ded_maral_winter47"
+  },
+  {
+    "id": "fact_tenuun_decoy",
+    "secret": true,
+    "reveal": "ded_tenuun_decoy"
+  },
+  {
+    "id": "fact_tenuun_alive",
+    "secret": true,
+    "reveal": "ded_tenuun_alive"
+  }
+]
