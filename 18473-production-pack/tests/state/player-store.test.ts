@@ -673,4 +673,93 @@ describe('createPlayerStore', () => {
     });
     expect(adapter.saveCalls).toHaveLength(0);
   });
+
+  it('persists a valid external setState change after an established save', async () => {
+    const adapter = new MemoryAdapter();
+    const store = createPlayerStore({ caseId: 'case_external_set', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_initial']);
+    await store.getState().actions.save();
+    const current = store.getState().playerState;
+    store.setState({
+      playerState: {
+        ...current,
+        knownFactIds: [...current.knownFactIds, 'fact_external'],
+      },
+    });
+
+    await store.getState().actions.save();
+
+    expect(adapter.saveCalls).toHaveLength(2);
+    const reloaded = createPlayerStore({ caseId: 'case_external_set', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([
+      'fact_initial',
+      'fact_external',
+    ]);
+  });
+
+  it('persists a valid in-place collection mutation after an established save', async () => {
+    const adapter = new MemoryAdapter();
+    const store = createPlayerStore({ caseId: 'case_in_place', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_initial']);
+    await store.getState().actions.save();
+    store.getState().playerState.knownFactIds.push('fact_in_place');
+
+    await store.getState().actions.save();
+
+    expect(adapter.saveCalls).toHaveLength(2);
+    const reloaded = createPlayerStore({ caseId: 'case_in_place', adapter, now: () => T2 });
+    await reloaded.getState().actions.hydrate();
+    expect(reloaded.getState().playerState.knownFactIds).toEqual([
+      'fact_initial',
+      'fact_in_place',
+    ]);
+  });
+
+  it('rejects invalid external setState content even when the revision is unchanged', async () => {
+    const adapter = new MemoryAdapter();
+    const store = createPlayerStore({ caseId: 'case_invalid_external', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_initial']);
+    await store.getState().actions.save();
+    const current = store.getState().playerState;
+    store.setState({
+      playerState: {
+        ...current,
+        knownFactIds: [...current.knownFactIds, 'fact_initial'],
+      },
+    });
+
+    await expect(store.getState().actions.save()).rejects.toMatchObject({
+      name: 'PlayerStoreValidationError',
+      operation: 'save',
+      caseId: 'case_invalid_external',
+    });
+    expect(adapter.saveCalls).toHaveLength(1);
+  });
+
+  it('rejects an invalid in-place collection mutation after an established save', async () => {
+    const adapter = new MemoryAdapter();
+    const store = createPlayerStore({ caseId: 'case_invalid_in_place', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_initial']);
+    await store.getState().actions.save();
+    store.getState().playerState.knownFactIds.push('fact_initial');
+
+    await expect(store.getState().actions.save()).rejects.toMatchObject({
+      name: 'PlayerStoreValidationError',
+      operation: 'save',
+      caseId: 'case_invalid_in_place',
+    });
+    expect(adapter.saveCalls).toHaveLength(1);
+  });
+
+  it('deduplicates a repeated save when validated state content is unchanged', async () => {
+    const adapter = new MemoryAdapter();
+    const store = createPlayerStore({ caseId: 'case_unchanged', adapter, now: () => T1 });
+    store.getState().actions.learnFacts(['fact_initial']);
+
+    await store.getState().actions.save();
+    await store.getState().actions.save();
+
+    expect(adapter.saveCalls).toHaveLength(1);
+  });
 });

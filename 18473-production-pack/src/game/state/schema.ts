@@ -30,6 +30,22 @@ export const playerTimestampsSchema = z.strictObject({
       });
     }
   }
+
+  const updatedAt = Date.parse(timestamps.updatedAt);
+  if (updatedAt < Date.parse(timestamps.lastPlayedAt)) {
+    context.addIssue({
+      code: 'custom',
+      path: ['updatedAt'],
+      message: 'updatedAt cannot be before lastPlayedAt.',
+    });
+  }
+  if (timestamps.lastSavedAt !== null && updatedAt < Date.parse(timestamps.lastSavedAt)) {
+    context.addIssue({
+      code: 'custom',
+      path: ['updatedAt'],
+      message: 'updatedAt cannot be before lastSavedAt.',
+    });
+  }
 });
 
 export function orderedUniqueStringArraySchema(itemSchema: z.ZodType<string>) {

@@ -21,4 +21,5 @@ Adapters namespace records by case ID and verify that the embedded case ID match
 - Legacy saves receive deterministic defaults for fields that did not exist in the starter shape. Missing timestamps use the Unix epoch sentinel rather than load time so repeated decoding cannot reset pacing metadata.
 - Legacy ordered ID lists are normalized by first occurrence before current-schema validation; current-version saves reject duplicates instead of silently changing them.
 - Runtime mutation/save timestamps use the latest parsed instant across the candidate clock and existing metadata, so an older local clock cannot regress hydrated progress. Clear uses its request time for the new baseline. Store hydration and save boundaries validate state even when a custom adapter is used.
+- Save deduplication compares a canonical fingerprint of validated state with the last successfully loaded or written snapshot; action revisions alone are not trusted because vanilla store consumers can mutate state directly.
 - Unsupported future saves fail closed instead of risking progress corruption.

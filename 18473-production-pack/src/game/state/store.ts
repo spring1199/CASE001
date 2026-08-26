@@ -69,6 +69,20 @@ function latestIsoInstant(values: Array<string | null>): string {
   return latestValue;
 }
 
+function canonicalizeJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalizeJson);
+  if (typeof value !== 'object' || value === null) return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([key, child]) => [key, canonicalizeJson(child)]),
+  );
+}
+
+function fingerprintPlayerState(state: PlayerState): string {
+  return JSON.stringify(canonicalizeJson(state));
+}
+
 function validateStorePlayerState(
   input: unknown,
   operation: PlayerStoreValidationOperation,
@@ -106,7 +120,7 @@ function appendUnique(existing: string[], incoming: string[]): string[] {
 export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<PlayerStoreState> {
   const now = options.now ?? defaultClock;
   let progressRevision = 0;
-  let persistedRevision: number | null = null;
+  let persistedFingerprint: string | null = null;
   let lifecycleGeneration = 0;
   let lifecycleTail = Promise.resolve();
   const mutationCaptures = new Set<PlayerMutation[]>();
@@ -150,12 +164,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
 
     const saveLatestProgress = (requestedGeneration: number): Promise<void> => {
       return enqueueLifecycle(async () => {
-        if (
-          requestedGeneration !== lifecycleGeneration ||
-          persistedRevision === progressRevision
-        ) {
-          return;
-        }
+        if (requestedGeneration !== lifecycleGeneration) return;
 
         while (requestedGeneration === lifecycleGeneration) {
           const revisionToSave = progressRevision;
@@ -164,6 +173,8 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
             'save',
             options.caseId,
           );
+          const currentFingerprint = fingerprintPlayerState(current);
+          if (persistedFingerprint === currentFingerprint) return;
           const savedAt = latestIsoInstant([
             current.timestamps.startedAt,
             current.timestamps.updatedAt,
@@ -183,15 +194,29 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
             'save',
             options.caseId,
           );
+          const savedFingerprint = fingerprintPlayerState(savedState);
 
           await options.adapter.save(savedState);
           if (requestedGeneration !== lifecycleGeneration) return;
           if (progressRevision !== revisionToSave) continue;
 
+          const latestState = validateStorePlayerState(
+            get().playerState,
+            'save',
+            options.caseId,
+          );
+          if (fingerprintPlayerState(latestState) !== currentFingerprint) continue;
+
           set({ playerState: savedState });
           if (requestedGeneration !== lifecycleGeneration) return;
           if (progressRevision !== revisionToSave) continue;
-          persistedRevision = revisionToSave;
+          const finalizedState = validateStorePlayerState(
+            get().playerState,
+            'save',
+            options.caseId,
+          );
+          if (fingerprintPlayerState(finalizedState) !== savedFingerprint) continue;
+          persistedFingerprint = savedFingerprint;
           return;
         }
       });
@@ -300,7 +325,11 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
               loaded,
             );
             set({ playerState });
-            persistedRevision = playerState === loaded ? progressRevision : null;
+            const loadedFingerprint = fingerprintPlayerState(loaded);
+            persistedFingerprint =
+              fingerprintPlayerState(playerState) === loadedFingerprint
+                ? loadedFingerprint
+                : null;
           } finally {
             mutationCaptures.delete(capturedMutations);
           }
@@ -323,7 +352,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
               createInitialPlayerState(options.caseId, requestedAt),
             );
             set({ playerState });
-            persistedRevision = null;
+            persistedFingerprint = null;
           } finally {
             mutationCaptures.delete(capturedMutations);
           }

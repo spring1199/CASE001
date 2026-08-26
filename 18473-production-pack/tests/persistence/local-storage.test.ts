@@ -286,6 +286,22 @@ describe('LocalStoragePersistenceAdapter', () => {
         state.timestamps.lastSavedAt = '2026-08-26T00:59:00.000Z';
       },
     ],
+    [
+      'an updated timestamp before the last-played timestamp',
+      (state: PlayerState) => {
+        state.timestamps.updatedAt = '2026-08-26T01:05:00.000Z';
+        state.timestamps.lastPlayedAt = '2026-08-26T01:06:00.000Z';
+        state.timestamps.lastSavedAt = '2026-08-26T01:04:00.000Z';
+      },
+    ],
+    [
+      'an updated timestamp before the last-saved timestamp',
+      (state: PlayerState) => {
+        state.timestamps.updatedAt = '2026-08-26T01:05:00.000Z';
+        state.timestamps.lastPlayedAt = '2026-08-26T01:04:00.000Z';
+        state.timestamps.lastSavedAt = '2026-08-26T01:06:00.000Z';
+      },
+    ],
   ])('rejects %s in persisted player state', async (_label, makeInvalid) => {
     const storage = new MemoryStorage();
     const state = completeState();
