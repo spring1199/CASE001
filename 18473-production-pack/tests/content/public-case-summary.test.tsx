@@ -21,12 +21,13 @@ describe('public case summary', () => {
     const markup = renderToStaticMarkup(<PhoneShell caseSummary={summary} />);
 
     expect(summary).toStrictEqual({
+      id: 'case_777',
       label: 'CASE 777',
       title: 'Синтетик хэрэг',
     });
     expect(markup).toContain('CASE 777');
     expect(markup).toContain('Синтетик хэрэг');
-    expect(markup).toContain('Хэргийн мэдээллийг ачааллаа.');
+    expect(markup).toContain('Түгжээ тайлах');
     expect(markup).not.toContain('CASE 001');
     expect(markup).not.toContain('18473');
     expect(markup).not.toContain('Starter shell');
