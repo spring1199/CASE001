@@ -6,6 +6,53 @@
 Primary language for player-facing content: Mongolian.
 Working language for code and schemas: English identifiers, Mongolian narrative content.
 
+## Mandatory continuity lifecycle
+
+Every agent must use repository state, never prior chat history, as the continuation authority.
+
+### Start of every task
+
+1. Read `AGENTS.md` completely.
+2. Read `PROJECT_STATE.md` completely.
+3. Read `HANDOFF.md` completely.
+4. Inspect `git status --short --branch`, the current branch/HEAD, and relevant recent history.
+5. Identify the latest approved commit recorded in `PROJECT_STATE.md` and verify it against Git.
+6. Resolve the task sources from the exact continuation point in `PROJECT_STATE.md`:
+   - for phase work, read the current phase execution plan and matching task file;
+   - for non-phase operational work, read the recorded plan/specification and note when no separate `tasks/` brief exists.
+7. If the required task sources are absent or ambiguous, stop and report the gap instead of searching for a substitute.
+8. Read only the canonical/source-of-truth documents relevant to that task.
+9. Confirm the authorized phase boundary before implementation.
+
+### During every task
+
+- Treat `docs/` as the product, canon, architecture, and acceptance source of truth.
+- Do not silently change narrative canon or invent missing canon.
+- Do not weaken spoiler/reveal gates or client-delivery protections.
+- Do not hardcode Case #001 narrative into reusable engine or UI code.
+- Do not rely on previous chat history for state, decisions, or authority.
+- If repository state conflicts with docs or `PROJECT_STATE.md`, report the conflict instead of guessing.
+
+### Before declaring any task complete
+
+1. Run all required validation and fix failures.
+2. Update `PROJECT_STATE.md` with:
+   - completed work;
+   - current branch;
+   - latest approved/base commit;
+   - final task implementation commit hash (followed by a state-only refresh commit when needed, because a commit cannot contain its own hash);
+   - validation and test results;
+   - limitations and risks;
+   - unresolved decisions;
+   - deferred work;
+   - next task;
+   - exact continuation point.
+3. Update `HANDOFF.md` only when architecture, workflow, source-of-truth locations/precedence, validation policy, or continuation rules materially changed.
+4. Run `npm run validate:continuity`.
+5. Verify that a new agent with zero chat history can continue safely.
+
+A task or phase is not complete until `PROJECT_STATE.md` is current.
+
 ## Non-negotiable rules
 1. `docs/` is the narrative and product source of truth.
 2. Never rewrite canon story facts unless the user explicitly asks for a canon change.
@@ -65,10 +112,14 @@ Read:
 
 ## Required validation before completing implementation work
 Run, when dependencies are available:
+- `npm run validate:pack`
+- `npm run validate:continuity`
 - `npm run lint`
 - `npm run typecheck`
 - `npm test`
 - `npm run test:e2e` for player-flow or UI changes
+- `npm run build`
+- `npm audit` when dependency manifests change
 
 Do not silently skip failures. Explain failures and fix them unless they are caused by an unavailable external dependency.
 
