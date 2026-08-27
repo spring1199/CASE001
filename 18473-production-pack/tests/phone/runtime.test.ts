@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createInitialPlayerState } from '@/game/state/types';
+import { requestCasePhoneProjection } from '@/phone/case-runtime-client';
+import { neutralPhoneContent } from '@/phone/data/neutral-seed';
 import {
   commitPhoneDiscovery,
   initializePhonePlayer,
@@ -124,5 +126,55 @@ describe('phone runtime initialization', () => {
     });
     expect(actions.hydrate).toHaveBeenCalledTimes(2);
     expect(actions.save).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('case runtime client', () => {
+  it('sends one allowlisted event and exposes validated view and outcomes', async () => {
+    const state = createInitialPlayerState('case_test', '2026-08-27T00:00:00.000Z');
+    const outcomes = [{
+      type: 'event-rejected' as const,
+      reason: 'unrecognized-id' as const,
+      ids: ['not_visible'],
+    }];
+    const view = {
+      caseId: 'case_test',
+      title: 'Neutral case',
+      characters: [],
+      objectives: [],
+      evidence: [],
+      completedDeductions: [],
+      availableDeductions: [],
+      timelinePositions: [],
+      timelineEvents: [],
+      graph: { nodes: [], edges: [] },
+      openLockIds: [],
+      unlockedContentIds: [],
+      finalChoice: null,
+      ending: null,
+      progression: {
+        discoveredEvidenceCount: 0,
+        completedDeductionCount: 0,
+        activeObjectiveCount: 0,
+        completedObjectiveCount: 0,
+      },
+    };
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
+      state,
+      outcomes,
+      content: neutralPhoneContent,
+      gatedContentIds: [],
+      view,
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const event = { type: 'pin-evidence' as const, evidenceIds: ['not_visible'] };
+    const projection = await requestCasePhoneProjection(state, undefined, event);
+
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject({ event });
+    expect(projection.view).toEqual(view);
+    expect(projection.outcomes).toEqual(outcomes);
+    expect(projection.phoneIndex.content).toEqual(neutralPhoneContent);
+    vi.unstubAllGlobals();
   });
 });

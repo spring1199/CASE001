@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { processEngineEvent, settleEngineState, type EngineOutcome } from '@/game/engine/engine';
+import { projectCaseView, type CaseView } from '@/game/engine/view';
 import { case001Seed } from '@/game/content/case-001';
+import {
+  caseViewSchema,
+  playerCaseEngineEventSchema,
+  type PlayerCaseEngineEvent,
+} from '@/game/schema/case-view';
 import { playerStateSchema } from '@/game/state/schema';
 import type { PlayerState } from '@/game/state/types';
 import { case001PhoneIndex, createCase001PhoneIndex } from '@/phone/data/case-001';
@@ -11,6 +17,7 @@ import { phoneDiscoveryEffectsSchema } from '@/phone/data/schema';
 const requestSchema = z.strictObject({
   state: playerStateSchema,
   discovery: phoneDiscoveryEffectsSchema.optional(),
+  event: playerCaseEngineEventSchema.optional(),
 });
 
 function appendUnique(existing: string[], incoming: readonly string[]): string[] {
@@ -21,6 +28,57 @@ function appendUnique(existing: string[], incoming: readonly string[]): string[]
     return true;
   });
   return added.length === 0 ? existing : [...existing, ...added];
+}
+
+function unrecognizedPlayerEventIds(
+  event: PlayerCaseEngineEvent,
+  view: CaseView,
+): string[] {
+  let allowedIds: ReadonlySet<string>;
+  let submittedIds: readonly string[];
+
+  switch (event.type) {
+    case 'attempt-deduction':
+      allowedIds = new Set([
+        ...view.availableDeductions.map(({ id }) => id),
+        ...view.completedDeductions.map(({ id }) => id),
+      ]);
+      submittedIds = [event.deductionId];
+      break;
+    case 'place-timeline-event':
+      allowedIds = new Set([
+        ...view.timelineEvents.map(({ id }) => id),
+        ...view.timelinePositions.map(({ id }) => id),
+      ]);
+      submittedIds = [event.eventId, event.positionId];
+      break;
+    case 'pin-evidence':
+    case 'unpin-evidence':
+      allowedIds = new Set(view.evidence.map(({ id }) => id));
+      submittedIds = event.evidenceIds;
+      break;
+    case 'confirm-graph-edges':
+      allowedIds = new Set(
+        view.graph.edges.filter(({ playerCanConfirm }) => playerCanConfirm).map(({ id }) => id),
+      );
+      submittedIds = event.edgeIds;
+      break;
+    case 'sever-graph-edges':
+      allowedIds = new Set(
+        view.graph.edges.filter(({ playerCanSever }) => playerCanSever).map(({ id }) => id),
+      );
+      submittedIds = event.edgeIds;
+      break;
+    case 'select-ending':
+      allowedIds = new Set([
+        ...(view.finalChoice ?? []).map(({ id }) => id),
+        ...(view.ending === null ? [] : [view.ending.endingId]),
+      ]);
+      submittedIds = [event.endingId];
+      break;
+  }
+
+  return [...new Set(submittedIds.filter((id) => !allowedIds.has(id)))];
 }
 
 function applyDiscovery(state: PlayerState, discovery: z.infer<typeof phoneDiscoveryEffectsSchema>) {
@@ -80,6 +138,17 @@ export async function POST(request: Request) {
     state = discoveryResult.state;
     outcomes.push(...discoveryResult.outcomes);
   }
+  if (parsed.data.event !== undefined) {
+    const visibleBeforeEvent = projectCaseView(case001Seed, state);
+    const eventResult = processEngineEvent(case001Seed, state, parsed.data.event);
+    const unrecognizedIds = unrecognizedPlayerEventIds(parsed.data.event, visibleBeforeEvent);
+    if (unrecognizedIds.length > 0) {
+      outcomes.push({ type: 'event-rejected', reason: 'unrecognized-id', ids: unrecognizedIds });
+    } else {
+      state = eventResult.state;
+      outcomes.push(...eventResult.outcomes);
+    }
+  }
   const settled = settleEngineState(case001Seed, state);
   state = settled.state;
   outcomes.push(...settled.outcomes);
@@ -104,6 +173,7 @@ export async function POST(request: Request) {
     outcomes,
     content: phoneIndex.content,
     gatedContentIds,
+    view: caseViewSchema.parse(projectCaseView(case001Seed, state)),
   }, {
     headers: {
       'Cache-Control': 'private, no-store, max-age=0',
