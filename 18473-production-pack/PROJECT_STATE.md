@@ -22,7 +22,7 @@ Phase 02 — Fake Phone OS, approved and merged through PR #2.
 
 ## Current task implementation commit
 
-`bb84b540fb4a8ff76baa6d13ff6b44be5b0b2de2`
+`96727e1fa7829e52b2489b71e8fa18fe16090c19`
 
 ## Current implementation status
 
@@ -36,7 +36,7 @@ Phases 01 and 02 are implemented and merged. The repository has a strict case-da
 
 ## Current task status
 
-Continuity files, mandatory agent rules, bootstrap routing, and lightweight continuity validation are implemented and fully validated on `codex/continuity-handoff`. The branch is awaiting review/merge; Phase 03 remains unstarted.
+Continuity files, mandatory agent rules, bootstrap routing, and fail-closed continuity validation are implemented and fully validated after independent zero-history review on `codex/continuity-handoff`. The branch is awaiting approval/merge; Phase 03 remains unstarted.
 
 ## Validation and test results
 
@@ -100,7 +100,7 @@ Review and merge the continuity branch. After a separate explicit approval, begi
 
 ## Exact continuation point
 
-Checkout `codex/continuity-handoff`, confirm a clean worktree, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review the continuity work against `docs/superpowers/specs/2026-08-27-continuity-handoff-design.md` and `docs/superpowers/plans/2026-08-27-continuity-handoff.md`. This non-phase operational task has no separate file under `tasks/`. Merge only after explicit approval. After merge, sync `main`, immediately refresh the active branch, approved commit, task status, next task, and continuation point in `PROJECT_STATE.md`, run continuity validation, and commit that state transition; do not start Phase 03.
+Checkout `codex/continuity-handoff`, confirm a clean worktree, verify implementation commit `96727e1fa7829e52b2489b71e8fa18fe16090c19`, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review the continuity work against `docs/superpowers/specs/2026-08-27-continuity-handoff-design.md` and `docs/superpowers/plans/2026-08-27-continuity-handoff.md`. This non-phase operational task has no separate file under `tasks/`. Merge only after explicit approval. After merge, sync `main`, immediately refresh the active branch, approved commit, task status, next task, and continuation point in `PROJECT_STATE.md`, run continuity validation, and commit that state transition; do not start Phase 03.
 
 ## Source-of-truth documents
 
