@@ -22,7 +22,7 @@ Phase 02 — Fake Phone OS, approved and merged through PR #2.
 
 ## Current task implementation commit
 
-Pending the first continuity implementation commit. Replace this sentence with its exact hash before final handoff.
+`bb84b540fb4a8ff76baa6d13ff6b44be5b0b2de2`
 
 ## Current implementation status
 
@@ -36,7 +36,7 @@ Phases 01 and 02 are implemented and merged. The repository has a strict case-da
 
 ## Current task status
 
-Continuity files, mandatory agent rules, bootstrap routing, and lightweight continuity validation are implemented on `codex/continuity-handoff`. Final validation and a clean committed handoff are required before this task is complete.
+Continuity files, mandatory agent rules, bootstrap routing, and lightweight continuity validation are implemented and fully validated on `codex/continuity-handoff`. The branch is awaiting review/merge; Phase 03 remains unstarted.
 
 ## Validation and test results
 
@@ -100,7 +100,7 @@ Review and merge the continuity branch. After a separate explicit approval, begi
 
 ## Exact continuation point
 
-Checkout `codex/continuity-handoff`, confirm a clean worktree, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review/merge the continuity work if approved. Do not start Phase 03 from this continuation point.
+Checkout `codex/continuity-handoff`, confirm a clean worktree, verify implementation commit `bb84b540fb4a8ff76baa6d13ff6b44be5b0b2de2`, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review/merge the continuity work if approved. The following state-only commit records this handoff. Do not start Phase 03 from this continuation point.
 
 ## Source-of-truth documents
 
