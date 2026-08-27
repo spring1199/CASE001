@@ -41,7 +41,7 @@ const neutralSeedInput = {
     ownerLabel: 'Туршилтын төхөөрөмж',
     modelLabel: 'Aru 5',
     systemLabel: 'Aru OS 12.4',
-    lockPrompt: 'Төхөөрөмжийг нээхийн тулд дээш шударна уу',
+    lockPrompt: 'Төхөөрөмжийг нээхийн тулд товчийг дарна уу',
   },
   apps: [
     {

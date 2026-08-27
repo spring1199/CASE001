@@ -21,6 +21,7 @@ describe('phone shell server markup', () => {
     expect(markup).toContain('data-phone-screen="lock"');
     expect(markup).toContain('<button type="button"');
     expect(markup).toContain('Түгжээ тайлах');
+    expect(markup).toContain('Төхөөрөмжийг нээхийн тулд товчийг дарна уу');
     expect(markup).not.toContain('aria-label="Аппын нүүр"');
     expect(markup).not.toContain('Зурвас апп');
   });
