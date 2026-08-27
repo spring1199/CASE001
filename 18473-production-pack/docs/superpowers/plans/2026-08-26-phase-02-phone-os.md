@@ -180,4 +180,3 @@ Run: `git add <reviewed-files> && git commit -m "fix: complete Phase 02 acceptan
 Run: `git status --short --branch && git rev-parse HEAD`
 
 Expected: branch `codex/phase-02-phone-os`, clean worktree, no Phase 02 merge.
-
