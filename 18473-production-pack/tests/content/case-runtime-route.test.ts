@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { processEngineEvent } from '@/game/engine/engine';
 import { createInitialPlayerState } from '@/game/state/types';
 import { POST } from '@/app/api/case-runtime/route';
+
+vi.mock('@/game/engine/engine', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/game/engine/engine')>();
+  return { ...actual, processEngineEvent: vi.fn(actual.processEngineEvent) };
+});
 
 function requestFor(body: unknown): Request {
   return new Request('http://localhost/api/case-runtime', {
@@ -72,26 +78,43 @@ describe('Case #001 server runtime projection', () => {
 
   it('rejects unknown and hidden event IDs without turning the runtime into an oracle', async () => {
     const state = createInitialPlayerState('case_001', '2026-08-27T00:00:00.000Z');
+    vi.mocked(processEngineEvent).mockClear();
     const unknownResponse = await POST(requestFor({
       state,
       event: { type: 'pin-evidence', evidenceIds: ['not_visible'] },
     }));
+    expect(processEngineEvent).not.toHaveBeenCalled();
     const hiddenResponse = await POST(requestFor({
       state,
       event: { type: 'pin-evidence', evidenceIds: ['ev_winter47_operator'] },
     }));
+    expect(processEngineEvent).not.toHaveBeenCalled();
     const hiddenDeductionResponse = await POST(requestFor({
       state,
       event: { type: 'attempt-deduction', deductionId: 'ded_maral_winter47' },
     }));
+    expect(processEngineEvent).not.toHaveBeenCalled();
     const ineligibleEndingResponse = await POST(requestFor({
       state,
       event: { type: 'select-ending', endingId: 'ending_sever' },
     }));
+    expect(processEngineEvent).not.toHaveBeenCalled();
+    const hiddenTimelineResponse = await POST(requestFor({
+      state,
+      event: { type: 'place-timeline-event', eventId: 'tev_audit', positionId: 'tpos_4' },
+    }));
+    expect(processEngineEvent).not.toHaveBeenCalled();
+    const hiddenGraphResponse = await POST(requestFor({
+      state,
+      event: { type: 'confirm-graph-edges', edgeIds: ['edge_tenuun_location'] },
+    }));
+    expect(processEngineEvent).not.toHaveBeenCalled();
     const unknownPayload = await unknownResponse.json();
     const hiddenPayload = await hiddenResponse.json();
     const hiddenDeductionPayload = await hiddenDeductionResponse.json();
     const ineligibleEndingPayload = await ineligibleEndingResponse.json();
+    const hiddenTimelinePayload = await hiddenTimelineResponse.json();
+    const hiddenGraphPayload = await hiddenGraphResponse.json();
 
     expect(unknownResponse.status).toBe(200);
     expect(hiddenResponse.status).toBe(200);
@@ -113,6 +136,16 @@ describe('Case #001 server runtime projection', () => {
       type: 'event-rejected',
       reason: 'unrecognized-id',
       ids: ['ending_sever'],
+    });
+    expect(hiddenTimelinePayload.outcomes).toContainEqual({
+      type: 'event-rejected',
+      reason: 'unrecognized-id',
+      ids: ['tev_audit'],
+    });
+    expect(hiddenGraphPayload.outcomes).toContainEqual({
+      type: 'event-rejected',
+      reason: 'unrecognized-id',
+      ids: ['edge_tenuun_location'],
     });
     expect(JSON.stringify(hiddenPayload.view)).not.toContain('ev_winter47_operator');
     expect(JSON.stringify(hiddenDeductionPayload.view)).not.toContain('ded_maral_winter47');

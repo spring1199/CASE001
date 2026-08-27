@@ -197,3 +197,26 @@ export const engineOutcomeSchema = z.discriminatedUnion('type', [
     ids: z.array(idSchema),
   }),
 ]) satisfies z.ZodType<EngineOutcome>;
+
+type DeepMutable<Value> = Value extends readonly (infer Item)[]
+  ? DeepMutable<Item>[]
+  : Value extends object
+    ? { -readonly [Key in keyof Value]: DeepMutable<Value[Key]> }
+    : Value;
+
+type TypesEqual<Left, Right> =
+  (<Value>() => Value extends Left ? 1 : 2) extends
+  (<Value>() => Value extends Right ? 1 : 2)
+    ? (<Value>() => Value extends Right ? 1 : 2) extends
+      (<Value>() => Value extends Left ? 1 : 2)
+      ? true
+      : false
+    : false;
+
+type AssertTrue<Value extends true> = Value;
+
+/** Fails typecheck if the engine union and strict parser ever diverge. */
+export type EngineOutcomeSchemaExhaustiveness = AssertTrue<TypesEqual<
+  DeepMutable<z.infer<typeof engineOutcomeSchema>>,
+  DeepMutable<EngineOutcome>
+>>;

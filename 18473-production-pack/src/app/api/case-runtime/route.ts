@@ -140,11 +140,11 @@ export async function POST(request: Request) {
   }
   if (parsed.data.event !== undefined) {
     const visibleBeforeEvent = projectCaseView(case001Seed, state);
-    const eventResult = processEngineEvent(case001Seed, state, parsed.data.event);
     const unrecognizedIds = unrecognizedPlayerEventIds(parsed.data.event, visibleBeforeEvent);
     if (unrecognizedIds.length > 0) {
       outcomes.push({ type: 'event-rejected', reason: 'unrecognized-id', ids: unrecognizedIds });
     } else {
+      const eventResult = processEngineEvent(case001Seed, state, parsed.data.event);
       state = eventResult.state;
       outcomes.push(...eventResult.outcomes);
     }
