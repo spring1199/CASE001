@@ -1,11 +1,142 @@
 [
-  { "id": "art_package_note", "kind": "file", "title": "18473", "body": "18473" },
-  { "id": "doc_graph_help", "kind": "system-info", "title": "GRAPH confidence", "body": "Баталгаажсан холбоос бүр confidence-ийг дахин тооцно." },
-  { "id": "graph_f17", "kind": "system-info", "title": "F17 edge", "body": "Хамгаалагдсан identity edge." },
-  { "id": "audit_winter47", "kind": "file", "title": "Winter 47 audit", "body": "Operator attribution audit.", "hiddenUntilFacts": ["fact_f17_is_maral"] },
-  { "id": "graph_decoy", "kind": "system-info", "title": "Decoy topology", "body": "Тэнүүн дээр төвлөрсөн зориудын pattern." },
-  { "id": "graph_live_signal", "kind": "system-info", "title": "Fresh live signal", "body": "Шинэхэн activity." },
-  { "id": "txn_post_missing", "kind": "file", "title": "Bank activity", "body": "Алга болсны дараах activity." },
-  { "id": "device_post_missing", "kind": "file", "title": "Device activity", "body": "Алга болсны дараах device activity." },
-  { "id": "file_cabin_budget", "kind": "file", "title": "Cabin budget", "body": "Raspberry — 6" }
+  {
+    "id": "art_package_note",
+    "kind": "file",
+    "title": "18473",
+    "body": "Илгээгчгүй хайрцаг дотор байсан ганц тоо.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_18473_paper"
+      ]
+    }
+  },
+  {
+    "id": "doc_graph_help",
+    "kind": "system-info",
+    "title": "GRAPH confidence",
+    "body": "Баталгаажсан холбоос бүр identity confidence-ийг дахин тооцно.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_graph_confidence_tutorial"
+      ]
+    }
+  },
+  {
+    "id": "graph_f17",
+    "kind": "system-info",
+    "title": "F17 хамгаалагдсан edge",
+    "body": "Тэнүүн F17 гэсэн нэргүй хүний холбоосыг зориуд бүдгэрүүлсэн.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_f17_edge"
+      ]
+    }
+  },
+  {
+    "id": "audit_winter47",
+    "kind": "file",
+    "title": "WINTER-47 query export",
+    "body": "target: minor F/17\nmedical risk: HIGH\nauthorization: PENDING\nrelationship expansion: ENABLED",
+    "hiddenUntilFacts": [
+      "fact_f17_is_maral"
+    ],
+    "discovery": {
+      "evidenceIds": [
+        "ev_winter47_operator"
+      ]
+    }
+  },
+  {
+    "id": "graph_decoy",
+    "kind": "system-info",
+    "title": "Decoy topology",
+    "body": "Олон эмзэг node TB-CORE дээр зориуд төвлөрсөн.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_decoy_topology"
+      ]
+    }
+  },
+  {
+    "id": "graph_live_signal",
+    "kind": "system-info",
+    "title": "Fresh live signal",
+    "body": "Cache, proxy, Билгүүний төхөөрөмжөөр тайлбарлагдахгүй шинэхэн activity.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_live_signal"
+      ]
+    }
+  },
+  {
+    "id": "txn_post_missing",
+    "kind": "file",
+    "title": "Post-missing bank activity",
+    "body": "Алга болсны дараах activity. Шууд амьд гэдгийг батлахгүй.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_bank_hope1"
+      ]
+    }
+  },
+  {
+    "id": "device_post_missing",
+    "kind": "file",
+    "title": "Post-missing device activity",
+    "body": "Алга болсны дараа төхөөрөмж ассан.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_device_hope2"
+      ]
+    }
+  },
+  {
+    "id": "file_graph_matrix",
+    "kind": "file",
+    "title": "GRAPH capability matrix",
+    "body": "identity resolution\nco-location inference\nrecurring-contact inference\nhousehold probability\nemergency re-identification\nmanual override\naudit requirement"
+  },
+  {
+    "id": "file_winter47",
+    "kind": "file",
+    "title": "WINTER47 redacted query export",
+    "body": "target: minor F/17\nmedical risk: HIGH\nauthorization: PENDING\nrelationship expansion: ENABLED",
+    "deepLinks": [
+      {
+        "label": "Audit mail",
+        "appId": "mail",
+        "contentId": "mail_winter47"
+      }
+    ],
+    "hiddenUntilFacts": [
+      "fact_f17_is_maral"
+    ],
+    "discovery": {
+      "evidenceIds": [
+        "ev_winter47_operator"
+      ]
+    }
+  },
+  {
+    "id": "file_decoy_plan",
+    "kind": "file",
+    "title": "Decoy edge plan",
+    "body": "If one node must look guilty, use mine.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_decoy_topology"
+      ]
+    }
+  },
+  {
+    "id": "file_cabin_budget",
+    "kind": "file",
+    "title": "Cabin budget",
+    "body": "Land\nTimber\nSolar\nGreenhouse\nDog fence\nRaspberry — 6",
+    "discovery": {
+      "evidenceIds": [
+        "ev_raspberry_plan"
+      ]
+    }
+  }
 ]

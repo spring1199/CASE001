@@ -4,13 +4,15 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useStore } from 'zustand';
 
 import type { PublicCaseSummary } from '@/game/content/public-case-summary';
+import { case001Seed } from '@/game/content/case-001';
 import { LocalStoragePersistenceAdapter } from '@/game/persistence/adapter';
+import { createCaseRuntime } from '@/game/runtime/case-runtime';
 import { createPlayerStore } from '@/game/state/store';
 import { ArtifactDetail } from '@/phone/apps/ArtifactDetail';
 import { PhoneAppView } from '@/phone/apps/PhoneAppView';
 import { AppIcon } from '@/phone/components/AppIcon';
 import { PhoneChrome } from '@/phone/components/PhoneChrome';
-import { neutralPhoneIndex } from '@/phone/data/neutral-seed';
+import { case001PhoneIndex } from '@/phone/data/case-001';
 import type {
   DeepReadonly,
   PhoneAppDescriptor,
@@ -43,12 +45,12 @@ type PhoneExperienceProps = Readonly<{
 
 type ScrollNavigationMode = 'reset' | 'restore';
 
-const INITIAL_UNLOCKED_APP_IDS: PhoneAppId[] = neutralPhoneIndex.content.apps
+const INITIAL_UNLOCKED_APP_IDS: PhoneAppId[] = case001PhoneIndex.content.apps
   .filter((app) => !app.lockedInitially)
   .map((app) => app.id);
 
 const GATED_CONTENT_IDS: ReadonlySet<string> = new Set(
-  neutralPhoneIndex.content.apps.flatMap((app) =>
+  case001PhoneIndex.content.apps.flatMap((app) =>
     app.items.flatMap((item) => item.discovery?.unlockContentIds ?? []),
   ),
 );
@@ -72,6 +74,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     }),
   );
   const playerState = useStore(playerStore, (state) => state.playerState);
+  const caseRuntime = useMemo(() => createCaseRuntime(case001Seed, playerStore), [playerStore]);
   const hydrationStatus = useStore(playerStore, (state) => state.hydrationStatus);
   const [navigation, setNavigation] = useState(createPhoneNavigationState);
   const [status, setStatus] = useState('Төхөөрөмж түгжээтэй байна.');
@@ -101,7 +104,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
   const unlockedAppIds = useMemo(() => {
     const unlocked = new Set<PhoneAppId>(INITIAL_UNLOCKED_APP_IDS);
-    for (const app of neutralPhoneIndex.content.apps) {
+    for (const app of case001PhoneIndex.content.apps) {
       if (playerState.unlockedAppIds.includes(app.id)) unlocked.add(app.id);
     }
     return unlocked;
@@ -149,12 +152,23 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
   const recordDiscovery = (item: DeepReadonly<PhoneItem>): void => {
     if (!item.discovery || !hasDiscoveries(item)) return;
-    const storeState = playerStore.getState();
+    const artifactIds = item.discovery.artifactIds ? [...item.discovery.artifactIds] : [];
+    const evidenceIds = item.discovery.evidenceIds ? [...item.discovery.evidenceIds] : [];
+    if (artifactIds.length > 0) {
+      caseRuntime.dispatch({ type: 'discover-artifacts', artifactIds });
+    }
+    if (evidenceIds.length > 0) {
+      caseRuntime.dispatch({ type: 'discover-evidence', evidenceIds });
+    }
     const result = commitPhoneDiscovery(
-      item.discovery,
-      storeState.playerState,
-      storeState.actions,
+      {
+        unlockAppIds: item.discovery.unlockAppIds,
+        unlockContentIds: item.discovery.unlockContentIds,
+      },
+      playerStore.getState().playerState,
+      playerStore.getState().actions,
     );
+    caseRuntime.settle();
     setStatus(
       result.kind === 'content-unlocked'
         ? 'Шинэ агуулга нээгдлээ.'
@@ -215,13 +229,13 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     }
     prepareNavigation('reset');
     setNavigation((current) =>
-      navigateToApp(current, app.id, neutralPhoneIndex, unlockedAppIds),
+      navigateToApp(current, app.id, case001PhoneIndex, unlockedAppIds),
     );
     setStatus(`${app.label} апп нээгдлээ.`);
   };
 
   const openItem = (item: DeepReadonly<PhoneItem>): void => {
-    const appId = neutralPhoneIndex.itemAppIds[item.id];
+    const appId = case001PhoneIndex.itemAppIds[item.id];
     if (appId === undefined) return;
     if (GATED_CONTENT_IDS.has(item.id) && !unlockedContentIds.has(item.id)) {
       setStatus('Энэ зүйл одоогоор түгжээтэй байна.');
@@ -230,14 +244,14 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     recordDiscovery(item);
     prepareNavigation('reset');
     setNavigation((current) =>
-      navigateToItem(current, appId, item.id, neutralPhoneIndex, unlockedAppIds),
+      navigateToItem(current, appId, item.id, case001PhoneIndex, unlockedAppIds),
     );
     if (!hasDiscoveries(item)) setStatus(`${item.title} нээгдлээ.`);
   };
 
   const openDeepLink = (target: DeepReadonly<PhoneDeepLinkTarget>): void => {
     if (!unlockedAppIds.has(target.appId)) {
-      setStatus(`${neutralPhoneIndex.appsById[target.appId].label} апп түгжээтэй байна.`);
+      setStatus(`${case001PhoneIndex.appsById[target.appId].label} апп түгжээтэй байна.`);
       return;
     }
     if (
@@ -248,11 +262,11 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       setStatus('Холбоотой зүйл одоогоор түгжээтэй байна.');
       return;
     }
-    const targetItem = target.itemId ? neutralPhoneIndex.itemsById[target.itemId] : undefined;
+    const targetItem = target.itemId ? case001PhoneIndex.itemsById[target.itemId] : undefined;
     if (targetItem) recordDiscovery(targetItem);
     prepareNavigation('reset');
     setNavigation((current) =>
-      navigateToDeepLink(current, target, neutralPhoneIndex, unlockedAppIds),
+      navigateToDeepLink(current, target, case001PhoneIndex, unlockedAppIds),
     );
     if (!targetItem || !hasDiscoveries(targetItem)) setStatus('Холбоотой зүйл нээгдлээ.');
   };
@@ -271,8 +285,8 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           </h1>
         </header>
         <div className={styles.lockContent}>
-          <p className={styles.lockOwner}>{neutralPhoneIndex.content.device.ownerLabel}</p>
-          <p className={styles.lockPrompt}>{neutralPhoneIndex.content.device.lockPrompt}</p>
+          <p className={styles.lockOwner}>{case001PhoneIndex.content.device.ownerLabel}</p>
+          <p className={styles.lockPrompt}>{case001PhoneIndex.content.device.lockPrompt}</p>
           <button
             type="button"
             className={styles.primaryButton}
@@ -306,10 +320,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const route = navigation.current;
   const currentApp =
     route.screen === 'app' || route.screen === 'item'
-      ? neutralPhoneIndex.appsById[route.appId]
+      ? case001PhoneIndex.appsById[route.appId]
       : undefined;
   const currentItem =
-    route.screen === 'item' ? neutralPhoneIndex.itemsById[route.itemId] : undefined;
+    route.screen === 'item' ? case001PhoneIndex.itemsById[route.itemId] : undefined;
   const title =
     route.screen === 'home'
       ? 'Аппын нүүр'
@@ -352,7 +366,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
       {route.screen === 'home' ? (
         <div role="region" aria-label="Аппын нүүр" className={styles.homeGrid}>
-          {neutralPhoneIndex.content.apps.map((app) => (
+          {case001PhoneIndex.content.apps.map((app) => (
             <AppIcon
               key={app.id}
               app={app}

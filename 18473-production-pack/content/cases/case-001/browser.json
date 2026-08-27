@@ -1,3 +1,120 @@
 [
-  { "id": "browser_seed", "kind": "web-page", "title": "Хадгалсан хуудас", "body": "Offline snapshot." }
+  {
+    "id": "browser_001",
+    "kind": "web-page",
+    "title": "entity resolution probabilistic relationship inference audit",
+    "body": "Хайлтын түүх: entity resolution probabilistic relationship inference audit",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_002",
+    "kind": "web-page",
+    "title": "can co-location metadata identify domestic violence shelter",
+    "body": "Хайлтын түүх: can co-location metadata identify domestic violence shelter",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_003",
+    "kind": "web-page",
+    "title": "winter tire black ice stopping distance",
+    "body": "Хайлтын түүх: winter tire black ice stopping distance",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_004",
+    "kind": "web-page",
+    "title": "wooden cabin insulation arvantai province",
+    "body": "Хайлтын түүх: wooden cabin insulation arvantai province",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_005",
+    "kind": "web-page",
+    "title": "raspberry greenhouse cold climate",
+    "body": "Хайлтын түүх: raspberry greenhouse cold climate",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_006",
+    "kind": "web-page",
+    "title": "dog breeds good with children cold weather",
+    "body": "Хайлтын түүх: dog breeds good with children cold weather",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_007",
+    "kind": "web-page",
+    "title": "how to remove metadata from exported logs",
+    "body": "Хайлтын түүх: how to remove metadata from exported logs",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_008",
+    "kind": "web-page",
+    "title": "encrypted archive dead drop design",
+    "body": "Хайлтын түүх: encrypted archive dead drop design",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_009",
+    "kind": "web-page",
+    "title": "selective autobiographical amnesia trauma head injury",
+    "body": "Хайлтын түүх: selective autobiographical amnesia trauma head injury",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_010",
+    "kind": "web-page",
+    "title": "how much sunlight does raspberry need",
+    "body": "Хайлтын түүх: how much sunlight does raspberry need",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_011",
+    "kind": "web-page",
+    "title": "used off-grid vehicle cash purchase",
+    "body": "Хайлтын түүх: used off-grid vehicle cash purchase",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_012",
+    "kind": "web-page",
+    "title": "can deleted support call audio be recovered",
+    "body": "Хайлтын түүх: can deleted support call audio be recovered",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_013",
+    "kind": "web-page",
+    "title": "sore throat tea honey",
+    "body": "Хайлтын түүх: sore throat tea honey",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_014",
+    "kind": "web-page",
+    "title": "best cheap ramen near central district",
+    "body": "Хайлтын түүх: best cheap ramen near central district",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_015",
+    "kind": "web-page",
+    "title": "why do people stop singing when older",
+    "body": "Хайлтын түүх: why do people stop singing when older",
+    "timestampLabel": "Архив"
+  },
+  {
+    "id": "browser_cabin_plan",
+    "kind": "web-page",
+    "title": "Small Timber House Plan 84m²",
+    "body": "2 bedrooms · small office · greenhouse extension",
+    "deepLinks": [
+      {
+        "label": "Cabin budget",
+        "appId": "files",
+        "contentId": "file_cabin_budget"
+      }
+    ]
+  }
 ]

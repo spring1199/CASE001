@@ -701,6 +701,14 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
         `[${recordIndex}].hiddenUntilFacts`,
       );
       assertKnownReferences(
+        endingIds,
+        'ending',
+        record.hiddenUntilEndings,
+        sourcePath,
+        record.id,
+        `[${recordIndex}].hiddenUntilEndings`,
+      );
+      assertKnownReferences(
         artifactIds,
         'artifact',
         record.discovery?.artifactIds,

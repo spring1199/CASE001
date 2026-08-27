@@ -83,6 +83,7 @@ const commonShape = {
   deepLinks: z.array(authoredDeepLinkSchema).optional(),
   discovery: authoredDiscoverySchema.optional(),
   hiddenUntilFacts: z.array(idSchema).optional(),
+  hiddenUntilEndings: z.array(idSchema).optional(),
 };
 
 export const artifactRecordSchema = z.object({

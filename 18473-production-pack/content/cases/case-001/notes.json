@@ -1,3 +1,25 @@
 [
-  { "id": "note_laugh", "kind": "note", "title": "Инээд", "body": "Тэр инээхээр хэдхэн секунд бүх юм зүгээр юм шиг." }
+  {
+    "id": "note_cabin",
+    "kind": "note",
+    "title": "Cabin",
+    "body": "Not rich. Quiet.\nBig window facing east.\nKitchen should be larger than living room.\nDog.\n2 kids?\nRaspberry — six plants."
+  },
+  {
+    "id": "note_rule",
+    "kind": "note",
+    "title": "Rule",
+    "body": "A system can be lawful and still be wrong.\nA person can break the law and still save someone.\nNeither sentence cancels the other."
+  },
+  {
+    "id": "note_laugh",
+    "kind": "note",
+    "title": "Инээд",
+    "body": "Тэр инээхээр хэдхэн секунд энэ бүх юм зүгээр юм шиг болдог.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_tenuun_laugh_note"
+      ]
+    }
+  }
 ]
