@@ -25,7 +25,7 @@ Keep `validate:pack` unchanged so canon validation remains independently runnabl
 
 ## State semantics
 
-`Latest approved commit hash` means the commit already approved and merged into `main`, not the unapproved HEAD of the continuity branch. A branch cannot embed its own final Git hash without changing that hash, so the exact current branch HEAD remains authoritative through `git rev-parse HEAD` and is reported at handoff.
+`Latest approved commit hash` means the commit already approved and merged into `main`, not the unapproved HEAD of the continuity branch. `Current task implementation commit` records the commit containing the substantive task changes. A later state-only refresh commit cannot embed its own Git hash without changing that hash, so the exact final branch HEAD remains authoritative through `git rev-parse HEAD` and is reported at handoff.
 
 ## Scope boundaries
 
