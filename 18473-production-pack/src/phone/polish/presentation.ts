@@ -15,9 +15,7 @@ export type VisiblePresentationEvidence = Readonly<{
   tags: readonly string[];
 }>;
 
-const TAG_PRIORITY: readonly Exclude<PresentationBeat, 'ordinary' | 'ending'>[] = [
-  'postcredit',
-  'hope3',
+const TAG_PRIORITY: readonly Exclude<PresentationBeat, 'ordinary' | 'ending' | 'hope3' | 'postcredit'>[] = [
   'decoy',
   'winter47',
   'f17',
@@ -45,7 +43,13 @@ export function selectPresentationBeat(
 ): PresentationBeat | null {
   if (outcomes.some(({ type }) => type === 'ending-selected')) return 'ending';
 
-  const tags = new Set(evidence.flatMap((record) => record.tags.map((tag) => tag.toLowerCase())));
+  const normalizedRecords = evidence.map((record) => (
+    new Set(record.tags.map((tag) => tag.toLowerCase()))
+  ));
+  if (normalizedRecords.some((tags) => tags.has('postcredit'))) return 'postcredit';
+  if (normalizedRecords.some((tags) => tags.has('hope3') && tags.has('finale'))) return 'hope3';
+
+  const tags = new Set(normalizedRecords.flatMap((recordTags) => [...recordTags]));
   const taggedBeat = TAG_PRIORITY.find((beat) => tags.has(beat));
   if (taggedBeat !== undefined) return taggedBeat;
 

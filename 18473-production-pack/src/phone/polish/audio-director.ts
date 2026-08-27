@@ -26,6 +26,7 @@ export interface GainNodePort extends AudioNodePort {
 export interface OscillatorNodePort extends AudioNodePort {
   frequency: AudioParamPort;
   type: OscillatorType;
+  onended: (() => void) | null;
   start(when?: number): void;
   stop(when?: number): void;
 }
@@ -37,6 +38,7 @@ export interface AudioBufferPort {
 export interface BufferSourceNodePort extends AudioNodePort {
   buffer: AudioBufferPort | null;
   loop: boolean;
+  onended: (() => void) | null;
   start(when?: number): void;
   stop(when?: number): void;
 }
@@ -106,6 +108,7 @@ export class AudioDirector {
   private preferences: AudioPreferences;
   private activated = false;
   private disposed = false;
+  private disposePromise: Promise<void> | null = null;
 
   private readonly onVisibilityChange = () => {
     void this.handleVisibilityChange(this.visibility?.hidden ?? false);
@@ -131,8 +134,14 @@ export class AudioDirector {
       }
     }
 
+    const context = this.context;
     try {
-      if (this.context.state !== 'running') await this.context.resume();
+      if (context.state !== 'running') await context.resume();
+      if (this.disposed || this.context !== context) return false;
+      if (this.visibility?.hidden === true) {
+        await context.suspend();
+        return false;
+      }
       this.activated = true;
       if (this.preferences.ambienceEnabled) this.startAmbience();
       return true;
@@ -159,10 +168,14 @@ export class AudioDirector {
     const destination = spec.category === 'reveal' ? this.revealGain : this.interfaceGain;
     if (destination === null) return;
 
+    let oscillator: OscillatorNodePort | null = null;
+    let envelope: GainNodePort | null = null;
     try {
       const now = context.currentTime;
-      const oscillator = this.track(context.createOscillator());
-      const envelope = this.track(context.createGain());
+      oscillator = this.track(context.createOscillator());
+      envelope = this.track(context.createGain());
+      const oneShotNodes = [oscillator, envelope] as const;
+      oscillator.onended = () => this.releaseNodes(oneShotNodes);
       oscillator.type = cue === 'ending' ? 'triangle' : 'sine';
       oscillator.frequency.setValueAtTime(spec.frequency, now);
       envelope.gain.setValueAtTime(0.0001, now);
@@ -174,6 +187,7 @@ export class AudioDirector {
       oscillator.stop(now + spec.duration);
       if (spec.noise) this.playNoiseBurst(destination, spec.duration, spec.peak * 0.22);
     } catch {
+      this.releaseNodes([oscillator, envelope]);
       // Audio is supplemental; presentation remains usable when a browser rejects a node operation.
     }
   }
@@ -199,9 +213,14 @@ export class AudioDirector {
     }
   }
 
-  async dispose(): Promise<void> {
-    if (this.disposed) return;
+  dispose(): Promise<void> {
+    if (this.disposePromise !== null) return this.disposePromise;
     this.disposed = true;
+    this.disposePromise = this.disposeResources();
+    return this.disposePromise;
+  }
+
+  private async disposeResources(): Promise<void> {
     this.visibility?.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.stopAmbience();
     for (const node of this.nodes) {
@@ -212,6 +231,11 @@ export class AudioDirector {
       try { await this.context.close(); } catch { /* already closed */ }
     }
     this.context = null;
+    this.masterGain = null;
+    this.duckGain = null;
+    this.interfaceGain = null;
+    this.revealGain = null;
+    this.ambienceGain = null;
     this.activated = false;
   }
 
@@ -249,6 +273,10 @@ export class AudioDirector {
       const source = this.track(context.createBufferSource());
       source.buffer = buffer;
       source.loop = true;
+      source.onended = () => {
+        if (this.ambienceSource === source) this.ambienceSource = null;
+        this.releaseNodes([source], source);
+      };
       source.connect(destination);
       source.start();
       this.ambienceSource = source;
@@ -259,9 +287,11 @@ export class AudioDirector {
 
   private stopAmbience(): void {
     if (this.ambienceSource === null) return;
-    try { this.ambienceSource.stop(); } catch { /* already stopped */ }
-    try { this.ambienceSource.disconnect(); } catch { /* already disconnected */ }
+    const source = this.ambienceSource;
     this.ambienceSource = null;
+    source.onended = null;
+    try { source.stop(); } catch { /* already stopped */ }
+    this.releaseNodes([source], source);
   }
 
   private playNoiseBurst(destination: AudioNodePort, duration: number, peak: number): void {
@@ -272,6 +302,8 @@ export class AudioDirector {
     fillRestrainedNoise(buffer.getChannelData(0));
     const source = this.track(context.createBufferSource());
     const envelope = this.track(context.createGain());
+    const oneShotNodes = [source, envelope] as const;
+    source.onended = () => this.releaseNodes(oneShotNodes, source);
     const now = context.currentTime;
     source.buffer = buffer;
     envelope.gain.setValueAtTime(peak, now);
@@ -285,6 +317,17 @@ export class AudioDirector {
   private track<Node extends AudioNodePort>(node: Node): Node {
     this.nodes.add(node);
     return node;
+  }
+
+  private releaseNodes(
+    nodes: readonly (AudioNodePort | null)[],
+    bufferSource?: BufferSourceNodePort,
+  ): void {
+    if (bufferSource !== undefined) bufferSource.buffer = null;
+    for (const node of nodes) {
+      if (node === null || !this.nodes.delete(node)) continue;
+      try { node.disconnect(); } catch { /* already disconnected */ }
+    }
   }
 }
 

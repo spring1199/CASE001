@@ -27,7 +27,7 @@ describe('presentation director', () => {
     const evidence = [
       { tags: ['hope1'] },
       { tags: ['f17'] },
-      { tags: ['hope3'] },
+      { tags: ['hope3', 'finale'] },
     ];
 
     expect(selectPresentationBeat(evidence)).toBe('hope3');
@@ -48,6 +48,15 @@ describe('presentation director', () => {
   test('keeps postcredit explicit and returns no beat when nothing presentable changed', () => {
     expect(selectPresentationBeat([{ tags: ['postcredit'] }])).toBe('postcredit');
     expect(selectPresentationBeat([])).toBeNull();
+  });
+
+  test('reserves Hope 3 pacing for the conclusive finale signal', () => {
+    expect(selectPresentationBeat([{ tags: ['optional', 'hope3'] }])).toBe('ordinary');
+    expect(selectPresentationBeat([{ tags: ['hope3', 'finale'] }])).toBe('hope3');
+    expect(selectPresentationBeat([
+      { tags: ['optional', 'hope3'] },
+      { tags: ['finale'] },
+    ])).toBe('ordinary');
   });
 
   test('collapses every reduced-motion beat to at most 150ms', () => {

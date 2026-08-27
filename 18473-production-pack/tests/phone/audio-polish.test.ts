@@ -39,8 +39,20 @@ function fakeNode(extra: Record<string, unknown> = {}): AudioNodePort & Record<s
   return {
     connect: vi.fn(function connect(this: AudioNodePort) { return this; }),
     disconnect: vi.fn(),
+    onended: null,
     ...extra,
   };
+}
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((settle) => { resolve = settle; });
+  return { promise, resolve };
+}
+
+function endNode(node: ReturnType<typeof fakeNode>): void {
+  const onended = node.onended as (() => void) | null;
+  onended?.();
 }
 
 function createFakeContext() {
@@ -173,5 +185,96 @@ describe('AudioDirector', () => {
     expect(fake.context.close).toHaveBeenCalledOnce();
     expect([...fake.gains, ...fake.oscillators, ...fake.bufferSources]
       .every((node) => vi.mocked(node.disconnect).mock.calls.length > 0)).toBe(true);
+  });
+
+  test('releases completed one-shot nodes and stopped ambience instead of retaining them', async () => {
+    const fake = createFakeContext();
+    const director = new AudioDirector({ contextFactory: () => fake.context });
+    await director.activateFromUserGesture();
+
+    for (let index = 0; index < 3; index += 1) director.playCue('reveal');
+    const oneShotGains = fake.gains.slice(5);
+    for (const node of [...fake.oscillators, ...fake.bufferSources]) endNode(node);
+
+    expect([...fake.oscillators, ...fake.bufferSources, ...oneShotGains]
+      .every((node) => vi.mocked(node.disconnect).mock.calls.length === 1)).toBe(true);
+    expect(fake.bufferSources.every((node) => node.buffer === null)).toBe(true);
+
+    const disconnectCounts = [...fake.oscillators, ...fake.bufferSources, ...oneShotGains]
+      .map((node) => vi.mocked(node.disconnect).mock.calls.length);
+    await director.dispose();
+    expect([...fake.oscillators, ...fake.bufferSources, ...oneShotGains]
+      .map((node) => vi.mocked(node.disconnect).mock.calls.length)).toEqual(disconnectCounts);
+
+    const ambienceFake = createFakeContext();
+    const ambience = new AudioDirector({ contextFactory: () => ambienceFake.context });
+    await ambience.activateFromUserGesture();
+    for (let index = 0; index < 3; index += 1) {
+      ambience.setAmbienceEnabled(true);
+      ambience.setAmbienceEnabled(false);
+    }
+    expect(ambienceFake.bufferSources).toHaveLength(3);
+    expect(ambienceFake.bufferSources.every((node) => (
+      vi.mocked(node.disconnect).mock.calls.length === 1 && node.buffer === null
+    ))).toBe(true);
+    await ambience.dispose();
+    expect(ambienceFake.bufferSources.every((node) => (
+      vi.mocked(node.disconnect).mock.calls.length === 1
+    ))).toBe(true);
+  });
+
+  test('does not activate after a deferred resume is disposed and shares concurrent disposal', async () => {
+    const fake = createFakeContext();
+    const resume = deferred();
+    const close = deferred();
+    fake.context.resume = vi.fn(() => resume.promise);
+    fake.context.close = vi.fn(() => close.promise);
+    const director = new AudioDirector({
+      contextFactory: () => fake.context,
+      preferences: { ...DEFAULT_AUDIO_PREFERENCES, ambienceEnabled: true },
+    });
+
+    const activation = director.activateFromUserGesture();
+    const firstDispose = director.dispose();
+    const secondDispose = director.dispose();
+    expect(firstDispose).toBe(secondDispose);
+    expect(fake.context.close).toHaveBeenCalledOnce();
+
+    resume.resolve();
+    expect(await activation).toBe(false);
+    expect(fake.bufferSources).toHaveLength(0);
+
+    let secondFinished = false;
+    void secondDispose.then(() => { secondFinished = true; });
+    await Promise.resolve();
+    expect(secondFinished).toBe(false);
+    close.resolve();
+    await Promise.all([firstDispose, secondDispose]);
+    expect(secondFinished).toBe(true);
+  });
+
+  test('does not activate or start ambience when visibility becomes hidden during resume', async () => {
+    const fake = createFakeContext();
+    const resume = deferred();
+    fake.context.resume = vi.fn(() => resume.promise);
+    const visibility = {
+      hidden: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    const director = new AudioDirector({
+      contextFactory: () => fake.context,
+      visibility,
+      preferences: { ...DEFAULT_AUDIO_PREFERENCES, ambienceEnabled: true },
+    });
+
+    const activation = director.activateFromUserGesture();
+    visibility.hidden = true;
+    resume.resolve();
+
+    expect(await activation).toBe(false);
+    expect(fake.context.suspend).toHaveBeenCalledOnce();
+    expect(fake.bufferSources).toHaveLength(0);
+    await director.dispose();
   });
 });
