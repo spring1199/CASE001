@@ -38,6 +38,8 @@ describe('Case #001 structured phone content', () => {
     const finalCall = case001PhoneIndex.itemsById.call_18473_03;
     expect(finalCall?.kind).toBe('call');
     expect(finalCall?.audio?.transcript).toContain('Бөөрөлзгөнө');
+    expect(finalCall?.audio?.productionStatus).toBe('scripted');
+    expect(finalCall?.audio?.src).toBeUndefined();
 
     const winter = case001PhoneIndex.itemsById.file_winter47;
     expect(winter?.deepLinks?.some((link) => link.target.itemId === 'mail_winter47')).toBe(true);

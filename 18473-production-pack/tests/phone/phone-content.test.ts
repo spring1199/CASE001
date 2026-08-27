@@ -200,6 +200,7 @@ describe('phone content boundary', () => {
       src: '/audio/neutral-note.mp3',
       durationLabel: '0:08',
       transcript: '',
+      productionStatus: 'ready',
     };
     expect(() => parsePhoneContent(audioItem)).toThrow();
   });
@@ -234,8 +235,9 @@ describe('phone content boundary', () => {
       .flatMap((app) => app.items)
       .find((item) => item.audio !== undefined)?.audio;
     expect(audio?.src).toMatch(/^data:audio\/wav;base64,/);
+    if (audio?.src === undefined) throw new Error('Expected playable neutral audio.');
 
-    const waveBytes = Buffer.from(audio!.src.split(',')[1]!, 'base64');
+    const waveBytes = Buffer.from(audio.src.split(',')[1]!, 'base64');
     expect(waveBytes.subarray(0, 4).toString('ascii')).toBe('RIFF');
     expect(waveBytes.subarray(8, 12).toString('ascii')).toBe('WAVE');
     expect(waveBytes.byteLength).toBeGreaterThan(44);
@@ -245,7 +247,7 @@ describe('phone content boundary', () => {
     const audio = neutralPhoneContent.apps
       .flatMap((app) => app.items)
       .find((item) => item.audio !== undefined)?.audio;
-    if (audio === undefined) throw new Error('Expected neutral audio fixture.');
+    if (audio?.src === undefined) throw new Error('Expected playable neutral audio fixture.');
 
     const waveBytes = Buffer.from(audio.src.split(',')[1]!, 'base64');
     const channels = waveBytes.readUInt16LE(22);

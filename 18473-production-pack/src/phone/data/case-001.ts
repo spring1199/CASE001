@@ -59,9 +59,12 @@ function projectCommon(record: CommonRecord) {
       height: record.visual.height ?? 1024,
     },
     audio: record.audio === undefined ? undefined : {
-      src: `/api/case-audio/${record.audio.assetId ?? record.id}`,
+      src: record.audio.productionStatus === 'ready' && record.audio.assetId !== undefined
+        ? `/api/case-audio/${record.audio.assetId}`
+        : undefined,
       durationLabel: record.audio.durationLabel,
       transcript: record.audio.transcript,
+      productionStatus: record.audio.productionStatus,
     },
     deepLinks: record.deepLinks?.map((link) => ({
       label: link.label,
@@ -90,21 +93,45 @@ const messages = case001Seed.messages.map((record) => ({
       height: message.visual.height ?? 1024,
     },
     audio: message.audio === undefined ? undefined : {
-      src: `/api/case-audio/${message.audio.assetId ?? message.id}`,
+      src: message.audio.productionStatus === 'ready' && message.audio.assetId !== undefined
+        ? `/api/case-audio/${message.audio.assetId}`
+        : undefined,
       durationLabel: message.audio.durationLabel,
       transcript: message.audio.transcript,
+      productionStatus: message.audio.productionStatus,
     },
   })),
 }));
 
 const gallery = case001Seed.photos.map((record) => ({
-  ...projectCommon(record), kind: 'photo' as const, collectionId: 'timeline',
+  ...projectCommon(record),
+  kind: 'photo' as const,
+  collectionId: record.id === 'photo_audit_screen'
+    ? 'recently_deleted'
+    : record.id === 'photo_safehouse'
+      ? 'hidden'
+      : 'timeline',
+  groupLabel: record.id.startsWith('photo_filler_') ? 'Ердийн зураг' : 'Нотлох зураг',
+  metadata: record.metadata ?? (record.visual === undefined ? undefined : [
+    { label: 'Хөрөнгийн ID', value: record.visual.assetId },
+    { label: 'Эх сурвалж', value: 'Төхөөрөмжийн зургийн сан' },
+  ]),
 }));
 const calls = case001Seed.calls.map((record) => ({ ...projectCommon(record), kind: 'call' as const }));
 const mail = case001Seed.emails.map((record) => ({ ...projectCommon(record), kind: 'mail' as const }));
 const browser = [
-  ...case001Seed.browser.map((record) => ({ ...projectCommon(record), kind: 'web-page' as const })),
-  ...case001Seed.locations.map((record) => ({ ...projectCommon(record), kind: 'web-page' as const })),
+  ...case001Seed.browser.map((record) => ({
+    ...projectCommon(record),
+    kind: 'web-page' as const,
+    collectionId: record.id === 'browser_cabin_plan'
+      ? 'saved'
+      : Number(record.id.replace('browser_', '')) >= 13
+        ? 'searches'
+        : 'history',
+  })),
+  ...case001Seed.locations.map((record) => ({
+    ...projectCommon(record), kind: 'web-page' as const, collectionId: 'saved',
+  })),
 ];
 const notes = case001Seed.notes.map((record) => ({ ...projectCommon(record), kind: 'note' as const }));
 const files = case001Seed.artifacts.map((record) => ({
@@ -132,11 +159,21 @@ export const case001PhoneIndex = createPhoneContentIndex({
   apps: [
     app('messages', messages),
     app('gallery', gallery, {
-      collections: [{ id: 'timeline', label: 'Цагийн шугам', presentation: 'timeline-grid' }],
+      collections: [
+        { id: 'timeline', label: 'Цагийн шугам', presentation: 'timeline-grid' },
+        { id: 'hidden', label: 'Нуусан', presentation: 'timeline-grid', emptyLabel: 'Нуусан зураг алга.' },
+        { id: 'recently_deleted', label: 'Саяхан устгасан', presentation: 'timeline-grid', emptyLabel: 'Саяхан устгасан зураг алга.' },
+      ],
     }),
     app('calls', calls),
     app('mail', mail),
-    app('browser', browser),
+    app('browser', browser, {
+      collections: [
+        { id: 'history', label: 'Түүх', presentation: 'list' },
+        { id: 'searches', label: 'Өмнөх хайлтууд', presentation: 'list' },
+        { id: 'saved', label: 'Хадгалсан', presentation: 'list' },
+      ],
+    }),
     app('notes', notes),
     app('files', files),
     app('settings', [{

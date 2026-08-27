@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 
 import type { NextRequest } from 'next/server';
 import { resolveCaseAsset } from '@/game/assets/case-assets';
@@ -28,7 +28,13 @@ export async function GET(
   if (resolution.kind !== 'private-file') return unavailable();
 
   try {
-    const bytes = await readFile(resolve(process.cwd(), resolution.runtimePath));
+    const bytes = await readFile(resolve(
+      process.cwd(),
+      'private-assets',
+      'case-001',
+      'runtime',
+      basename(resolution.runtimePath),
+    ));
     return new Response(bytes, {
       headers: {
         'Cache-Control': 'private, no-store',

@@ -61,9 +61,18 @@ export const phoneVisualSchema = z.strictObject({
 });
 
 export const phoneAudioSchema = z.strictObject({
-  src: nonEmptyTextSchema,
+  src: nonEmptyTextSchema.optional(),
   durationLabel: nonEmptyTextSchema,
   transcript: nonEmptyTextSchema,
+  productionStatus: z.enum(['scripted', 'ready']).default('ready'),
+}).superRefine((audio, context) => {
+  if (audio.productionStatus === 'ready' && audio.src === undefined) {
+    context.addIssue({
+      code: 'custom',
+      path: ['src'],
+      message: 'Ready audio requires a playback source.',
+    });
+  }
 });
 
 export const phoneDiscoveryEffectsSchema = z.strictObject({
