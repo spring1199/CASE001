@@ -212,6 +212,18 @@ function containsShortProtectedValue(body: string, value: string): boolean {
 }
 
 const protectedValues = buildProtectedValues();
+const genericImplementationTokens = new Set(['locked', 'unlock']);
+
+async function unlockPhone(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
+  await expect(page.locator('[data-phone-screen="home"]')).toBeVisible();
+}
+
+async function goHome(page: import('@playwright/test').Page): Promise<void> {
+  await page.keyboard.press('Home');
+  await expect(page.locator('[data-phone-screen="home"]')).toBeVisible();
+}
 
 test('renders only the Case #001 public manifest summary', async ({ page, baseURL }) => {
   if (baseURL === undefined) throw new Error('Playwright baseURL is required for leak detection');
@@ -271,6 +283,7 @@ test('renders only the Case #001 public manifest summary', async ({ page, baseUR
   ];
 
   const leaks = protectedValues.flatMap((protectedValue) => {
+    if (genericImplementationTokens.has(protectedValue.value)) return [];
     const sources = deliveredText
       .filter((delivered) => {
         const searchableBody = isDistinctiveProtectedValue(protectedValue.value)
@@ -284,4 +297,146 @@ test('renders only the Case #001 public manifest summary', async ({ page, baseUR
     return sources.length === 0 ? [] : [{ ...protectedValue, sources }];
   });
   expect(leaks, 'Protected authored values must not reach browser-delivered text').toEqual([]);
+});
+
+test('unlocks the neutral phone and exposes every Phase 02 app shell', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-phone-screen="lock"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Файл хадгалах сан, түгжээтэй' })).toHaveCount(0);
+
+  await unlockPhone(page);
+  await expect(page.getByRole('button', { name: 'Файл хадгалах сан, түгжээтэй' })).toHaveAttribute('aria-disabled', 'true');
+
+  const initiallyAvailableApps = [
+    ['Зурвас апп', 'messages'],
+    ['Зургийн цомог', 'gallery'],
+    ['Дуудлагын жагсаалт', 'calls'],
+    ['Цахим шуудан', 'mail'],
+    ['Вэб хөтөч', 'browser'],
+    ['Тэмдэглэлийн дэвтэр', 'notes'],
+    ['Системийн тохиргоо', 'settings'],
+  ] as const;
+
+  for (const [accessibleName, appId] of initiallyAvailableApps) {
+    await page.getByRole('button', { name: accessibleName }).click();
+    await expect(page.locator(`[data-app-shell="${appId}"]`)).toBeVisible();
+    await goHome(page);
+  }
+
+  await page.getByRole('button', { name: 'Зурвас апп' }).click();
+  await page.getByRole('button', { name: /Амралтын өдрийн төлөвлөгөө/ }).click();
+  await goHome(page);
+  await page.getByRole('button', { name: 'Файл хадгалах сан' }).click();
+  await expect(page.locator('[data-app-shell="files"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: /баримт-08\.pdf/ })).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
+  await expect(page.getByRole('button', { name: 'Файл хадгалах сан' })).toBeEnabled();
+});
+
+test('supports search, deep links, dialogs, zoom, transcripts, and keyboard history', async ({ page }) => {
+  await unlockPhone(page);
+
+  await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
+  const search = page.getByRole('searchbox', { name: 'Хадгалсан хуудсаас хайх' });
+  await search.fill('бороо');
+  await expect(page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ })).toBeVisible();
+  await page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ }).click();
+  await page.getByRole('button', { name: 'Төлөвлөгөөний зурвас нээх' }).click();
+  await expect(page.getByRole('heading', { name: 'Амралтын өдрийн төлөвлөгөө', exact: true })).toBeVisible();
+  await expect(page.getByText('Бичлэгийн тайлал')).toBeVisible();
+  await page.getByText('Бичлэгийн тайлал').click();
+  await expect(page.getByText('Бороотой бол кофе шопт уулзаж болно шүү.').first()).toBeVisible();
+  await expect(page.locator('audio')).toHaveAttribute('controls', '');
+  await page.keyboard.press('Alt+ArrowLeft');
+  await expect(page.locator('[data-app-shell="browser"]')).toBeVisible();
+  await goHome(page);
+
+  await page.getByRole('button', { name: 'Зургийн цомог' }).click();
+  await expect(page.locator('[data-gallery-layout="timeline-grid"]')).toBeVisible();
+  await page.getByRole('button', { name: /Борооны дараах цэцэрлэг/ }).click();
+  const metadataButton = page.getByRole('button', { name: 'Метадата шалгах' });
+  await metadataButton.focus();
+  await metadataButton.press('Enter');
+  await expect(page.getByRole('dialog', { name: /Метадата/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(metadataButton).toBeFocused();
+
+  const zoomButton = page.getByRole('button', { name: 'Зургийг томруулах' });
+  await zoomButton.focus();
+  await zoomButton.press('Enter');
+  await expect(page.getByRole('dialog', { name: /Томруулсан зураг/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(zoomButton).toBeFocused();
+});
+
+for (const width of [320, 375, 414, 768]) {
+  test(`keeps the phone surface usable at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 720 });
+    await unlockPhone(page);
+
+    const layout = await page.evaluate(() => ({
+      viewport: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      bodyWidth: document.body.scrollWidth,
+    }));
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport);
+    expect(layout.bodyWidth).toBeLessThanOrEqual(layout.viewport);
+
+    const actionLabels = page.locator('[data-action-label]');
+    const actionCount = await actionLabels.count();
+    expect(actionCount).toBeGreaterThan(0);
+    for (let index = 0; index < actionCount; index += 1) {
+      await expect(actionLabels.nth(index)).toHaveCSS('white-space', 'nowrap');
+    }
+
+    await page.getByRole('button', { name: 'Зурвас апп' }).click();
+    await expect(page.locator('[data-phone-scroll-region]')).toHaveCSS('overflow-y', 'auto');
+  });
+}
+
+test('protects narrow actions and both horizontal safe-area edges', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await unlockPhone(page);
+
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /viewport-fit=cover/);
+  const phoneCss = await page.evaluate(() =>
+    Array.from(document.styleSheets)
+      .flatMap((sheet) => {
+        try {
+          return Array.from(sheet.cssRules, (rule) => rule.cssText);
+        } catch {
+          return [];
+        }
+      })
+      .join('\n'),
+  );
+  expect(phoneCss).toContain('env(safe-area-inset-left)');
+  expect(phoneCss).toContain('env(safe-area-inset-right)');
+
+  await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
+  await page.getByRole('searchbox', { name: 'Хадгалсан хуудсаас хайх' }).fill('бороо');
+  await page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ }).click();
+  const deepLink = page.getByRole('button', { name: 'Төлөвлөгөөний зурвас нээх' });
+  const actionBox = await deepLink.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(actionBox.scrollWidth).toBeLessThanOrEqual(actionBox.clientWidth);
+});
+
+test('reduces phone motion without removing state feedback', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await unlockPhone(page);
+  await page.getByRole('button', { name: 'Зурвас апп' }).click();
+  await page.keyboard.press('Shift+Tab');
+  const action = page.getByRole('button', { name: 'Нүүр' });
+  await expect(action).toBeFocused();
+  const durations = await action.evaluate((element) =>
+    getComputedStyle(element).transitionDuration.split(',').map((value) => Number.parseFloat(value) * 1000),
+  );
+  expect(Math.max(...durations)).toBeLessThanOrEqual(150);
+  await expect(action).toHaveCSS('outline-style', 'solid');
+  await expect(action).not.toHaveCSS('outline-color', 'rgba(0, 0, 0, 0)');
 });

@@ -1,5 +1,7 @@
 import type { RefObject, ReactNode } from 'react';
 
+import styles from '@/phone/phone.module.css';
+
 type PhoneChromeProps = Readonly<{
   title: string;
   screen: 'home' | 'app' | 'item';
@@ -22,15 +24,24 @@ export function PhoneChrome({
   children,
 }: PhoneChromeProps) {
   return (
-    <section aria-labelledby="phone-screen-heading" data-phone-screen={screen}>
-      <header>
-        <p aria-label="Төхөөрөмжийн цаг">09:41</p>
-        <nav aria-label="Утасны навигаци">
+    <section
+      aria-labelledby="phone-screen-heading"
+      data-phone-screen={screen}
+      className={styles.phoneSurface}
+    >
+      <header className={styles.phoneHeader}>
+        <div className={styles.statusBar}>
+          <p aria-label="Төхөөрөмжийн цаг" className={styles.statusTime}>09:41</p>
+          <span aria-hidden="true" className={styles.statusIndicators}>● ◒</span>
+        </div>
+        <div className={styles.navigationBar}>
+          <nav aria-label="Утасны навигаци" className={styles.navigationActions}>
           <button
             type="button"
             onClick={onBack}
             disabled={!canGoBack}
-            style={{ minHeight: 44, minWidth: 44 }}
+            className={styles.navButton}
+            data-action-label
           >
             Буцах
           </button>
@@ -38,16 +49,21 @@ export function PhoneChrome({
             type="button"
             onClick={onHome}
             disabled={!canGoHome}
-            style={{ minHeight: 44, minWidth: 44 }}
+            className={styles.navButton}
+            data-action-label
           >
             Нүүр
           </button>
-        </nav>
-        <h1 id="phone-screen-heading" ref={headingRef} tabIndex={-1}>
+          </nav>
+          <span className={styles.deviceLabel}>18473</span>
+        </div>
+        <h1 id="phone-screen-heading" ref={headingRef} tabIndex={-1} className={styles.screenTitle}>
           {title}
         </h1>
       </header>
-      {children}
+      <div className={styles.scrollRegion} data-phone-scroll-region>
+        {children}
+      </div>
     </section>
   );
 }

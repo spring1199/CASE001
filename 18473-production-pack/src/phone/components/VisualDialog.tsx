@@ -2,12 +2,14 @@ import Image from 'next/image';
 import type { RefObject } from 'react';
 
 import type { DeepReadonly, PhoneVisual } from '@/phone/data/schema';
+import styles from '@/phone/phone.module.css';
 
 type VisualMediaProps = Readonly<{
   visual: DeepReadonly<PhoneVisual>;
+  className?: string;
 }>;
 
-export function VisualMedia({ visual }: VisualMediaProps) {
+export function VisualMedia({ visual, className }: VisualMediaProps) {
   const aspectRatio =
     visual.width && visual.height ? `${visual.width} / ${visual.height}` : undefined;
 
@@ -18,9 +20,15 @@ export function VisualMedia({ visual }: VisualMediaProps) {
       width={visual.width ?? 1}
       height={visual.height ?? 1}
       unoptimized
+      className={[styles.visualMedia, className].filter(Boolean).join(' ')}
     />
   ) : (
-    <div role="img" aria-label={visual.alt} style={{ aspectRatio }}>
+    <div
+      role="img"
+      aria-label={visual.alt}
+      style={{ aspectRatio }}
+      className={[styles.visualPlaceholder, className].filter(Boolean).join(' ')}
+    >
       {visual.alt}
     </div>
   );
@@ -38,15 +46,19 @@ export function VisualDialog({ dialogRef, visualId, title, visual }: VisualDialo
   const headingId = `${visualId}-visual-heading`;
 
   return (
-    <dialog id={dialogId} ref={dialogRef} aria-labelledby={headingId}>
-      <h2 id={headingId}>{title} · Томруулсан зураг</h2>
-      <VisualMedia visual={visual} />
-      <p>{visual.description}</p>
-      <form method="dialog">
-        <button type="submit" style={{ minHeight: 44, minWidth: 44 }}>
-          Хаах
-        </button>
-      </form>
+    <dialog id={dialogId} ref={dialogRef} aria-labelledby={headingId} className={styles.dialog}>
+      <div className={styles.dialogContent}>
+        <header className={styles.dialogHeader}>
+          <h2 id={headingId} className={styles.dialogTitle}>{title} · Томруулсан зураг</h2>
+          <form method="dialog">
+            <button type="submit" className={styles.dialogButton} data-action-label>
+              Хаах
+            </button>
+          </form>
+        </header>
+        <VisualMedia visual={visual} className={styles.dialogVisual} />
+        <p className={styles.visualCaption}>{visual.description}</p>
+      </div>
     </dialog>
   );
 }

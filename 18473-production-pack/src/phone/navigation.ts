@@ -70,9 +70,27 @@ export function navigateToDeepLink(
   index: PhoneContentIndex,
   unlockedAppIds: ReadonlySet<PhoneAppId>,
 ): PhoneNavigationState {
-  return target.itemId === undefined
-    ? navigateToApp(state, target.appId, index, unlockedAppIds)
-    : navigateToItem(state, target.appId, target.itemId, index, unlockedAppIds);
+  if (target.itemId === undefined) {
+    return navigateToApp(state, target.appId, index, unlockedAppIds);
+  }
+
+  const next = navigateToItem(state, target.appId, target.itemId, index, unlockedAppIds);
+  if (
+    next === state ||
+    state.current.screen !== 'item' ||
+    state.current.appId === target.appId
+  ) {
+    return next;
+  }
+
+  const sourceAppRoute: PhoneRoute = { screen: 'app', appId: state.current.appId };
+  const previous = state.history.at(-1);
+  const history =
+    previous?.screen === 'app' && previous.appId === sourceAppRoute.appId
+      ? state.history
+      : [...state.history, sourceAppRoute];
+
+  return { current: next.current, history };
 }
 
 export function goBack(state: PhoneNavigationState): PhoneNavigationState {

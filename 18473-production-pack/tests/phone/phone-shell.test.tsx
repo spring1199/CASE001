@@ -61,7 +61,6 @@ describe('data-driven phone application views', () => {
     expect(markup).toContain('type="search"');
     expect(markup).toContain('Хадгалсан хуудсаас хайх');
     expect(markup).toContain('Долоо хоногийн цаг агаар');
-    expect(markup).toContain('style="min-height:44px"');
   });
 
   it('uses native metadata and audio controls with an available transcript', () => {
@@ -80,7 +79,7 @@ describe('data-driven phone application views', () => {
     expect(galleryMarkup).toContain('<dialog id="park-rain-photo-metadata-dialog"');
     expect(galleryMarkup).toContain('3024 × 4032');
     expect(messageMarkup).toContain('<audio controls=""');
-    expect(messageMarkup).toContain('<summary style="min-height:44px">Бичлэгийн тайлал</summary>');
+    expect(messageMarkup).toContain('<summary>Бичлэгийн тайлал</summary>');
     expect(messageMarkup).toContain('Бороотой бол кофе шопт уулзаж болно шүү.');
   });
 

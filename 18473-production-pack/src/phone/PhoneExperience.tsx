@@ -34,6 +34,7 @@ import {
   type PhoneInitializationFailure,
   type PhoneInitializationResult,
 } from '@/phone/runtime';
+import styles from '@/phone/phone.module.css';
 
 type PhoneExperienceProps = Readonly<{
   caseSummary: PublicCaseSummary;
@@ -148,6 +149,20 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || document.querySelector('dialog[open]')) return;
+
+      const eventTarget = event.target;
+      const isEditableTarget =
+        eventTarget instanceof HTMLInputElement ||
+        eventTarget instanceof HTMLTextAreaElement ||
+        (eventTarget instanceof HTMLElement && eventTarget.isContentEditable);
+
+      if (event.key === 'Home' && !isEditableTarget && navigation.current.screen !== 'home') {
+        event.preventDefault();
+        setNavigation((current) => goHome(current));
+        setStatus('Аппын нүүр рүү шилжлээ.');
+        return;
+      }
+
       if (event.key !== 'Escape' && !(event.altKey && event.key === 'ArrowLeft')) return;
 
       const next = goBack(navigation);
@@ -212,37 +227,42 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       <section
         aria-label={`${caseSummary.label}: ${caseSummary.title}`}
         data-phone-screen="lock"
+        className={`${styles.phoneSurface} ${styles.lockScreen}`}
       >
-        <header>
-          <p>{caseSummary.label}</p>
-          <h1 ref={headingRef} tabIndex={-1}>
+        <header className={styles.lockHeader}>
+          <p className={styles.eyebrow}>{caseSummary.label}</p>
+          <h1 ref={headingRef} tabIndex={-1} className={styles.lockTitle}>
             {caseSummary.title}
           </h1>
         </header>
-        <p>{neutralPhoneIndex.content.device.ownerLabel}</p>
-        <p>{neutralPhoneIndex.content.device.lockPrompt}</p>
-        <button
-          type="button"
-          onClick={() => {
-            setNavigation((current) => unlockPhone(current));
-            setStatus('Төхөөрөмжийн түгжээ тайлагдлаа.');
-          }}
-          style={{ minHeight: 44, minWidth: 44 }}
-        >
-          Түгжээ тайлах
-        </button>
-        <p role="status" aria-live="polite">
-          {hydrationStatus === 'hydrating' ? 'Хадгалсан төлөвийг ачаалж байна.' : status}
-        </p>
-        {initializationFailure ? (
+        <div className={styles.lockContent}>
+          <p className={styles.lockOwner}>{neutralPhoneIndex.content.device.ownerLabel}</p>
+          <p className={styles.lockPrompt}>{neutralPhoneIndex.content.device.lockPrompt}</p>
           <button
             type="button"
-            onClick={retryInitialization}
-            style={{ minHeight: 44, minWidth: 44 }}
+            className={styles.primaryButton}
+            data-action-label
+            onClick={() => {
+              setNavigation((current) => unlockPhone(current));
+              setStatus('Төхөөрөмжийн түгжээ тайлагдлаа.');
+            }}
           >
-            Дахин оролдох
+            Түгжээ тайлах
           </button>
-        ) : null}
+          <p role="status" aria-live="polite" className={styles.statusMessage}>
+            {hydrationStatus === 'hydrating' ? 'Хадгалсан төлөвийг ачаалж байна.' : status}
+          </p>
+          {initializationFailure ? (
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              data-action-label
+              onClick={retryInitialization}
+            >
+              Дахин оролдох
+            </button>
+          ) : null}
+        </div>
       </section>
     );
   }
@@ -258,7 +278,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     route.screen === 'home'
       ? 'Аппын нүүр'
       : route.screen === 'item'
-        ? (currentItem?.title ?? currentApp?.label ?? 'Зүйл')
+        ? (currentApp?.label ?? 'Зүйл')
         : (currentApp?.label ?? 'Апп');
 
   return (
@@ -277,21 +297,22 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         setStatus('Аппын нүүр рүү шилжлээ.');
       }}
     >
-      <p role="status" aria-live="polite">
+      <p role="status" aria-live="polite" className={styles.statusMessage}>
         {hydrationStatus === 'hydrating' ? 'Хадгалсан төлөвийг ачаалж байна.' : status}
       </p>
       {initializationFailure ? (
         <button
           type="button"
+          className={styles.secondaryButton}
+          data-action-label
           onClick={retryInitialization}
-          style={{ minHeight: 44, minWidth: 44 }}
         >
           Дахин оролдох
         </button>
       ) : null}
 
       {route.screen === 'home' ? (
-        <div role="region" aria-label="Аппын нүүр">
+        <div role="region" aria-label="Аппын нүүр" className={styles.homeGrid}>
           {neutralPhoneIndex.content.apps.map((app) => (
             <AppIcon
               key={app.id}

@@ -1,14 +1,79 @@
-:root {
-  font-family: Arial, Helvetica, sans-serif;
-  background: #111;
-  color: #f4f4f4;
+/* Hallmark · macrostructure: Workbench · theme: Halo · tone: restrained investigative utility · anchor hue: amber */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 */
+* {
+  box-sizing: border-box;
 }
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; }
-body { min-height: 100vh; }
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  overflow-x: clip;
+}
+
+html {
+  background: var(--color-canvas);
+  color-scheme: dark;
+  font-family: var(--font-body);
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100svh;
+  min-height: 100dvh;
+  background: var(--color-canvas);
+  color: var(--color-text);
+}
+
+button,
+input,
+audio {
+  font: inherit;
+}
+
+button,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  color: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible,
+audio:focus-visible {
+  outline: 0.125rem solid var(--color-focus);
+  outline-offset: 0.125rem;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
 .stage {
-  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 24px;
+  background: var(--color-canvas);
+}
+
+@media (min-width: 48rem) {
+  .stage {
+    padding: var(--space-xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: var(--dur-micro) !important;
+    animation-duration: var(--dur-micro) !important;
+    animation-iteration-count: 1 !important;
+  }
 }

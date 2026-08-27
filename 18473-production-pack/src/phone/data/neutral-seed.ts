@@ -183,7 +183,7 @@ const neutralSeedInput = {
           body: 'Бямба гарагт түр зуурын бороотой. Өдрийн дундаж 18°.',
           deepLinks: [
             {
-              label: 'Амралтын өдрийн зурвасыг нээх',
+              label: 'Төлөвлөгөөний зурвас нээх',
               target: { appId: 'messages', itemId: 'weekend-plan-thread' },
             },
           ],

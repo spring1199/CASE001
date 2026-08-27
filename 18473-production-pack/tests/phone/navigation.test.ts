@@ -95,4 +95,26 @@ describe('phone navigation', () => {
       itemId: link!.target.itemId,
     });
   });
+
+  it('returns from a cross-app deep link to the source app instead of its detail', () => {
+    const browserItem = neutralPhoneIndex.appsById.browser.items.find(
+      (item) => item.deepLinks && item.deepLinks.length > 0,
+    );
+    const target = browserItem?.deepLinks?.[0]?.target;
+    expect(browserItem).toBeDefined();
+    expect(target).toBeDefined();
+
+    let state = unlockPhone(createPhoneNavigationState());
+    state = navigateToApp(state, 'browser', neutralPhoneIndex, initiallyUnlocked);
+    state = navigateToItem(
+      state,
+      'browser',
+      browserItem!.id,
+      neutralPhoneIndex,
+      initiallyUnlocked,
+    );
+    state = navigateToDeepLink(state, target!, neutralPhoneIndex, initiallyUnlocked);
+
+    expect(goBack(state).current).toEqual({ screen: 'app', appId: 'browser' });
+  });
 });

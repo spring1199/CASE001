@@ -9,6 +9,7 @@ import type {
   PhoneItem,
   PhoneVisual,
 } from '@/phone/data/schema';
+import styles from '@/phone/phone.module.css';
 
 type ArtifactDetailProps = Readonly<{
   item: DeepReadonly<PhoneItem>;
@@ -33,8 +34,8 @@ function VisualArtifact({ visualId, title, visual }: VisualArtifactProps) {
 
   return (
     <>
-      <div data-visual-artifact={visualId}>
-        <figure>
+      <div data-visual-artifact={visualId} className={styles.visualArtifact}>
+        <figure className={styles.visualFigure}>
           <VisualMedia visual={visual} />
           <figcaption id={captionId}>{visual.description}</figcaption>
         </figure>
@@ -44,7 +45,8 @@ function VisualArtifact({ visualId, title, visual }: VisualArtifactProps) {
           aria-controls={`${visualId}-visual-dialog`}
           aria-describedby={captionId}
           onClick={() => dialogRef.current?.showModal()}
-          style={{ minHeight: 44, minWidth: 44 }}
+          className={styles.inspectButton}
+          data-action-label
         >
           Зургийг томруулах
         </button>
@@ -61,7 +63,7 @@ function VisualArtifact({ visualId, title, visual }: VisualArtifactProps) {
 
 function BodyText({ body }: Readonly<{ body: string }>) {
   return (
-    <div>
+    <div className={styles.bodyText}>
       {body.split('\n').map((line, index) => (
         <p key={`${index}:${line}`}>{line}</p>
       ))}
@@ -73,26 +75,29 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   return (
-    <article aria-labelledby={`${item.id}-title`}>
-      <header>
-        <h2 id={`${item.id}-title`}>{item.title}</h2>
-        {item.subtitle ? <p>{item.subtitle}</p> : null}
-        {item.timestampLabel ? <p>{item.timestampLabel}</p> : null}
+    <article aria-labelledby={`${item.id}-title`} className={styles.artifactDetail}>
+      <header className={styles.detailHeader}>
+        <h2 id={`${item.id}-title`} className={styles.detailTitle}>{item.title}</h2>
+        <div className={styles.detailMeta}>
+          {item.subtitle ? <span>{item.subtitle}</span> : null}
+          {item.timestampLabel ? <time className={styles.timestamp}>{item.timestampLabel}</time> : null}
+        </div>
       </header>
 
       {item.kind === 'message-thread' ? (
-        <ol aria-label="Зурвасын түүх">
+        <ol aria-label="Зурвасын түүх" className={styles.messageList}>
           {item.messages.map((message) => (
-            <li key={message.id}>
+            <li key={message.id} className={styles.messageListItem}>
               <article
                 data-message-direction={message.direction}
                 aria-label={`${MESSAGE_DIRECTION_LABELS[message.direction]} зурвас · ${message.senderLabel} · ${message.timestampLabel}`}
+                className={styles.messageBubble}
               >
-                <header>
-                  <strong>{message.senderLabel}</strong>
-                  <span>{MESSAGE_DIRECTION_LABELS[message.direction]}</span>
-                  <time>{message.timestampLabel}</time>
-                  {!message.read ? <span>Уншаагүй</span> : null}
+                <header className={styles.messageHeader}>
+                  <strong className={styles.messageSender}>{message.senderLabel}</strong>
+                  <span className={styles.directionLabel}>{MESSAGE_DIRECTION_LABELS[message.direction]}</span>
+                  <time className={styles.timestamp}>{message.timestampLabel}</time>
+                  {!message.read ? <span className={styles.unreadMarker}>Уншаагүй</span> : null}
                 </header>
                 {message.body ? <BodyText body={message.body} /> : null}
                 {message.visual ? (
@@ -126,7 +131,8 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
             aria-haspopup="dialog"
             aria-controls={`${item.id}-metadata-dialog`}
             onClick={() => dialogRef.current?.showModal()}
-            style={{ minHeight: 44, minWidth: 44 }}
+            className={styles.inspectButton}
+            data-action-label
           >
             Метадата шалгах
           </button>
@@ -140,13 +146,14 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
       ) : null}
 
       {item.deepLinks && item.deepLinks.length > 0 ? (
-        <nav aria-label="Холбоотой зүйлс">
+        <nav aria-label="Холбоотой зүйлс" className={styles.deepLinks}>
           {item.deepLinks.map((link) => (
             <button
               key={`${link.target.appId}:${link.target.itemId ?? ''}`}
               type="button"
               onClick={() => onOpenDeepLink(link.target)}
-              style={{ minHeight: 44, minWidth: 44 }}
+              className={styles.deepLinkButton}
+              data-action-label
             >
               {link.label}
             </button>

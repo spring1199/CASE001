@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import type { DeepReadonly, PhoneAppDescriptor, PhoneItem } from '@/phone/data/schema';
+import styles from '@/phone/phone.module.css';
 
 type PhoneAppViewProps = Readonly<{
   app: DeepReadonly<PhoneAppDescriptor>;
@@ -41,44 +42,58 @@ export function PhoneAppView({
       : availableItems;
 
   return (
-    <section aria-labelledby={`${app.id}-app-heading`}>
-      <h2 id={`${app.id}-app-heading`}>{app.label}</h2>
+    <section
+      aria-labelledby={`${app.id}-app-heading`}
+      className={styles.appShell}
+      data-app-shell={app.id}
+    >
+      <h2 id={`${app.id}-app-heading`} className={styles.appHeading}>{app.label}</h2>
 
       {app.id === 'browser' ? (
-        <search>
-          <label htmlFor="browser-saved-page-search">Хадгалсан хуудсаас хайх</label>
+        <search className={styles.searchForm}>
+          <label htmlFor="browser-saved-page-search" className={styles.searchLabel}>
+            Хадгалсан хуудсаас хайх
+          </label>
           <input
             id="browser-saved-page-search"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
-            style={{ minHeight: 44 }}
+            className={styles.searchInput}
           />
         </search>
       ) : null}
 
       {visibleItems.length > 0 ? (
-        <ol aria-label={LIST_LABELS[app.id]} data-app-list={app.id}>
+        <ol
+          aria-label={LIST_LABELS[app.id]}
+          data-app-list={app.id}
+          data-gallery-layout={app.id === 'gallery' ? 'timeline-grid' : undefined}
+          className={app.id === 'gallery' ? styles.galleryList : styles.itemList}
+        >
           {visibleItems.map((item) => (
-            <li key={item.id}>
+            <li
+              key={item.id}
+              className={app.id === 'gallery' ? styles.galleryListItem : styles.itemListItem}
+            >
               <button
                 type="button"
                 onClick={() => onOpenItem(item)}
-                style={{ minHeight: 44, minWidth: 44 }}
+                className={styles.listButton}
               >
-                <strong>{item.title}</strong>
-                {item.subtitle ? <span>{item.subtitle}</span> : null}
-                {item.timestampLabel ? <time>{item.timestampLabel}</time> : null}
+                <strong className={styles.itemTitle}>{item.title}</strong>
+                {item.subtitle ? <span className={styles.itemSubtitle}>{item.subtitle}</span> : null}
+                {item.timestampLabel ? <time className={styles.timestamp}>{item.timestampLabel}</time> : null}
                 {item.kind === 'message-thread' && item.messages.some((message) => !message.read) ? (
-                  <span>Уншаагүй</span>
+                  <span className={styles.unreadMarker}>Уншаагүй</span>
                 ) : null}
-                {item.visual ? <span>{item.visual.alt}</span> : null}
+                {item.visual ? <span className={styles.visualAlt}>{item.visual.alt}</span> : null}
               </button>
             </li>
           ))}
         </ol>
       ) : (
-        <p role="status">Харуулах зүйл алга.</p>
+        <p role="status" className={styles.emptyState}>Харуулах зүйл алга.</p>
       )}
     </section>
   );

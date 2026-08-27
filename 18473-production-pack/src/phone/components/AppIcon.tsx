@@ -1,4 +1,5 @@
 import type { PhoneAppDescriptor } from '@/phone/data/schema';
+import styles from '@/phone/phone.module.css';
 
 type AppIconProps = Readonly<{
   app: Readonly<Pick<PhoneAppDescriptor, 'iconLabel' | 'label' | 'shortLabel'>>;
@@ -15,11 +16,11 @@ export function AppIcon({ app, locked, onActivate }: AppIconProps) {
       aria-disabled={locked || undefined}
       aria-label={accessibleLabel}
       onClick={onActivate}
-      style={{ minHeight: 44, minWidth: 44 }}
+      className={styles.appIcon}
     >
-      <span aria-hidden="true">{app.label.slice(0, 1)}</span>
-      <span>{app.shortLabel}</span>
-      {locked ? <span aria-hidden="true"> · Түгжээтэй</span> : null}
+      <span aria-hidden="true" className={styles.appGlyph}>{app.label.slice(0, 1)}</span>
+      <span className={styles.appLabel}>{app.shortLabel}</span>
+      {locked ? <span aria-hidden="true" className={styles.lockBadge}>Түгжээтэй</span> : null}
     </button>
   );
 }
