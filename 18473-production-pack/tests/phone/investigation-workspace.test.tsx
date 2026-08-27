@@ -141,6 +141,9 @@ describe('investigation workspace semantics', () => {
     expect(markup).toContain('Шийдээгүй');
     expect(markup).toContain('Холбоог батлах');
     expect(markup).toContain('Холбоог таслах');
+    expect(markup).toContain('aria-label="Дүгнэлтийг шалгах: Дохионы давхцал"');
+    expect(markup).toContain('aria-label="Холбоог батлах: Дохионы холбоо"');
+    expect(markup).toContain('aria-label="Холбоог таслах: Дохионы холбоо"');
     expect(markup.indexOf('>Альфа</')).toBeLessThan(markup.indexOf('>Бета</'));
   });
 

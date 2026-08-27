@@ -8,6 +8,7 @@ import {
 import {
   DEFAULT_PRESENTATION_CHECKPOINT,
   PresentationCheckpointStorage,
+  presentationStageForEnding,
   resetEndingPresentation,
   setEndingPresentationStage,
 } from '@/phone/polish/presentation-storage';
@@ -77,6 +78,7 @@ describe('presentation checkpoint storage', () => {
     const checkpoint = {
       version: 1 as const,
       acknowledgedBeatKeys: ['hope3:signal'],
+      endingId: 'ending_alpha',
       endingStage: 'aftermath' as const,
     };
 
@@ -89,17 +91,31 @@ describe('presentation checkpoint storage', () => {
     const checkpoint = {
       version: 1 as const,
       acknowledgedBeatKeys: ['opaque:beat'],
+      endingId: 'ending_alpha',
       endingStage: 'aftermath' as const,
     };
 
-    expect(setEndingPresentationStage(checkpoint, 'closure')).toEqual({
+    expect(setEndingPresentationStage(checkpoint, 'ending_alpha', 'closure')).toEqual({
       ...checkpoint,
       endingStage: 'closure',
     });
-    expect(resetEndingPresentation(checkpoint)).toEqual({
+    expect(resetEndingPresentation(checkpoint, 'ending_beta')).toEqual({
       ...checkpoint,
+      endingId: 'ending_beta',
       endingStage: 'decision',
     });
+    expect(presentationStageForEnding(checkpoint, 'ending_alpha')).toBe('aftermath');
+    expect(presentationStageForEnding(checkpoint, 'ending_beta')).toBe('decision');
+  });
+
+  test('keeps a volatile in-session round trip when persistent storage is denied', () => {
+    const denied = () => { throw new Error('denied'); };
+    const key = 'test:presentation:volatile';
+    const first = new PresentationCheckpointStorage(denied, key);
+    const checkpoint = resetEndingPresentation(DEFAULT_PRESENTATION_CHECKPOINT, 'ending_volatile');
+
+    expect(first.save(checkpoint)).toBe(false);
+    expect(new PresentationCheckpointStorage(denied, key).load()).toEqual(checkpoint);
   });
 
   test('falls back safely for corrupt, stale, or unavailable storage', () => {

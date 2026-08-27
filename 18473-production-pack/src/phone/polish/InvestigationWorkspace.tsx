@@ -96,6 +96,7 @@ export function InvestigationWorkspace({
                   type="button"
                   className={styles.secondaryButton}
                   disabled={actionPending}
+                  aria-label={`Дүгнэлтийг шалгах: ${deduction.title}`}
                   onClick={() => void onEvent({
                     type: 'attempt-deduction',
                     deductionId: deduction.id,

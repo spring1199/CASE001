@@ -38,6 +38,8 @@ export function EndingSequence({
   stage,
   onStageChange,
 }: EndingSequenceProps) {
+  // Task 5 PresentationLayer supplies the approved gated final phone beats;
+  // this workbench sequence intentionally stays structural.
   const followingStage = nextEndingStage(stage);
 
   const advance = (): void => {

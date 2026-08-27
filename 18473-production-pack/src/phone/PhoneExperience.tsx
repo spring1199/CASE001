@@ -9,19 +9,29 @@ import { LocalStoragePersistenceAdapter } from '@/game/persistence/adapter';
 import { applyEngineTransition } from '@/game/runtime/case-runtime';
 import type { PlayerCaseEngineEvent } from '@/game/schema/case-view';
 import { createPlayerStore } from '@/game/state/store';
+import type { PlayerState } from '@/game/state/types';
 import { ArtifactDetail } from '@/phone/apps/ArtifactDetail';
 import { PhoneAppView } from '@/phone/apps/PhoneAppView';
 import { AppIcon } from '@/phone/components/AppIcon';
 import { PhoneChrome, type ExperienceSurface } from '@/phone/components/PhoneChrome';
-import { requestCasePhoneProjection } from '@/phone/case-runtime-client';
+import {
+  requestCasePhoneProjection,
+  type CasePhoneProjection,
+} from '@/phone/case-runtime-client';
 import { InvestigationWorkspace } from '@/phone/polish/InvestigationWorkspace';
 import {
   PresentationCheckpointStorage,
+  presentationStageForEnding,
   resetEndingPresentation,
   setEndingPresentationStage,
   type EndingPresentationStage,
   type PresentationCheckpoint,
 } from '@/phone/polish/presentation-storage';
+import {
+  RuntimeMutationError,
+  RuntimeMutationQueue,
+  shouldFocusAfterRuntimeOutcomes,
+} from '@/phone/runtime-mutation-queue';
 import type {
   DeepReadonly,
   PhoneAppDescriptor,
@@ -77,10 +87,11 @@ function discoveryChanged(
 }
 
 export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
+  const [persistenceAdapter] = useState(() => new LocalStoragePersistenceAdapter());
   const [playerStore] = useState(() =>
     createPlayerStore({
       caseId: caseSummary.id,
-      adapter: new LocalStoragePersistenceAdapter(),
+      adapter: persistenceAdapter,
     }),
   );
   const [presentationStorage] = useState(() => new PresentationCheckpointStorage());
@@ -95,7 +106,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const [navigation, setNavigation] = useState(createPhoneNavigationState);
   const [activeSurface, setActiveSurface] = useState<ExperienceSurface>('phone');
   const [status, setStatus] = useState('Төхөөрөмж түгжээтэй байна.');
-  const [caseActionPending, setCaseActionPending] = useState(false);
+  const [runtimeMutationPending, setRuntimeMutationPending] = useState(false);
+  const [retryRuntimeMutation, setRetryRuntimeMutation] = useState<(() => void) | null>(null);
+  const [presentationPersistenceLimited, setPresentationPersistenceLimited] = useState(false);
+  const [focusStatusRevision, setFocusStatusRevision] = useState(0);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [initializationFailure, setInitializationFailure] =
     useState<PhoneInitializationFailure | null>(null);
@@ -103,12 +117,19 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     Partial<Record<PhoneAppId, string>>
   >({});
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const actionStatusRef = useRef<HTMLParagraphElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
-  const caseActionPendingRef = useRef(false);
   const presentationCheckpointRef = useRef(presentationCheckpoint);
   const scrollPositionsRef = useRef(new Map<string, number>());
   const scrollNavigationModeRef = useRef<ScrollNavigationMode>('reset');
   const currentRouteKey = phoneRouteKey(navigation.current);
+  const runtimeMutationQueue = useMemo(() => (
+    new RuntimeMutationQueue<PlayerState, CasePhoneProjection>({
+      getLatestState: () => playerStore.getState().playerState,
+      persistProjectedState: (state) => persistenceAdapter.save(state),
+      onPendingChange: setRuntimeMutationPending,
+    })
+  ), [persistenceAdapter, playerStore]);
 
   const prepareNavigation = useCallback(
     (mode: ScrollNavigationMode): void => {
@@ -169,76 +190,86 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     );
   };
 
-  const refreshProjection = useCallback(async (discovery?: PhoneDiscoveryEffects) => {
-    const previous = playerStore.getState().playerState;
-    const projection = await requestCasePhoneProjection(previous, discovery);
+  const applyProjection = useCallback((
+    previous: PlayerState,
+    projection: CasePhoneProjection,
+  ): void => {
     applyEngineTransition(playerStore, previous, projection.state);
     setPhoneIndex(projection.phoneIndex);
     setGatedContentIds(projection.gatedContentIds);
     setCaseView(projection.view);
-    await playerStore.getState().actions.save();
-    return discoveryChanged(previous, projection.state);
+    void playerStore.getState().actions.save().catch(() => {
+      setStatus('Үндсэн ахиц хадгалагдсан ч хугацааны тэмдгийг шинэчилж чадсангүй.');
+    });
   }, [playerStore]);
+
+  const refreshProjection = useCallback(async (discovery?: PhoneDiscoveryEffects) => {
+    let change = { information: false, unlocks: false };
+    await runtimeMutationQueue.enqueue(
+      (latestState) => requestCasePhoneProjection(latestState, discovery),
+      (previous, projection) => {
+        change = discoveryChanged(previous, projection.state);
+        applyProjection(previous, projection);
+      },
+    );
+    return change;
+  }, [applyProjection, runtimeMutationQueue]);
 
   const commitPresentationCheckpoint = useCallback((checkpoint: PresentationCheckpoint): void => {
     presentationCheckpointRef.current = checkpoint;
     setPresentationCheckpoint(checkpoint);
-    presentationStorage.save(checkpoint);
+    if (!presentationStorage.save(checkpoint)) setPresentationPersistenceLimited(true);
   }, [presentationStorage]);
 
   const updateEndingStage = useCallback((stage: EndingPresentationStage): void => {
+    const endingId = caseView?.ending?.endingId;
+    if (endingId === undefined) return;
     commitPresentationCheckpoint(setEndingPresentationStage(
       presentationCheckpointRef.current,
+      endingId,
       stage,
     ));
-  }, [commitPresentationCheckpoint]);
+  }, [caseView?.ending?.endingId, commitPresentationCheckpoint]);
 
-  const dispatchCaseEvent = useCallback(async (event: PlayerCaseEngineEvent): Promise<void> => {
-    if (caseActionPendingRef.current) return;
-    caseActionPendingRef.current = true;
-    setCaseActionPending(true);
+  async function dispatchCaseEvent(event: PlayerCaseEngineEvent): Promise<void> {
+    setRetryRuntimeMutation(null);
     setStatus('Мөрдлөгийн үйлдлийг шалгаж байна.');
 
     try {
-      const previous = playerStore.getState().playerState;
-      const projection = await requestCasePhoneProjection(previous, undefined, event).catch(() => {
-        setStatus('Мөрдлөгийн төлөвийг шинэчилж чадсангүй. Өмнөх төлөв хэвээр байна.');
-        return null;
-      });
-      if (projection === null) return;
-
-      if (projection.outcomes.some((outcome) => outcome.type === 'ending-selected')) {
-        commitPresentationCheckpoint(resetEndingPresentation(
-          presentationCheckpointRef.current,
-        ));
-      }
-
-      applyEngineTransition(playerStore, previous, projection.state);
-      setPhoneIndex(projection.phoneIndex);
-      setGatedContentIds(projection.gatedContentIds);
-      setCaseView(projection.view);
-      const saveSucceeded = await playerStore.getState().actions.save().then(
-        () => true,
-        () => false,
+      const projection = await runtimeMutationQueue.enqueue(
+        (latestState) => requestCasePhoneProjection(latestState, undefined, event),
+        (previous, committedProjection) => {
+          const selectedEndingId = committedProjection.view.ending?.endingId;
+          if (
+            selectedEndingId !== undefined
+            && committedProjection.outcomes.some(({ type }) => type === 'ending-selected')
+            && presentationCheckpointRef.current.endingId !== selectedEndingId
+          ) {
+            commitPresentationCheckpoint(resetEndingPresentation(
+              presentationCheckpointRef.current,
+              selectedEndingId,
+            ));
+          }
+          applyProjection(previous, committedProjection);
+          if (shouldFocusAfterRuntimeOutcomes(committedProjection.outcomes)) {
+            setFocusStatusRevision((revision) => revision + 1);
+          }
+        },
       );
-      if (!saveSucceeded) {
-        setStatus('Шинэ төлөвийг хадгалж чадсангүй. Дахин оролдоно уу.');
-        return;
-      }
       setStatus(projection.outcomes.some((outcome) => outcome.type.endsWith('rejected'))
         ? 'Энэ үйлдлийг одоогоор гүйцэтгэх боломжгүй байна.'
         : projection.outcomes.length > 0
           ? 'Мөрдлөгийн төлөв шинэчлэгдлээ.'
           : 'Шинэ өөрчлөлт бүртгэгдсэнгүй.');
-    } catch {
-      setStatus('Мөрдлөгийн үйлдлийг дуусгаж чадсангүй. Дахин оролдоно уу.');
-    } finally {
-      caseActionPendingRef.current = false;
-      setCaseActionPending(false);
+    } catch (error) {
+      setStatus(error instanceof RuntimeMutationError && error.stage === 'persist'
+        ? 'Өөрчлөлтийг хадгалж чадсангүй. Өмнөх төлөв хэвээр байна.'
+        : 'Мөрдлөгийн төлөвийг шинэчилж чадсангүй. Өмнөх төлөв хэвээр байна.');
+      setRetryRuntimeMutation(() => () => { void dispatchCaseEvent(event); });
     }
-  }, [commitPresentationCheckpoint, playerStore]);
+  }
 
-  const recordDiscovery = (item: DeepReadonly<PhoneItem>): void => {
+  function recordDiscovery(item: DeepReadonly<PhoneItem>): void {
     if (!item.discovery || !hasDiscoveries(item)) return;
     const discovery: PhoneDiscoveryEffects = {
       artifactIds: item.discovery.artifactIds ? [...item.discovery.artifactIds] : undefined,
@@ -248,17 +279,24 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         ? [...item.discovery.unlockContentIds]
         : undefined,
     };
+    setRetryRuntimeMutation(null);
     void refreshProjection(discovery).then(
-      (changed) => setStatus(
-        changed.unlocks
-          ? 'Шинэ агуулга нээгдлээ.'
-          : changed.information
-            ? 'Шинэ мэдээлэл бүртгэгдлээ.'
-            : 'Энэ мэдээлэл өмнө бүртгэгдсэн байна.',
-      ),
-      () => setStatus('Илрүүлэлтийг хадгалж чадсангүй.'),
+      (changed) => {
+        setRetryRuntimeMutation(null);
+        setStatus(
+          changed.unlocks
+            ? 'Шинэ агуулга нээгдлээ.'
+            : changed.information
+              ? 'Шинэ мэдээлэл бүртгэгдлээ.'
+              : 'Энэ мэдээлэл өмнө бүртгэгдсэн байна.',
+        );
+      },
+      () => {
+        setStatus('Илрүүлэлтийг хадгалж чадсангүй. Өмнөх төлөв хэвээр байна.');
+        setRetryRuntimeMutation(() => () => recordDiscovery(item));
+      },
     );
-  };
+  }
 
   useLayoutEffect(() => {
     const scrollRegion = scrollRegionRef.current;
@@ -270,6 +308,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     }
     headingRef.current?.focus({ preventScroll: true });
   }, [navigation]);
+
+  useLayoutEffect(() => {
+    if (focusStatusRevision > 0) actionStatusRef.current?.focus({ preventScroll: true });
+  }, [focusStatusRevision]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -363,6 +405,23 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     if (!targetItem || !hasDiscoveries(targetItem)) setStatus('Холбоотой зүйл нээгдлээ.');
   };
 
+  function unlockDevice(): void {
+    setIsUnlocking(true);
+    setRetryRuntimeMutation(null);
+    setStatus('Хэргийн өгөгдлийг аюулгүй ачаалж байна.');
+    void refreshProjection().then(
+      () => {
+        prepareNavigation('reset');
+        setNavigation((current) => unlockPhone(current));
+        setStatus('Төхөөрөмжийн түгжээ тайлагдлаа.');
+      },
+      () => {
+        setStatus('Хэргийн өгөгдлийг хадгалж ачаалж чадсангүй. Өмнөх төлөв хэвээр байна.');
+        setRetryRuntimeMutation(() => unlockDevice);
+      },
+    ).finally(() => setIsUnlocking(false));
+  }
+
   if (navigation.current.screen === 'lock') {
     return (
       <section
@@ -383,19 +442,8 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
             type="button"
             className={styles.primaryButton}
             data-action-label
-            disabled={hydrationStatus !== 'hydrated' || isUnlocking}
-            onClick={() => {
-              setIsUnlocking(true);
-              setStatus('Хэргийн өгөгдлийг аюулгүй ачаалж байна.');
-              void refreshProjection().then(
-                () => {
-                  prepareNavigation('reset');
-                  setNavigation((current) => unlockPhone(current));
-                  setStatus('Төхөөрөмжийн түгжээ тайлагдлаа.');
-                },
-                () => setStatus('Хэргийн өгөгдлийг ачаалж чадсангүй.'),
-              ).finally(() => setIsUnlocking(false));
-            }}
+            disabled={hydrationStatus !== 'hydrated' || isUnlocking || runtimeMutationPending}
+            onClick={unlockDevice}
           >
             Түгжээ тайлах
           </button>
@@ -410,6 +458,17 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
               onClick={retryInitialization}
             >
               Дахин оролдох
+            </button>
+          ) : null}
+          {retryRuntimeMutation && !initializationFailure ? (
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              data-action-label
+              disabled={runtimeMutationPending}
+              onClick={retryRuntimeMutation}
+            >
+              Хадгалалтыг дахин оролдох
             </button>
           ) : null}
         </div>
@@ -461,9 +520,21 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           : 'Мөрдлөгийн ажлын талбар нээгдлээ.');
       }}
     >
-      <p role="status" aria-live="polite" className={styles.statusMessage}>
+      <p
+        ref={actionStatusRef}
+        role="status"
+        aria-live="polite"
+        aria-label="Мөрдлөгийн үйлдлийн төлөв"
+        tabIndex={-1}
+        className={styles.statusMessage}
+      >
         {hydrationStatus === 'hydrating' ? 'Хадгалсан төлөвийг ачаалж байна.' : status}
       </p>
+      {presentationPersistenceLimited ? (
+        <p role="status" className={styles.statusMessage}>
+          Үзүүлэнгийн шат зөвхөн энэ сешнд хадгалагдана.
+        </p>
+      ) : null}
       {initializationFailure ? (
         <button
           type="button"
@@ -472,6 +543,16 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           onClick={retryInitialization}
         >
           Дахин оролдох
+        </button>
+      ) : null}
+      {retryRuntimeMutation ? (
+        <button
+          type="button"
+          className={styles.secondaryButton}
+          disabled={runtimeMutationPending}
+          onClick={retryRuntimeMutation}
+        >
+          Үйлдлийг дахин оролдох
         </button>
       ) : null}
 
@@ -527,8 +608,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         {caseView ? (
           <InvestigationWorkspace
             view={caseView}
-            actionPending={caseActionPending}
-            endingStage={presentationCheckpoint.endingStage ?? 'decision'}
+            actionPending={runtimeMutationPending}
+            endingStage={caseView.ending
+              ? presentationStageForEnding(presentationCheckpoint, caseView.ending.endingId)
+              : 'decision'}
             onEndingStageChange={updateEndingStage}
             onEvent={dispatchCaseEvent}
           />

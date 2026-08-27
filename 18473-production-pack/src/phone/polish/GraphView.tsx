@@ -62,6 +62,7 @@ export function GraphView({ graph, actionPending, onEvent }: GraphViewProps) {
                         type="button"
                         className={styles.secondaryButton}
                         disabled={actionPending}
+                        aria-label={`Холбоог батлах: ${edge.label ?? `${nodeLabels.get(edge.fromNodeId) ?? 'Тодорхойгүй'} → ${nodeLabels.get(edge.toNodeId) ?? 'Тодорхойгүй'}`}`}
                         onClick={() => void onEvent({
                           type: 'confirm-graph-edges',
                           edgeIds: [edge.id],
@@ -75,6 +76,7 @@ export function GraphView({ graph, actionPending, onEvent }: GraphViewProps) {
                         type="button"
                         className={styles.secondaryButton}
                         disabled={actionPending}
+                        aria-label={`Холбоог таслах: ${edge.label ?? `${nodeLabels.get(edge.fromNodeId) ?? 'Тодорхойгүй'} → ${nodeLabels.get(edge.toNodeId) ?? 'Тодорхойгүй'}`}`}
                         onClick={() => void onEvent({
                           type: 'sever-graph-edges',
                           edgeIds: [edge.id],
