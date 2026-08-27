@@ -124,12 +124,19 @@ export class AudioDirector {
   async activateFromUserGesture(): Promise<boolean> {
     if (this.disposed) return false;
     if (this.context === null) {
+      let createdContext: AudioContextPort | null = null;
       try {
-        this.context = this.contextFactory();
-        if (this.context === null) return false;
-        this.createMixGraph(this.context);
+        createdContext = this.contextFactory();
+        if (createdContext === null) return false;
+        this.context = createdContext;
+        this.createMixGraph(createdContext);
       } catch {
-        this.context = null;
+        if (this.context === createdContext) this.context = null;
+        this.disconnectTrackedNodes();
+        this.clearMixGraphReferences();
+        if (createdContext !== null) {
+          try { await createdContext.close(); } catch { /* failed context is already unusable */ }
+        }
         return false;
       }
     }
@@ -151,6 +158,7 @@ export class AudioDirector {
   }
 
   updatePreferences(preferences: AudioPreferences): void {
+    if (this.disposed) return;
     this.preferences = preferences;
     this.applyMixLevels();
     if (preferences.ambienceEnabled) this.startAmbience();
@@ -163,7 +171,7 @@ export class AudioDirector {
 
   playCue(cue: AudioCue): void {
     const context = this.context;
-    if (!this.activated || context === null || this.preferences.mute) return;
+    if (this.disposed || !this.activated || context === null || this.preferences.mute) return;
     const spec = CUE_SPEC[cue];
     const destination = spec.category === 'reveal' ? this.revealGain : this.interfaceGain;
     if (destination === null) return;
@@ -193,6 +201,7 @@ export class AudioDirector {
   }
 
   setNativeAudioActive(active: boolean): void {
+    if (this.disposed) return;
     const context = this.context;
     const duck = this.duckGain;
     if (context === null || duck === null) return;
@@ -216,6 +225,7 @@ export class AudioDirector {
   dispose(): Promise<void> {
     if (this.disposePromise !== null) return this.disposePromise;
     this.disposed = true;
+    this.activated = false;
     this.disposePromise = this.disposeResources();
     return this.disposePromise;
   }
@@ -223,20 +233,12 @@ export class AudioDirector {
   private async disposeResources(): Promise<void> {
     this.visibility?.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.stopAmbience();
-    for (const node of this.nodes) {
-      try { node.disconnect(); } catch { /* already disconnected */ }
-    }
-    this.nodes.clear();
+    this.disconnectTrackedNodes();
     if (this.context !== null) {
       try { await this.context.close(); } catch { /* already closed */ }
     }
     this.context = null;
-    this.masterGain = null;
-    this.duckGain = null;
-    this.interfaceGain = null;
-    this.revealGain = null;
-    this.ambienceGain = null;
-    this.activated = false;
+    this.clearMixGraphReferences();
   }
 
   private createMixGraph(context: AudioContextPort): void {
@@ -266,21 +268,28 @@ export class AudioDirector {
     const context = this.context;
     const destination = this.ambienceGain;
     if (!this.activated || context === null || destination === null || this.ambienceSource !== null) return;
+    let source: BufferSourceNodePort | null = null;
     try {
       const sampleCount = Math.max(1, Math.floor(context.sampleRate * 2));
       const buffer = context.createBuffer(1, sampleCount, context.sampleRate);
       fillRestrainedNoise(buffer.getChannelData(0));
-      const source = this.track(context.createBufferSource());
-      source.buffer = buffer;
-      source.loop = true;
-      source.onended = () => {
-        if (this.ambienceSource === source) this.ambienceSource = null;
-        this.releaseNodes([source], source);
+      source = this.track(context.createBufferSource());
+      const ambienceSource = source;
+      ambienceSource.buffer = buffer;
+      ambienceSource.loop = true;
+      ambienceSource.onended = () => {
+        if (this.ambienceSource === ambienceSource) this.ambienceSource = null;
+        this.releaseNodes([ambienceSource], ambienceSource);
       };
-      source.connect(destination);
-      source.start();
-      this.ambienceSource = source;
+      ambienceSource.connect(destination);
+      ambienceSource.start();
+      this.ambienceSource = ambienceSource;
     } catch {
+      if (source !== null) {
+        source.onended = null;
+        try { source.stop(); } catch { /* source never started or already stopped */ }
+        this.releaseNodes([source], source);
+      }
       this.ambienceSource = null;
     }
   }
@@ -297,21 +306,32 @@ export class AudioDirector {
   private playNoiseBurst(destination: AudioNodePort, duration: number, peak: number): void {
     const context = this.context;
     if (context === null) return;
-    const samples = Math.max(1, Math.floor(context.sampleRate * duration));
-    const buffer = context.createBuffer(1, samples, context.sampleRate);
-    fillRestrainedNoise(buffer.getChannelData(0));
-    const source = this.track(context.createBufferSource());
-    const envelope = this.track(context.createGain());
-    const oneShotNodes = [source, envelope] as const;
-    source.onended = () => this.releaseNodes(oneShotNodes, source);
-    const now = context.currentTime;
-    source.buffer = buffer;
-    envelope.gain.setValueAtTime(peak, now);
-    envelope.gain.linearRampToValueAtTime(0, now + duration);
-    source.connect(envelope);
-    envelope.connect(destination);
-    source.start(now);
-    source.stop(now + duration);
+    let source: BufferSourceNodePort | null = null;
+    let envelope: GainNodePort | null = null;
+    try {
+      const samples = Math.max(1, Math.floor(context.sampleRate * duration));
+      const buffer = context.createBuffer(1, samples, context.sampleRate);
+      fillRestrainedNoise(buffer.getChannelData(0));
+      source = this.track(context.createBufferSource());
+      envelope = this.track(context.createGain());
+      const oneShotNodes = [source, envelope] as const;
+      source.onended = () => this.releaseNodes(oneShotNodes, source ?? undefined);
+      const now = context.currentTime;
+      source.buffer = buffer;
+      envelope.gain.setValueAtTime(peak, now);
+      envelope.gain.linearRampToValueAtTime(0, now + duration);
+      source.connect(envelope);
+      envelope.connect(destination);
+      source.start(now);
+      source.stop(now + duration);
+    } catch (error) {
+      if (source !== null) {
+        source.onended = null;
+        try { source.stop(); } catch { /* source never started or already stopped */ }
+      }
+      this.releaseNodes([source, envelope], source ?? undefined);
+      throw error;
+    }
   }
 
   private track<Node extends AudioNodePort>(node: Node): Node {
@@ -328,6 +348,22 @@ export class AudioDirector {
       if (node === null || !this.nodes.delete(node)) continue;
       try { node.disconnect(); } catch { /* already disconnected */ }
     }
+  }
+
+  private disconnectTrackedNodes(): void {
+    for (const node of this.nodes) {
+      if ('buffer' in node) (node as BufferSourceNodePort).buffer = null;
+      try { node.disconnect(); } catch { /* already disconnected */ }
+    }
+    this.nodes.clear();
+  }
+
+  private clearMixGraphReferences(): void {
+    this.masterGain = null;
+    this.duckGain = null;
+    this.interfaceGain = null;
+    this.revealGain = null;
+    this.ambienceGain = null;
   }
 }
 

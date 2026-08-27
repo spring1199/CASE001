@@ -277,4 +277,101 @@ describe('AudioDirector', () => {
     expect(fake.bufferSources).toHaveLength(0);
     await director.dispose();
   });
+
+  test('deactivates synchronously and ignores public audio mutations while close is deferred', async () => {
+    const fake = createFakeContext();
+    const close = deferred();
+    fake.context.close = vi.fn(() => close.promise);
+    const director = new AudioDirector({ contextFactory: () => fake.context });
+    await director.activateFromUserGesture();
+
+    const initialGainCount = fake.gains.length;
+    const initialOscillatorCount = fake.oscillators.length;
+    const initialSourceCount = fake.bufferSources.length;
+    const duckGain = fake.gains[1]?.gain as AudioParamPort;
+    const initialDuckRamps = vi.mocked(duckGain.linearRampToValueAtTime).mock.calls.length;
+    const initialResumes = vi.mocked(fake.context.resume).mock.calls.length;
+    const disposal = director.dispose();
+
+    director.playCue('reveal');
+    director.updatePreferences({ ...DEFAULT_AUDIO_PREFERENCES, ambienceEnabled: true });
+    director.setAmbienceEnabled(true);
+    director.setNativeAudioActive(true);
+    await director.handleVisibilityChange(false);
+
+    expect(fake.gains).toHaveLength(initialGainCount);
+    expect(fake.oscillators).toHaveLength(initialOscillatorCount);
+    expect(fake.bufferSources).toHaveLength(initialSourceCount);
+    expect(duckGain.linearRampToValueAtTime).toHaveBeenCalledTimes(initialDuckRamps);
+    expect(fake.context.resume).toHaveBeenCalledTimes(initialResumes);
+
+    close.resolve();
+    await disposal;
+  });
+
+  test('cleans partial ambience connect and start failures without retaining sources', async () => {
+    for (const failure of ['connect', 'start'] as const) {
+      const fake = createFakeContext();
+      const originalCreateSource = fake.context.createBufferSource;
+      fake.context.createBufferSource = vi.fn(() => {
+        const source = originalCreateSource();
+        source[failure] = vi.fn(() => { throw new Error(`${failure} failed`); });
+        return source;
+      });
+      const director = new AudioDirector({ contextFactory: () => fake.context });
+      await director.activateFromUserGesture();
+
+      director.setAmbienceEnabled(true);
+      const source = fake.bufferSources[0];
+      expect(source).toBeDefined();
+      expect(source?.buffer).toBeNull();
+      expect(source?.disconnect).toHaveBeenCalledOnce();
+
+      await director.dispose();
+      expect(source?.disconnect).toHaveBeenCalledOnce();
+    }
+  });
+
+  test('cleans partial noise-burst start failures without retaining transient nodes', async () => {
+    const fake = createFakeContext();
+    const originalCreateSource = fake.context.createBufferSource;
+    fake.context.createBufferSource = vi.fn(() => {
+      const source = originalCreateSource();
+      source.start = vi.fn(() => { throw new Error('start failed'); });
+      return source;
+    });
+    const director = new AudioDirector({ contextFactory: () => fake.context });
+    await director.activateFromUserGesture();
+
+    director.playCue('reveal');
+    const transientGains = fake.gains.slice(5);
+    expect(fake.bufferSources[0]?.buffer).toBeNull();
+    expect([...fake.oscillators, ...fake.bufferSources, ...transientGains]
+      .every((node) => vi.mocked(node.disconnect).mock.calls.length === 1)).toBe(true);
+
+    await director.dispose();
+    expect([...fake.oscillators, ...fake.bufferSources, ...transientGains]
+      .every((node) => vi.mocked(node.disconnect).mock.calls.length === 1)).toBe(true);
+  });
+
+  test('cleans and closes a partially constructed mix graph', async () => {
+    const fake = createFakeContext();
+    const originalCreateGain = fake.context.createGain;
+    let gainCalls = 0;
+    fake.context.createGain = vi.fn(() => {
+      gainCalls += 1;
+      if (gainCalls === 3) throw new Error('mix graph failed');
+      return originalCreateGain();
+    });
+    const director = new AudioDirector({ contextFactory: () => fake.context });
+
+    expect(await director.activateFromUserGesture()).toBe(false);
+    expect(fake.gains).toHaveLength(2);
+    expect(fake.gains.every((node) => vi.mocked(node.disconnect).mock.calls.length === 1)).toBe(true);
+    expect(fake.context.close).toHaveBeenCalledOnce();
+
+    await director.dispose();
+    expect(fake.gains.every((node) => vi.mocked(node.disconnect).mock.calls.length === 1)).toBe(true);
+    expect(fake.context.close).toHaveBeenCalledOnce();
+  });
 });
