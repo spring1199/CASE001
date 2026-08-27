@@ -6,7 +6,7 @@
 
 ## Current phase
 
-Post-Phase 02 continuity hardening. Phase 03 has not started.
+Continuity infrastructure merged. Phase 03 — Case Engine is explicitly authorized (user instruction, 2026-08-27) and is the next implementation task.
 
 ## Last completed and approved phase
 
@@ -14,45 +14,47 @@ Phase 02 — Fake Phone OS, approved and merged through PR #2.
 
 ## Current active branch
 
-`codex/continuity-handoff`
+`main`
 
 ## Latest approved commit hash
 
-`1c2d8b75b632c855cde06052a517eeaa5a6757ee` on `main` (Phase 02 merge commit).
+`bcee8e101e7950779c408176f33dac9c2e3e2b03` on `main` (continuity merge commit, PR #3).
 
 ## Current task implementation commit
 
-`96727e1fa7829e52b2489b71e8fa18fe16090c19`
+`5837d8ef0da281657b29efef6266c769fd87d739` (final continuity branch commit, merged via PR #3). This state-only refresh commit follows the merge because a commit cannot contain its own hash.
 
 ## Current implementation status
 
-Phases 01 and 02 are implemented and merged. The repository has a strict case-data foundation, deterministic engine primitives, persistence, and a reusable mobile-first phone OS with eight neutral app shells. Continuity infrastructure is complete on the current branch and awaiting review/merge.
+Phases 01 and 02 are implemented and merged. The repository has a strict case-data foundation, deterministic engine primitives, persistence, and a reusable mobile-first phone OS with eight neutral app shells. Continuity infrastructure is complete and merged into `main` via PR #3.
 
 ## Completed milestones
 
 - Phase 01 foundation: schemas, fail-closed case loading, engine primitives, player state, save envelope, and spoiler-safe public projection.
 - Phase 02 phone OS: lock/home, Messages, Gallery, Calls, Mail, Browser, Notes, Files, Settings, deep links, metadata, zoom, audio transcripts, discovery persistence, accessibility, and responsive QA.
 - Phase 02 PR: [#2](https://github.com/spring1199/CASE001/pull/2), merged as `1c2d8b75b632c855cde06052a517eeaa5a6757ee`.
+- Continuity handoff PR: [#3](https://github.com/spring1199/CASE001/pull/3), merged as `bcee8e101e7950779c408176f33dac9c2e3e2b03`.
 
 ## Current task status
 
-Continuity files, mandatory agent rules, bootstrap routing, and fail-closed continuity validation are implemented and fully validated after independent zero-history review on `codex/continuity-handoff`. The branch is awaiting approval/merge; Phase 03 remains unstarted.
+Continuity infrastructure was approved and merged into `main` via PR #3 on 2026-08-27, with the full local validation matrix re-run green at merge time. This commit records the post-merge state transition. Phase 03 implementation has not yet begun; it is explicitly authorized and starts next on a new `codex/phase-03-case-engine` branch.
 
 ## Validation and test results
+
+Re-run on 2026-08-27 immediately before the PR #3 merge:
 
 - Pack validation: 51 authored IDs passed.
 - Continuity validation: 4 files and 21 required state fields passed.
 - Continuity unit tests: 8/8 passed, including placeholder-led and negated-reference rejection.
 - Lint and strict typecheck: passed.
 - Project unit tests: 188/188 passed.
-- Playwright: 12/12 passed.
-- Production build: passed.
-- Security audit: 0 vulnerabilities.
+- Production build: passed (generated `next-env.d.ts` rewrite restored, no intentional change).
+- Playwright (12/12) and the zero-vulnerability audit were last confirmed on the branch before merge; no UI or dependency changes occurred since.
 
 ## Open tasks
 
-- Review and merge `codex/continuity-handoff` after approval.
-- Do not begin Phase 03 until the user explicitly requests it.
+- Begin Phase 03 — Case Engine on `codex/phase-03-case-engine` (explicitly authorized by the user on 2026-08-27).
+- Do not begin Phase 04 or author final Case #001 narrative content.
 
 ## Known limitations
 
@@ -96,11 +98,11 @@ Authoritative details and automated expectations live in `AGENTS.md`, `docs/01-M
 
 ## Next expected task
 
-Review and merge the continuity branch. After a separate explicit approval, begin Phase 03 by reading `docs/exec-plans/PHASE-03-CASE-ENGINE.md`, `tasks/03-case-engine.md`, and every document they reference.
+Begin Phase 03 — Case Engine (explicitly authorized) by reading `docs/exec-plans/PHASE-03-CASE-ENGINE.md`, `tasks/03-case-engine.md`, and every source-of-truth document they reference.
 
 ## Exact continuation point
 
-Checkout `codex/continuity-handoff`, confirm a clean worktree, verify implementation commit `96727e1fa7829e52b2489b71e8fa18fe16090c19`, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review the continuity work against `docs/superpowers/specs/2026-08-27-continuity-handoff-design.md` and `docs/superpowers/plans/2026-08-27-continuity-handoff.md`. This non-phase operational task has no separate file under `tasks/`. Merge only after explicit approval. After merge, sync `main`, immediately refresh the active branch, approved commit, task status, next task, and continuation point in `PROJECT_STATE.md`, run continuity validation, and commit that state transition; do not start Phase 03.
+From `main` at `bcee8e101e7950779c408176f33dac9c2e3e2b03` with a clean worktree, create `codex/phase-03-case-engine`. Read `docs/exec-plans/PHASE-03-CASE-ENGINE.md` and `tasks/03-case-engine.md` completely, then only the canonical documents they and the engine read-order in `AGENTS.md` reference (`docs/07-GAME-DESIGN.md`, `docs/09-CASE-ENGINE.md`, `docs/12-TECH-ARCHITECTURE.md`, `docs/13-DATA-SCHEMA.md`). Implement Phase 03 only, preserving Phase 01/02 behavior, spoiler/reveal gates, and the data-driven Case #001 boundary. Stop and report if task sources are missing or conflict with repository state.
 
 ## Source-of-truth documents
 
