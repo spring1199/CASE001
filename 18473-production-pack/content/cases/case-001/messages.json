@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "id": "msg_orgil_public",
+    "kind": "message-thread",
+    "title": "Оргил",
+    "messages": [{ "id": "msg_orgil_public_01", "senderLabel": "Оргил", "direction": "incoming", "body": "Энэ нийтэд гарвал компани үлдэхгүй.", "timestampLabel": "21:14", "read": true }]
+  },
+  {
+    "id": "msg_18473_food",
+    "kind": "message-thread",
+    "title": "18473 — food",
+    "messages": [{ "id": "msg_18473_food_01", "senderLabel": "18473", "direction": "incoming", "body": "Кориандергүй.", "timestampLabel": "22:08", "read": true }]
+  },
+  {
+    "id": "msg_18473_habit",
+    "kind": "message-thread",
+    "title": "18473 — habit",
+    "messages": [{ "id": "msg_18473_habit_01", "senderLabel": "Тэнүүн", "direction": "outgoing", "body": "Айхаараа эрхий хуруугаа мааждагаа боль.", "timestampLabel": "23:02", "read": true }]
+  },
+  {
+    "id": "msg_18473_style",
+    "kind": "message-thread",
+    "title": "18473 — style",
+    "messages": [{ "id": "msg_18473_style_01", "senderLabel": "18473", "direction": "incoming", "body": "Богино. Тодорхой.", "timestampLabel": "23:10", "read": true }]
+  },
+  {
+    "id": "msg_18473_work_hint",
+    "kind": "message-thread",
+    "title": "18473 — work",
+    "messages": [{ "id": "msg_18473_work_hint_01", "senderLabel": "18473", "direction": "incoming", "body": "Яамны гадаад зочдын хөтөлбөр сунжирлаа.", "timestampLabel": "18:44", "read": true }]
+  },
+  {
+    "id": "msg_bilguun_admission",
+    "kind": "message-thread",
+    "title": "Билгүүн",
+    "messages": [{ "id": "msg_bilguun_admission_01", "senderLabel": "Билгүүн", "direction": "incoming", "body": "Тэр төхөөрөмжийг би асаасан.", "timestampLabel": "00:19", "read": true }]
+  }
+]

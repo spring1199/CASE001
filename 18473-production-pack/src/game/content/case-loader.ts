@@ -4,7 +4,6 @@ import {
   caseBundleSchema,
   caseManifestSchema,
   characterSchema,
-  deferredEmptyCollectionSchema,
   deductionSchema,
   endingSchema,
   evidenceSchema,
@@ -17,6 +16,17 @@ import {
   type CaseBundle,
   type Condition,
 } from '@/game/schema/case';
+import {
+  artifactRecordSchema,
+  browserRecordSchema,
+  callRecordSchema,
+  emailRecordSchema,
+  locationRecordSchema,
+  messageThreadRecordSchema,
+  noteRecordSchema,
+  photoRecordSchema,
+  type AuthoredArtifactRecord,
+} from '@/game/schema/authored-artifact';
 
 type AuthoredSource = {
   sourcePath: string;
@@ -59,7 +69,7 @@ export const coreCaseSourceKeys = [
   'timeline',
 ] as const;
 
-export const deferredCaseSourceKeys = [
+export const authoredArtifactCaseSourceKeys = [
   'artifacts',
   'browser',
   'calls',
@@ -70,15 +80,18 @@ export const deferredCaseSourceKeys = [
   'photos',
 ] as const;
 
+/** @deprecated Phase 04 promoted these sources; retained as a migration alias. */
+export const deferredCaseSourceKeys = authoredArtifactCaseSourceKeys;
+
 export type CoreCaseSourceKey = (typeof coreCaseSourceKeys)[number];
-export type DeferredCaseSourceKey = (typeof deferredCaseSourceKeys)[number];
-export type CaseSourceKey = CoreCaseSourceKey | DeferredCaseSourceKey;
+export type AuthoredArtifactCaseSourceKey = (typeof authoredArtifactCaseSourceKeys)[number];
+export type CaseSourceKey = CoreCaseSourceKey | AuthoredArtifactCaseSourceKey;
 
 export type CaseSourceMetadata = {
   [Key in CaseSourceKey]: {
     sourcePath: string;
-    validation: Key extends DeferredCaseSourceKey ? 'deferred-empty' : 'core';
-    indexed: Key extends DeferredCaseSourceKey ? false : true;
+    validation: Key extends AuthoredArtifactCaseSourceKey ? 'authored-artifact' : 'core';
+    indexed: true;
   }
 };
 
@@ -96,6 +109,14 @@ type CaseRecordByKind = {
   'graph-edge': Extract<CaseBundle['graph'][number], { recordType: 'edge' }>;
   'timeline-position': Extract<CaseBundle['timeline'][number], { recordType: 'position' }>;
   'timeline-event': Extract<CaseBundle['timeline'][number], { recordType: 'event' }>;
+  artifact: CaseBundle['artifacts'][number];
+  browser: CaseBundle['browser'][number];
+  call: CaseBundle['calls'][number];
+  email: CaseBundle['emails'][number];
+  location: CaseBundle['locations'][number];
+  message: CaseBundle['messages'][number];
+  note: CaseBundle['notes'][number];
+  photo: CaseBundle['photos'][number];
 };
 
 export type CaseRecordKind = keyof CaseRecordByKind;
@@ -115,6 +136,8 @@ export type LoadedCaseBundle = CaseBundle & {
 
 type ReferenceTargetKind =
   | 'character'
+  | 'artifact'
+  | 'content'
   | 'deduction'
   | 'ending'
   | 'evidence'
@@ -210,10 +233,17 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
   const timelinePositionIds = new Set(
     bundle.timeline.flatMap((record) => (record.recordType === 'position' ? [record.id] : [])),
   );
+  const authoredCollections: Array<{
+    sourceKey: AuthoredArtifactCaseSourceKey;
+    records: readonly AuthoredArtifactRecord[];
+  }> = authoredArtifactCaseSourceKeys.map((sourceKey) => ({
+    sourceKey,
+    records: bundle[sourceKey],
+  }));
+  const artifactIds = new Set(
+    authoredCollections.flatMap(({ records }) => records.map(({ id }) => id)),
+  );
 
-  // `artifactViewed` targets belong to the deferred artifact collection, so its
-  // referential check is intentionally added with that later-phase schema
-  // (mirroring Evidence.sourceArtifactId in ADR 0001).
   const validateCondition = (
     condition: Condition,
     sourcePath: string,
@@ -275,6 +305,15 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
         sourcePath,
         recordId,
         `${basePath}.objectiveCompleted`,
+      );
+    } else if ('artifactViewed' in condition) {
+      assertKnownReference(
+        artifactIds,
+        'artifact',
+        condition.artifactViewed,
+        sourcePath,
+        recordId,
+        `${basePath}.artifactViewed`,
       );
     } else if ('edgeConfidenceAtLeast' in condition) {
       assertKnownReference(
@@ -379,6 +418,14 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
   });
 
   bundle.evidence.forEach((evidence, evidenceIndex) => {
+    assertKnownReference(
+      artifactIds,
+      'artifact',
+      evidence.sourceArtifactId,
+      sources.evidence.sourcePath,
+      evidence.id,
+      `[${evidenceIndex}].sourceArtifactId`,
+    );
     assertKnownReferences(
       factIds,
       'fact',
@@ -641,6 +688,55 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
       `[${recordIndex}].grantsFactsWhenPlaced`,
     );
   });
+
+  authoredCollections.forEach(({ sourceKey, records }) => {
+    records.forEach((record, recordIndex) => {
+      const sourcePath = sources[sourceKey].sourcePath;
+      assertKnownReferences(
+        factIds,
+        'fact',
+        record.hiddenUntilFacts,
+        sourcePath,
+        record.id,
+        `[${recordIndex}].hiddenUntilFacts`,
+      );
+      assertKnownReferences(
+        artifactIds,
+        'artifact',
+        record.discovery?.artifactIds,
+        sourcePath,
+        record.id,
+        `[${recordIndex}].discovery.artifactIds`,
+      );
+      assertKnownReferences(
+        evidenceIds,
+        'evidence',
+        record.discovery?.evidenceIds,
+        sourcePath,
+        record.id,
+        `[${recordIndex}].discovery.evidenceIds`,
+      );
+      assertKnownReferences(
+        artifactIds,
+        'content',
+        record.discovery?.unlockContentIds,
+        sourcePath,
+        record.id,
+        `[${recordIndex}].discovery.unlockContentIds`,
+      );
+      record.deepLinks?.forEach((link, linkIndex) => {
+        if (link.contentId === undefined) return;
+        assertKnownReference(
+          artifactIds,
+          'content',
+          link.contentId,
+          sourcePath,
+          record.id,
+          `[${recordIndex}].deepLinks[${linkIndex}].contentId`,
+        );
+      });
+    });
+  });
 }
 
 /**
@@ -676,14 +772,14 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
     endings: parseSource(z.array(endingSchema), sources.endings),
     graph: parseSource(z.array(graphRecordSchema), sources.graph),
     timeline: parseSource(z.array(timelineRecordSchema), sources.timeline),
-    artifacts: parseSource(deferredEmptyCollectionSchema, sources.artifacts),
-    browser: parseSource(deferredEmptyCollectionSchema, sources.browser),
-    calls: parseSource(deferredEmptyCollectionSchema, sources.calls),
-    emails: parseSource(deferredEmptyCollectionSchema, sources.emails),
-    locations: parseSource(deferredEmptyCollectionSchema, sources.locations),
-    messages: parseSource(deferredEmptyCollectionSchema, sources.messages),
-    notes: parseSource(deferredEmptyCollectionSchema, sources.notes),
-    photos: parseSource(deferredEmptyCollectionSchema, sources.photos),
+    artifacts: parseSource(z.array(artifactRecordSchema), sources.artifacts),
+    browser: parseSource(z.array(browserRecordSchema), sources.browser),
+    calls: parseSource(z.array(callRecordSchema), sources.calls),
+    emails: parseSource(z.array(emailRecordSchema), sources.emails),
+    locations: parseSource(z.array(locationRecordSchema), sources.locations),
+    messages: parseSource(z.array(messageThreadRecordSchema), sources.messages),
+    notes: parseSource(z.array(noteRecordSchema), sources.notes),
+    photos: parseSource(z.array(photoRecordSchema), sources.photos),
   });
 
   const coreIndex = new Map<string, CoreCaseIndexEntry>();
@@ -734,6 +830,30 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
   bundle.timeline.forEach((value) => addRecord(value.recordType === 'position'
     ? { kind: 'timeline-position', sourcePath: sources.timeline.sourcePath, value }
     : { kind: 'timeline-event', sourcePath: sources.timeline.sourcePath, value }));
+  bundle.artifacts.forEach((value) => addRecord({
+    kind: 'artifact', sourcePath: sources.artifacts.sourcePath, value,
+  }));
+  bundle.browser.forEach((value) => addRecord({
+    kind: 'browser', sourcePath: sources.browser.sourcePath, value,
+  }));
+  bundle.calls.forEach((value) => addRecord({
+    kind: 'call', sourcePath: sources.calls.sourcePath, value,
+  }));
+  bundle.emails.forEach((value) => addRecord({
+    kind: 'email', sourcePath: sources.emails.sourcePath, value,
+  }));
+  bundle.locations.forEach((value) => addRecord({
+    kind: 'location', sourcePath: sources.locations.sourcePath, value,
+  }));
+  bundle.messages.forEach((value) => addRecord({
+    kind: 'message', sourcePath: sources.messages.sourcePath, value,
+  }));
+  bundle.notes.forEach((value) => addRecord({
+    kind: 'note', sourcePath: sources.notes.sourcePath, value,
+  }));
+  bundle.photos.forEach((value) => addRecord({
+    kind: 'photo', sourcePath: sources.photos.sourcePath, value,
+  }));
 
   validateCaseReferences(bundle, sources);
   enforceDeclaredCompleteProgression(bundle, sources);
@@ -773,28 +893,28 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
       sourcePath: sources.timeline.sourcePath, validation: 'core', indexed: true,
     },
     artifacts: {
-      sourcePath: sources.artifacts.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.artifacts.sourcePath, validation: 'authored-artifact', indexed: true,
     },
     browser: {
-      sourcePath: sources.browser.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.browser.sourcePath, validation: 'authored-artifact', indexed: true,
     },
     calls: {
-      sourcePath: sources.calls.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.calls.sourcePath, validation: 'authored-artifact', indexed: true,
     },
     emails: {
-      sourcePath: sources.emails.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.emails.sourcePath, validation: 'authored-artifact', indexed: true,
     },
     locations: {
-      sourcePath: sources.locations.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.locations.sourcePath, validation: 'authored-artifact', indexed: true,
     },
     messages: {
-      sourcePath: sources.messages.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.messages.sourcePath, validation: 'authored-artifact', indexed: true,
     },
     notes: {
-      sourcePath: sources.notes.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.notes.sourcePath, validation: 'authored-artifact', indexed: true,
     },
     photos: {
-      sourcePath: sources.photos.sourcePath, validation: 'deferred-empty', indexed: false,
+      sourcePath: sources.photos.sourcePath, validation: 'authored-artifact', indexed: true,
     },
   };
 

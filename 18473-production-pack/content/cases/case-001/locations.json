@@ -1,1 +1,3 @@
-[]
+[
+  { "id": "loc_cafe_day", "kind": "location", "title": "Кафены өдрийн route", "body": "Calendar болон route overlap." }
+]

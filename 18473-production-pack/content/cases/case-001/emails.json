@@ -1,1 +1,3 @@
-[]
+[
+  { "id": "email_seed", "kind": "mail", "title": "Archive", "body": "Archived mail." }
+]

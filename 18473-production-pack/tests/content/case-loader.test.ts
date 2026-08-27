@@ -72,14 +72,55 @@ function createValidSources() {
     },
     graph: { sourcePath: 'content/cases/test/graph.json', data: [] },
     timeline: { sourcePath: 'content/cases/test/timeline.json', data: [] },
-    artifacts: { sourcePath: 'content/cases/test/artifacts.json', data: [] },
-    browser: { sourcePath: 'content/cases/test/browser.json', data: [] },
-    calls: { sourcePath: 'content/cases/test/calls.json', data: [] },
-    emails: { sourcePath: 'content/cases/test/emails.json', data: [] },
-    locations: { sourcePath: 'content/cases/test/locations.json', data: [] },
-    messages: { sourcePath: 'content/cases/test/messages.json', data: [] },
-    notes: { sourcePath: 'content/cases/test/notes.json', data: [] },
-    photos: { sourcePath: 'content/cases/test/photos.json', data: [] },
+    artifacts: {
+      sourcePath: 'content/cases/test/artifacts.json',
+      data: [{ id: 'artifact_test', kind: 'file', title: 'Artifact', body: 'Body' }],
+    },
+    browser: {
+      sourcePath: 'content/cases/test/browser.json',
+      data: [{ id: 'browser_test', kind: 'web-page', title: 'Page', body: 'Body' }],
+    },
+    calls: {
+      sourcePath: 'content/cases/test/calls.json',
+      data: [{ id: 'call_test', kind: 'call', title: 'Call', body: 'Transcript' }],
+    },
+    emails: {
+      sourcePath: 'content/cases/test/emails.json',
+      data: [{ id: 'email_test', kind: 'mail', title: 'Mail', body: 'Body' }],
+    },
+    locations: {
+      sourcePath: 'content/cases/test/locations.json',
+      data: [{ id: 'location_test', kind: 'location', title: 'Location', body: 'Body' }],
+    },
+    messages: {
+      sourcePath: 'content/cases/test/messages.json',
+      data: [{
+        id: 'message_test',
+        kind: 'message-thread',
+        title: 'Thread',
+        messages: [{
+          id: 'message_entry_test',
+          senderLabel: 'Test',
+          direction: 'incoming',
+          body: 'Body',
+          timestampLabel: '00:00',
+          read: true,
+        }],
+      }],
+    },
+    notes: {
+      sourcePath: 'content/cases/test/notes.json',
+      data: [{ id: 'note_test', kind: 'note', title: 'Note', body: 'Body' }],
+    },
+    photos: {
+      sourcePath: 'content/cases/test/photos.json',
+      data: [{
+        id: 'photo_test',
+        kind: 'photo',
+        title: 'Photo',
+        visual: { assetId: 'asset_photo_test', alt: 'Alt', description: 'Description' },
+      }],
+    },
   };
 }
 
@@ -383,7 +424,7 @@ const danglingReferenceCases: Array<{
   },
 ];
 
-const deferredSourceCases = [
+const authoredArtifactSourceCases = [
   ['artifacts', 'artifacts.json'],
   ['browser', 'browser.json'],
   ['calls', 'calls.json'],
@@ -434,7 +475,15 @@ describe('case bundle loading', () => {
       + case001Seed.triggers.length
       + case001Seed.endings.length
       + case001Seed.graph.length
-      + case001Seed.timeline.length;
+      + case001Seed.timeline.length
+      + case001Seed.artifacts.length
+      + case001Seed.browser.length
+      + case001Seed.calls.length
+      + case001Seed.emails.length
+      + case001Seed.locations.length
+      + case001Seed.messages.length
+      + case001Seed.notes.length
+      + case001Seed.photos.length;
 
     expect(case001Seed.coreIndex.size).toBe(expectedRecordCount);
   });
@@ -469,33 +518,36 @@ describe('case bundle loading', () => {
     },
   );
 
-  it.each(deferredSourceCases)(
-    'loads deferred source %s as an explicitly unindexed empty array',
+  it.each(authoredArtifactSourceCases)(
+    'loads Phase 04 source %s as strict indexed authored artifacts',
     (sourceKey) => {
-      expect(case001Seed[sourceKey]).toEqual([]);
-      expect(case001Seed.sourceMetadata[sourceKey]).toMatchObject({
-        validation: 'deferred-empty',
-        indexed: false,
+      const loaded = parseCaseBundle(createValidSources());
+      expect(loaded[sourceKey]).toHaveLength(1);
+      expect(loaded.sourceMetadata[sourceKey]).toMatchObject({
+        validation: 'authored-artifact',
+        indexed: true,
       });
     },
   );
 
-  it.each(deferredSourceCases)(
-    'rejects records in deferred source %s until its later-phase schema exists',
+  it.each(authoredArtifactSourceCases)(
+    'rejects unknown keys in strict Phase 04 source %s',
     (sourceKey, fileName) => {
-      const invalidSources = replaceSource(createValidSources(), sourceKey, [{ id: 'future' }]);
+      const sources = createValidSources();
+      const record = sources[sourceKey].data[0];
+      const invalidSources = replaceSource(sources, sourceKey, [{ ...record, unknown: true }]);
 
       expect(() => parseCaseBundle(invalidSources)).toThrowError(
         new RegExp(
-          `content/cases/test/${fileName.replace('.', '\\.')}.*record "future".*requires its later-phase schema`,
+          `content/cases/test/${fileName.replace('.', '\\.')}.*[Uu]nrecognized key`,
           's',
         ),
       );
     },
   );
 
-  it.each(deferredSourceCases)(
-    'rejects malformed non-array deferred source %s',
+  it.each(authoredArtifactSourceCases)(
+    'rejects malformed non-array Phase 04 source %s',
     (sourceKey, fileName) => {
       const invalidSources = replaceSource(createValidSources(), sourceKey, { records: [] });
 
@@ -507,6 +559,62 @@ describe('case bundle loading', () => {
       );
     },
   );
+
+  it('rejects duplicate authored artifact IDs across Phase 04 sources', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'notes', [{
+      id: 'artifact_test', kind: 'note', title: 'Duplicate', body: 'Body',
+    }]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /Duplicate ID "artifact_test".*artifacts\.json.*notes\.json/s,
+    );
+  });
+
+  it('rejects broken evidence sourceArtifactId references', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'evidence', [{
+      ...sources.evidence.data[0], sourceArtifactId: 'artifact_missing',
+    }]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /evidence\.json.*ev_test.*sourceArtifactId.*unknown artifact ID "artifact_missing"/s,
+    );
+  });
+
+  it('rejects broken artifactViewed conditions', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'locks', [{
+      ...sources.locks.data[0], unlockWhen: { artifactViewed: 'artifact_missing' },
+    }]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /locks\.json.*lock_test.*artifactViewed.*unknown artifact ID "artifact_missing"/s,
+    );
+  });
+
+  it('rejects broken discovery evidence and content references', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'artifacts', [{
+      ...sources.artifacts.data[0],
+      discovery: { evidenceIds: ['ev_missing'], unlockContentIds: ['artifact_missing'] },
+    }]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /artifacts\.json.*artifact_test.*discovery\.evidenceIds\[0\].*unknown evidence ID "ev_missing"/s,
+    );
+  });
+
+  it('rejects invalid reveal gates on authored artifacts', () => {
+    const sources = createValidSources();
+    const invalidSources = replaceSource(sources, 'photos', [{
+      ...sources.photos.data[0], hiddenUntilFacts: ['fact_missing'],
+    }]);
+
+    expect(() => parseCaseBundle(invalidSources)).toThrowError(
+      /photos\.json.*photo_test.*hiddenUntilFacts\[0\].*unknown fact ID "fact_missing"/s,
+    );
+  });
 
   it('reports the source path, record ID, and issue path for invalid authored data', () => {
     const sources = createValidSources();

@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "id": "photo_cafe_reflection",
+    "kind": "photo",
+    "title": "Кафены тусгал",
+    "visual": { "assetId": "asset_cafe_reflection", "alt": "Кафены цонхны тусгал", "description": "Тусгалд бугуйн жижиг сорви харагдана." }
+  }
+]

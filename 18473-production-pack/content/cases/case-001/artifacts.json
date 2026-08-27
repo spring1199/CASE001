@@ -1,1 +1,11 @@
-[]
+[
+  { "id": "art_package_note", "kind": "file", "title": "18473", "body": "18473" },
+  { "id": "doc_graph_help", "kind": "system-info", "title": "GRAPH confidence", "body": "Баталгаажсан холбоос бүр confidence-ийг дахин тооцно." },
+  { "id": "graph_f17", "kind": "system-info", "title": "F17 edge", "body": "Хамгаалагдсан identity edge." },
+  { "id": "audit_winter47", "kind": "file", "title": "Winter 47 audit", "body": "Operator attribution audit.", "hiddenUntilFacts": ["fact_f17_is_maral"] },
+  { "id": "graph_decoy", "kind": "system-info", "title": "Decoy topology", "body": "Тэнүүн дээр төвлөрсөн зориудын pattern." },
+  { "id": "graph_live_signal", "kind": "system-info", "title": "Fresh live signal", "body": "Шинэхэн activity." },
+  { "id": "txn_post_missing", "kind": "file", "title": "Bank activity", "body": "Алга болсны дараах activity." },
+  { "id": "device_post_missing", "kind": "file", "title": "Device activity", "body": "Алга болсны дараах device activity." },
+  { "id": "file_cabin_budget", "kind": "file", "title": "Cabin budget", "body": "Raspberry — 6" }
+]
