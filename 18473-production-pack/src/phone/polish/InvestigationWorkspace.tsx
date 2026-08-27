@@ -3,19 +3,23 @@ import { useId } from 'react';
 import type { CaseView } from '@/game/engine/view';
 import type { PlayerCaseEngineEvent } from '@/game/schema/case-view';
 import styles from '@/phone/phone.module.css';
-import { EndingSequence } from '@/phone/polish/EndingSequence';
+import { EndingSequence, type EndingStage } from '@/phone/polish/EndingSequence';
 import { GraphView } from '@/phone/polish/GraphView';
 import { TimelineView } from '@/phone/polish/TimelineView';
 
 type InvestigationWorkspaceProps = Readonly<{
   view: CaseView;
   actionPending: boolean;
+  endingStage?: EndingStage;
+  onEndingStageChange?(stage: EndingStage): void;
   onEvent(event: PlayerCaseEngineEvent): void | Promise<void>;
 }>;
 
 export function InvestigationWorkspace({
   view,
   actionPending,
+  endingStage = 'decision',
+  onEndingStageChange,
   onEvent,
 }: InvestigationWorkspaceProps) {
   const objectiveHeadingId = useId();
@@ -24,7 +28,7 @@ export function InvestigationWorkspace({
   const choiceHeadingId = useId();
 
   return (
-    <div
+    <section
       aria-label="Мөрдлөгийн ажлын талбар"
       aria-busy={actionPending}
       className={styles.appShell}
@@ -140,7 +144,14 @@ export function InvestigationWorkspace({
         </section>
       ) : null}
 
-      {view.ending ? <EndingSequence ending={view.ending} graph={view.graph} /> : null}
-    </div>
+      {view.ending ? (
+        <EndingSequence
+          ending={view.ending}
+          graph={view.graph}
+          stage={endingStage}
+          onStageChange={(stage) => onEndingStageChange?.(stage)}
+        />
+      ) : null}
+    </section>
   );
 }

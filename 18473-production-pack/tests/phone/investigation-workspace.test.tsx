@@ -3,8 +3,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CaseView } from '@/game/engine/view';
-import { PhoneChrome } from '@/phone/components/PhoneChrome';
-import { EndingSequence } from '@/phone/polish/EndingSequence';
+import {
+  nextExperienceSurfaceForKey,
+  PhoneChrome,
+} from '@/phone/components/PhoneChrome';
+import {
+  advanceEndingStage,
+  EndingSequence,
+  nextEndingStage,
+} from '@/phone/polish/EndingSequence';
 import { InvestigationWorkspace } from '@/phone/polish/InvestigationWorkspace';
 
 const syntheticView: CaseView = {
@@ -103,6 +110,9 @@ const syntheticView: CaseView = {
   },
 };
 
+// PhoneExperience request/store/save/failure interaction needs a browser DOM and remains
+// an explicit Task 5 Playwright gate; these tests keep component semantics dependency-free.
+
 describe('investigation workspace semantics', () => {
   it('renders objectives, evidence actions, deduction progress, timeline controls, and GRAPH state', () => {
     const markup = renderToStaticMarkup(
@@ -113,7 +123,7 @@ describe('investigation workspace semantics', () => {
       />,
     );
 
-    expect(markup).toContain('aria-label="Мөрдлөгийн ажлын талбар"');
+    expect(markup).toContain('<section aria-label="Мөрдлөгийн ажлын талбар"');
     expect(markup).toContain('>Зорилтууд</h2>');
     expect(markup).toContain('>Баримтууд</h2>');
     expect(markup).toContain('>Дүгнэлтүүд</h2>');
@@ -164,16 +174,42 @@ describe('investigation workspace semantics', () => {
         onHome={vi.fn()}
         onSurfaceChange={vi.fn()}
       >
-        <p>Утасны агуулга</p>
+        <div role="tabpanel" id="phone-surface-panel" aria-labelledby="phone-surface-tab">
+          Утасны агуулга
+        </div>
+        <div
+          role="tabpanel"
+          id="investigation-surface-panel"
+          aria-labelledby="investigation-surface-tab"
+          hidden
+          inert
+        >
+          Мөрдлөгийн агуулга
+        </div>
       </PhoneChrome>,
     );
 
     expect(markup).toContain('role="tablist"');
     expect(markup).toContain('aria-label="Үндсэн ажлын талбар"');
     expect(markup).toContain('id="phone-surface-tab"');
+    expect(markup).toContain('id="phone-surface-tab" aria-controls="phone-surface-panel" aria-selected="true" tabindex="0"');
     expect(markup).toContain('>Утас</button>');
     expect(markup).toContain('id="investigation-surface-tab"');
+    expect(markup).toContain('id="investigation-surface-tab" aria-controls="investigation-surface-panel" aria-selected="false" tabindex="-1"');
     expect(markup).toContain('>Мөрдлөг</button>');
+    expect(markup).toContain('id="phone-surface-panel"');
+    expect(markup).toContain('id="investigation-surface-panel"');
+    expect(markup).toContain('hidden="" inert=""');
+  });
+
+  it('maps the complete top-level tab keyboard contract with predictable arrow wrapping', () => {
+    expect(nextExperienceSurfaceForKey('phone', 'ArrowRight')).toBe('investigation');
+    expect(nextExperienceSurfaceForKey('investigation', 'ArrowLeft')).toBe('phone');
+    expect(nextExperienceSurfaceForKey('investigation', 'Home')).toBe('phone');
+    expect(nextExperienceSurfaceForKey('phone', 'End')).toBe('investigation');
+    expect(nextExperienceSurfaceForKey('phone', 'ArrowLeft')).toBe('investigation');
+    expect(nextExperienceSurfaceForKey('investigation', 'ArrowRight')).toBe('phone');
+    expect(nextExperienceSurfaceForKey('phone', 'Enter')).toBeNull();
   });
 });
 
@@ -208,7 +244,8 @@ describe('ending sequence ordering', () => {
         <EndingSequence
           ending={endingView.ending!}
           graph={endingView.graph}
-          initialStage={stage}
+          stage={stage}
+          onStageChange={vi.fn()}
         />,
       );
 
@@ -222,12 +259,43 @@ describe('ending sequence ordering', () => {
       <EndingSequence
         ending={endingView.ending!}
         graph={endingView.graph}
-        initialStage="postcredit"
+        stage="postcredit"
+        onStageChange={vi.fn()}
       />,
     );
 
     expect(markup).toContain('data-ending-stage="postcredit"');
     expect(markup).toContain('NODE: 0');
     expect(markup).not.toMatch(/GOOD|BAD|САЙН|МУУ/);
+  });
+
+  it('uses a controlled deterministic stage order and renders no invented story prose', () => {
+    expect(nextEndingStage('decision')).toBe('aftermath');
+    expect(nextEndingStage('aftermath')).toBe('closure');
+    expect(nextEndingStage('closure')).toBe('postcredit');
+    expect(nextEndingStage('postcredit')).toBeNull();
+
+    const markup = renderToStaticMarkup(
+      <EndingSequence
+        ending={endingView.ending!}
+        graph={endingView.graph}
+        stage="aftermath"
+        onStageChange={vi.fn()}
+      />,
+    );
+    expect(markup).toContain('data-next-ending-stage="closure"');
+    expect(markup).toContain('>Үр дагавар</h2>');
+    expect(markup).not.toContain('тайван хэмнэлээр');
+    expect(markup).not.toContain('дуудлага');
+    expect(markup).not.toContain('бөөрөлзгөнө');
+  });
+
+  it('advances the controlled stage through the supplied persistence callback', () => {
+    const persistStage = vi.fn();
+
+    expect(advanceEndingStage('closure', persistStage)).toBe(true);
+    expect(persistStage).toHaveBeenCalledExactlyOnceWith('postcredit');
+    expect(advanceEndingStage('postcredit', persistStage)).toBe(false);
+    expect(persistStage).toHaveBeenCalledTimes(1);
   });
 });

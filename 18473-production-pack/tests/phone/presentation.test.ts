@@ -8,6 +8,8 @@ import {
 import {
   DEFAULT_PRESENTATION_CHECKPOINT,
   PresentationCheckpointStorage,
+  resetEndingPresentation,
+  setEndingPresentationStage,
 } from '@/phone/polish/presentation-storage';
 
 class MemoryStorage {
@@ -80,6 +82,24 @@ describe('presentation checkpoint storage', () => {
 
     expect(checkpoints.save(checkpoint)).toBe(true);
     expect(checkpoints.load()).toEqual(checkpoint);
+    expect(new PresentationCheckpointStorage(() => storage).load()).toEqual(checkpoint);
+  });
+
+  test('updates and resets only presentation stage while preserving acknowledged beats', () => {
+    const checkpoint = {
+      version: 1 as const,
+      acknowledgedBeatKeys: ['opaque:beat'],
+      endingStage: 'aftermath' as const,
+    };
+
+    expect(setEndingPresentationStage(checkpoint, 'closure')).toEqual({
+      ...checkpoint,
+      endingStage: 'closure',
+    });
+    expect(resetEndingPresentation(checkpoint)).toEqual({
+      ...checkpoint,
+      endingStage: 'decision',
+    });
   });
 
   test('falls back safely for corrupt, stale, or unavailable storage', () => {

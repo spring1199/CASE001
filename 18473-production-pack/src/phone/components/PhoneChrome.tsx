@@ -1,18 +1,32 @@
-import type { RefObject, ReactNode } from 'react';
+import type { KeyboardEvent, RefObject, ReactNode } from 'react';
 
 import styles from '@/phone/phone.module.css';
+
+export type ExperienceSurface = 'phone' | 'investigation';
+
+export function nextExperienceSurfaceForKey(
+  activeSurface: ExperienceSurface,
+  key: string,
+): ExperienceSurface | null {
+  if (key === 'Home') return 'phone';
+  if (key === 'End') return 'investigation';
+  if (key === 'ArrowLeft' || key === 'ArrowRight') {
+    return activeSurface === 'phone' ? 'investigation' : 'phone';
+  }
+  return null;
+}
 
 type PhoneChromeProps = Readonly<{
   title: string;
   screen: 'home' | 'app' | 'item';
-  activeSurface: 'phone' | 'investigation';
+  activeSurface: ExperienceSurface;
   canGoBack: boolean;
   canGoHome: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
   scrollRegionRef: RefObject<HTMLDivElement | null>;
   onBack(): void;
   onHome(): void;
-  onSurfaceChange(surface: 'phone' | 'investigation'): void;
+  onSurfaceChange(surface: ExperienceSurface): void;
   children: ReactNode;
 }>;
 
@@ -29,6 +43,14 @@ export function PhoneChrome({
   onSurfaceChange,
   children,
 }: PhoneChromeProps) {
+  const moveBetweenSurfaceTabs = (event: KeyboardEvent<HTMLButtonElement>): void => {
+    const nextSurface = nextExperienceSurfaceForKey(activeSurface, event.key);
+    if (nextSurface === null) return;
+    event.preventDefault();
+    onSurfaceChange(nextSurface);
+    document.getElementById(`${nextSurface}-surface-tab`)?.focus();
+  };
+
   return (
     <section
       aria-labelledby="phone-screen-heading"
@@ -74,8 +96,10 @@ export function PhoneChrome({
             id="phone-surface-tab"
             aria-controls="phone-surface-panel"
             aria-selected={activeSurface === 'phone'}
+            tabIndex={activeSurface === 'phone' ? 0 : -1}
             className={styles.collectionButton}
             onClick={() => onSurfaceChange('phone')}
+            onKeyDown={moveBetweenSurfaceTabs}
           >
             Утас
           </button>
@@ -85,8 +109,10 @@ export function PhoneChrome({
             id="investigation-surface-tab"
             aria-controls="investigation-surface-panel"
             aria-selected={activeSurface === 'investigation'}
+            tabIndex={activeSurface === 'investigation' ? 0 : -1}
             className={styles.collectionButton}
             onClick={() => onSurfaceChange('investigation')}
+            onKeyDown={moveBetweenSurfaceTabs}
           >
             Мөрдлөг
           </button>

@@ -1,41 +1,55 @@
-import { useState } from 'react';
-
 import type { EndingOutcome } from '@/game/engine/endings';
 import type { GraphView } from '@/game/engine/graph';
 import styles from '@/phone/phone.module.css';
+import type { EndingPresentationStage } from '@/phone/polish/presentation-storage';
 
-export type EndingStage = 'decision' | 'aftermath' | 'closure' | 'postcredit';
+export type EndingStage = EndingPresentationStage;
 
 type EndingSequenceProps = Readonly<{
   ending: EndingOutcome;
   graph: GraphView;
-  initialStage?: EndingStage;
-  onStageChange?(stage: EndingStage): void;
+  stage: EndingStage;
+  onStageChange(stage: EndingStage): void;
 }>;
 
-const nextEndingStage: Readonly<Partial<Record<EndingStage, EndingStage>>> = {
+const endingStageSequence: Readonly<Partial<Record<EndingStage, EndingStage>>> = {
   decision: 'aftermath',
   aftermath: 'closure',
   closure: 'postcredit',
 };
 
+export function nextEndingStage(stage: EndingStage): EndingStage | null {
+  return endingStageSequence[stage] ?? null;
+}
+
+export function advanceEndingStage(
+  stage: EndingStage,
+  onStageChange: (stage: EndingStage) => void,
+): boolean {
+  const followingStage = nextEndingStage(stage);
+  if (followingStage === null) return false;
+  onStageChange(followingStage);
+  return true;
+}
+
 export function EndingSequence({
   ending,
   graph,
-  initialStage = 'decision',
+  stage,
   onStageChange,
 }: EndingSequenceProps) {
-  const [stage, setStage] = useState<EndingStage>(initialStage);
-  const nextStage = nextEndingStage[stage];
+  const followingStage = nextEndingStage(stage);
 
   const advance = (): void => {
-    if (!nextStage) return;
-    setStage(nextStage);
-    onStageChange?.(nextStage);
+    advanceEndingStage(stage, onStageChange);
   };
 
   return (
-    <section aria-label="Төгсгөлийн дараалал" data-ending-stage={stage}>
+    <section
+      aria-label="Төгсгөлийн дараалал"
+      data-ending-stage={stage}
+      data-next-ending-stage={followingStage ?? undefined}
+    >
       {stage === 'decision' ? (
         <>
           <h2>{ending.title}</h2>
@@ -49,17 +63,11 @@ export function EndingSequence({
       ) : null}
 
       {stage === 'aftermath' ? (
-        <>
-          <h2>Үр дагавар</h2>
-          <p>Шийдвэрийн дараах агуулгыг тайван хэмнэлээр үргэлжлүүлнэ.</p>
-        </>
+        <h2>Үр дагавар</h2>
       ) : null}
 
       {stage === 'closure' ? (
-        <>
-          <h2>Хэргийн хаалт</h2>
-          <p>Хэргийн бүртгэл хаагдсан. Дараагийн хэсгийг та өөрөө нээнэ.</p>
-        </>
+        <h2>Хэргийн хаалт</h2>
       ) : null}
 
       {stage === 'postcredit' ? (
@@ -71,7 +79,7 @@ export function EndingSequence({
         </>
       ) : null}
 
-      {nextStage ? (
+      {followingStage ? (
         <button type="button" className={styles.primaryButton} onClick={advance}>
           Үргэлжлүүлэх
         </button>

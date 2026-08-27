@@ -4,17 +4,24 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useStore } from 'zustand';
 
 import type { PublicCaseSummary } from '@/game/content/public-case-summary';
+import type { CaseView } from '@/game/engine/view';
 import { LocalStoragePersistenceAdapter } from '@/game/persistence/adapter';
 import { applyEngineTransition } from '@/game/runtime/case-runtime';
 import type { PlayerCaseEngineEvent } from '@/game/schema/case-view';
 import { createPlayerStore } from '@/game/state/store';
-import type { CaseView } from '@/game/engine/view';
 import { ArtifactDetail } from '@/phone/apps/ArtifactDetail';
 import { PhoneAppView } from '@/phone/apps/PhoneAppView';
 import { AppIcon } from '@/phone/components/AppIcon';
-import { PhoneChrome } from '@/phone/components/PhoneChrome';
+import { PhoneChrome, type ExperienceSurface } from '@/phone/components/PhoneChrome';
 import { requestCasePhoneProjection } from '@/phone/case-runtime-client';
 import { InvestigationWorkspace } from '@/phone/polish/InvestigationWorkspace';
+import {
+  PresentationCheckpointStorage,
+  resetEndingPresentation,
+  setEndingPresentationStage,
+  type EndingPresentationStage,
+  type PresentationCheckpoint,
+} from '@/phone/polish/presentation-storage';
 import type {
   DeepReadonly,
   PhoneAppDescriptor,
@@ -45,7 +52,6 @@ type PhoneExperienceProps = Readonly<{
 }>;
 
 type ScrollNavigationMode = 'reset' | 'restore';
-type ExperienceSurface = 'phone' | 'investigation';
 
 function hasDiscoveries(item: DeepReadonly<PhoneItem>): boolean {
   const discovery = item.discovery;
@@ -77,6 +83,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       adapter: new LocalStoragePersistenceAdapter(),
     }),
   );
+  const [presentationStorage] = useState(() => new PresentationCheckpointStorage());
+  const [presentationCheckpoint, setPresentationCheckpoint] = useState(
+    () => presentationStorage.load(),
+  );
   const playerState = useStore(playerStore, (state) => state.playerState);
   const [phoneIndex, setPhoneIndex] = useState<PhoneContentIndex | null>(null);
   const [caseView, setCaseView] = useState<CaseView | null>(null);
@@ -95,6 +105,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const caseActionPendingRef = useRef(false);
+  const presentationCheckpointRef = useRef(presentationCheckpoint);
   const scrollPositionsRef = useRef(new Map<string, number>());
   const scrollNavigationModeRef = useRef<ScrollNavigationMode>('reset');
   const currentRouteKey = phoneRouteKey(navigation.current);
@@ -169,6 +180,19 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     return discoveryChanged(previous, projection.state);
   }, [playerStore]);
 
+  const commitPresentationCheckpoint = useCallback((checkpoint: PresentationCheckpoint): void => {
+    presentationCheckpointRef.current = checkpoint;
+    setPresentationCheckpoint(checkpoint);
+    presentationStorage.save(checkpoint);
+  }, [presentationStorage]);
+
+  const updateEndingStage = useCallback((stage: EndingPresentationStage): void => {
+    commitPresentationCheckpoint(setEndingPresentationStage(
+      presentationCheckpointRef.current,
+      stage,
+    ));
+  }, [commitPresentationCheckpoint]);
+
   const dispatchCaseEvent = useCallback(async (event: PlayerCaseEngineEvent): Promise<void> => {
     if (caseActionPendingRef.current) return;
     caseActionPendingRef.current = true;
@@ -182,6 +206,12 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         return null;
       });
       if (projection === null) return;
+
+      if (projection.outcomes.some((outcome) => outcome.type === 'ending-selected')) {
+        commitPresentationCheckpoint(resetEndingPresentation(
+          presentationCheckpointRef.current,
+        ));
+      }
 
       applyEngineTransition(playerStore, previous, projection.state);
       setPhoneIndex(projection.phoneIndex);
@@ -206,7 +236,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       caseActionPendingRef.current = false;
       setCaseActionPending(false);
     }
-  }, [playerStore]);
+  }, [commitPresentationCheckpoint, playerStore]);
 
   const recordDiscovery = (item: DeepReadonly<PhoneItem>): void => {
     if (!item.discovery || !hasDiscoveries(item)) return;
@@ -239,7 +269,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           : 0;
     }
     headingRef.current?.focus({ preventScroll: true });
-  }, [activeSurface, navigation]);
+  }, [navigation]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -445,63 +475,67 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         </button>
       ) : null}
 
-      {activeSurface === 'phone' ? (
-        <div
-          role="tabpanel"
-          id="phone-surface-panel"
-          aria-labelledby="phone-surface-tab"
-        >
-          {route.screen === 'home' ? (
-            <div role="region" aria-label="Аппын нүүр" className={styles.homeGrid}>
-              {phoneIndex.content.apps.map((app) => (
-                <AppIcon
-                  key={app.id}
-                  app={app}
-                  locked={!unlockedAppIds.has(app.id)}
-                  onActivate={() => openApp(app)}
-                />
-              ))}
-            </div>
-          ) : null}
+      <div
+        role="tabpanel"
+        id="phone-surface-panel"
+        aria-labelledby="phone-surface-tab"
+        hidden={activeSurface !== 'phone'}
+        inert={activeSurface !== 'phone'}
+      >
+        {route.screen === 'home' ? (
+          <div role="region" aria-label="Аппын нүүр" className={styles.homeGrid}>
+            {phoneIndex.content.apps.map((app) => (
+              <AppIcon
+                key={app.id}
+                app={app}
+                locked={!unlockedAppIds.has(app.id)}
+                onActivate={() => openApp(app)}
+              />
+            ))}
+          </div>
+        ) : null}
 
-          {route.screen === 'app' && currentApp ? (
-            <PhoneAppView
-              key={currentApp.id}
-              app={currentApp}
-              unlockedContentIds={unlockedContentIds}
-              gatedContentIds={gatedContentIds}
-              initialCollectionId={collectionSelections[currentApp.id]}
-              onCollectionChange={(collectionId) => {
-                setCollectionSelections((current) => ({
-                  ...current,
-                  [currentApp.id]: collectionId,
-                }));
-              }}
-              onOpenItem={openItem}
-            />
-          ) : null}
+        {route.screen === 'app' && currentApp ? (
+          <PhoneAppView
+            key={currentApp.id}
+            app={currentApp}
+            unlockedContentIds={unlockedContentIds}
+            gatedContentIds={gatedContentIds}
+            initialCollectionId={collectionSelections[currentApp.id]}
+            onCollectionChange={(collectionId) => {
+              setCollectionSelections((current) => ({
+                ...current,
+                [currentApp.id]: collectionId,
+              }));
+            }}
+            onOpenItem={openItem}
+          />
+        ) : null}
 
-          {route.screen === 'item' && currentItem ? (
-            <ArtifactDetail item={currentItem} onOpenDeepLink={openDeepLink} />
-          ) : null}
-        </div>
-      ) : (
-        <div
-          role="tabpanel"
-          id="investigation-surface-panel"
-          aria-labelledby="investigation-surface-tab"
-        >
-          {caseView ? (
-            <InvestigationWorkspace
-              view={caseView}
-              actionPending={caseActionPending}
-              onEvent={dispatchCaseEvent}
-            />
-          ) : (
-            <p className={styles.emptyState}>Мөрдлөгийн төлөвийг ачаалж байна.</p>
-          )}
-        </div>
-      )}
+        {route.screen === 'item' && currentItem ? (
+          <ArtifactDetail item={currentItem} onOpenDeepLink={openDeepLink} />
+        ) : null}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="investigation-surface-panel"
+        aria-labelledby="investigation-surface-tab"
+        hidden={activeSurface !== 'investigation'}
+        inert={activeSurface !== 'investigation'}
+      >
+        {caseView ? (
+          <InvestigationWorkspace
+            view={caseView}
+            actionPending={caseActionPending}
+            endingStage={presentationCheckpoint.endingStage ?? 'decision'}
+            onEndingStageChange={updateEndingStage}
+            onEvent={dispatchCaseEvent}
+          />
+        ) : (
+          <p className={styles.emptyState}>Мөрдлөгийн төлөвийг ачаалж байна.</p>
+        )}
+      </div>
     </PhoneChrome>
   );
 }

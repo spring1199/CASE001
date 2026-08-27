@@ -9,6 +9,7 @@ export const presentationCheckpointSchema = z.strictObject({
 });
 
 export type PresentationCheckpoint = z.infer<typeof presentationCheckpointSchema>;
+export type EndingPresentationStage = NonNullable<PresentationCheckpoint['endingStage']>;
 
 export const DEFAULT_PRESENTATION_CHECKPOINT: PresentationCheckpoint = Object.freeze({
   version: 1,
@@ -19,6 +20,23 @@ export const DEFAULT_PRESENTATION_CHECKPOINT: PresentationCheckpoint = Object.fr
 export const PRESENTATION_CHECKPOINT_STORAGE_KEY = '18473:presentation-checkpoint:v1';
 
 export type PresentationStorageFactory = () => KeyValueStorage | null;
+
+export function setEndingPresentationStage(
+  checkpoint: PresentationCheckpoint,
+  endingStage: EndingPresentationStage,
+): PresentationCheckpoint {
+  return {
+    ...checkpoint,
+    acknowledgedBeatKeys: [...checkpoint.acknowledgedBeatKeys],
+    endingStage,
+  };
+}
+
+export function resetEndingPresentation(
+  checkpoint: PresentationCheckpoint,
+): PresentationCheckpoint {
+  return setEndingPresentationStage(checkpoint, 'decision');
+}
 
 const defaultStorageFactory: PresentationStorageFactory = () => {
   if (typeof window === 'undefined') return null;
