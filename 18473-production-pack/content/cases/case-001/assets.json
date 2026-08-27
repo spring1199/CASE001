@@ -1,0 +1,934 @@
+{
+  "version": 1,
+  "sourcePack": "18473-PHASE04-PRODUCTION-PACK-v1.0.1-FINAL",
+  "assets": [
+    {
+      "id": "CHAR-TEN-ANCHOR-01",
+      "filename": "char_tenuun_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Tenuun Batzorig, 25 | Primary face/body reference",
+      "runtimePath": "public/assets/case-001/runtime/char_tenuun_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_tenuun_anchor_01.png"
+    },
+    {
+      "id": "CHAR-MAR-ANCHOR-01",
+      "filename": "char_maral_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Maral Enkhtuvshin, 25 | Primary face/body reference",
+      "runtimePath": "public/assets/case-001/runtime/char_maral_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_maral_anchor_01.png"
+    },
+    {
+      "id": "CHAR-ORG-ANCHOR-01",
+      "filename": "char_orgil_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Orgil Sodnom, CEO/mentor | Primary reference",
+      "runtimePath": "public/assets/case-001/runtime/char_orgil_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_orgil_anchor_01.png"
+    },
+    {
+      "id": "CHAR-MUN-ANCHOR-01",
+      "filename": "char_munkh_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Munkh, security architect | Primary reference",
+      "runtimePath": "public/assets/case-001/runtime/char_munkh_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_munkh_anchor_01.png"
+    },
+    {
+      "id": "CHAR-SAR-ANCHOR-01",
+      "filename": "char_saruul_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Saruul, shelter-network figure | Primary reference",
+      "runtimePath": "public/assets/case-001/runtime/char_saruul_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_saruul_anchor_01.png"
+    },
+    {
+      "id": "CHAR-TUY-ANCHOR-01",
+      "filename": "char_tuya_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Tuya, younger sister | Primary reference",
+      "runtimePath": "public/assets/case-001/runtime/char_tuya_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_tuya_anchor_01.png"
+    },
+    {
+      "id": "CHAR-BIL-ANCHOR-01",
+      "filename": "char_bilguun_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Bilguun, younger brother | Primary reference",
+      "runtimePath": "public/assets/case-001/runtime/char_bilguun_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_bilguun_anchor_01.png"
+    },
+    {
+      "id": "CHAR-OYU-ANCHOR-01",
+      "filename": "char_oyunaa_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Oyunaa, Tenuun’s mother | Primary reference",
+      "runtimePath": "public/assets/case-001/runtime/char_oyunaa_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_oyunaa_anchor_01.png"
+    },
+    {
+      "id": "CHAR-BAT-ANCHOR-01",
+      "filename": "char_batzorig_father_anchor_01.png",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Tenuun’s father | Primary reference",
+      "runtimePath": "public/assets/case-001/runtime/char_batzorig_father_anchor_01.png",
+      "publicPath": "/assets/case-001/runtime/char_batzorig_father_anchor_01.png"
+    },
+    {
+      "id": "TEN-WALL-001",
+      "filename": "tenuun_wallpaper_001.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Natural candid portrait of Tenuun outdoors in cold Arvantai light | First visual contact with missing man | Humanizes him before player knows context",
+      "runtimePath": "public/assets/case-001/runtime/tenuun_wallpaper_001.jpg",
+      "publicPath": "/assets/case-001/runtime/tenuun_wallpaper_001.jpg"
+    },
+    {
+      "id": "TEN-CONTACT-001",
+      "filename": "tenuun_contact_crop_001.jpg",
+      "mode": "derive",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Crop of an approved Tenuun source image | Contact/avatar use | None",
+      "runtimePath": "public/assets/case-001/runtime/tenuun_contact_crop_001.jpg",
+      "publicPath": "/assets/case-001/runtime/tenuun_contact_crop_001.jpg"
+    },
+    {
+      "id": "TUY-CONTACT-001",
+      "filename": "tuya_contact_001.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Casual sibling profile image | Phone realism | None",
+      "runtimePath": "public/assets/case-001/runtime/tuya_contact_001.jpg",
+      "publicPath": "/assets/case-001/runtime/tuya_contact_001.jpg"
+    },
+    {
+      "id": "BIL-CONTACT-001",
+      "filename": "bilguun_contact_001.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Casual profile image | Phone realism | None",
+      "runtimePath": "public/assets/case-001/runtime/bilguun_contact_001.jpg",
+      "publicPath": "/assets/case-001/runtime/bilguun_contact_001.jpg"
+    },
+    {
+      "id": "OYU-CONTACT-001",
+      "filename": "oyunaa_contact_001.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Warm family profile image | Phone realism | None",
+      "runtimePath": "public/assets/case-001/runtime/oyunaa_contact_001.jpg",
+      "publicPath": "/assets/case-001/runtime/oyunaa_contact_001.jpg"
+    },
+    {
+      "id": "ORG-CONTACT-001",
+      "filename": "orgil_contact_001.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Formal-but-personal contact photo | Supports CEO thread | None",
+      "runtimePath": "public/assets/case-001/runtime/orgil_contact_001.jpg",
+      "publicPath": "/assets/case-001/runtime/orgil_contact_001.jpg"
+    },
+    {
+      "id": "MUN-CONTACT-001",
+      "filename": "munkh_contact_001.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Work/casual contact photo | Supports Munkh thread | None",
+      "runtimePath": "public/assets/case-001/runtime/munkh_contact_001.jpg",
+      "publicPath": "/assets/case-001/runtime/munkh_contact_001.jpg"
+    },
+    {
+      "id": "FAM-001",
+      "filename": "family_table_small_apartment.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Young Tenuun with parents + siblings at a cramped dinner table | Poor but close family | Origin of his wealth ambition",
+      "runtimePath": "public/assets/case-001/runtime/family_table_small_apartment.jpg",
+      "publicPath": "/assets/case-001/runtime/family_table_small_apartment.jpg"
+    },
+    {
+      "id": "FAM-002",
+      "filename": "childhood_karaoke_tenuun.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Teen Tenuun singing into cheap microphone while siblings laugh | Funny childhood memory | Singing motif / old self",
+      "runtimePath": "public/assets/case-001/runtime/childhood_karaoke_tenuun.jpg",
+      "publicPath": "/assets/case-001/runtime/childhood_karaoke_tenuun.jpg"
+    },
+    {
+      "id": "FAM-003",
+      "filename": "siblings_winter_bus_stop.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Tenuun, Tuya, Bilguun bundled in winter, laughing | Ordinary sibling photo | Shows warmth before adult stress",
+      "runtimePath": "public/assets/case-001/runtime/siblings_winter_bus_stop.jpg",
+      "publicPath": "/assets/case-001/runtime/siblings_winter_bus_stop.jpg"
+    },
+    {
+      "id": "FAM-004",
+      "filename": "mother_repaired_coat.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Mother fixing an old winter coat on kitchen chair | Ordinary poverty detail | Reinforces parental sacrifice",
+      "runtimePath": "public/assets/case-001/runtime/mother_repaired_coat.jpg",
+      "publicPath": "/assets/case-001/runtime/mother_repaired_coat.jpg"
+    },
+    {
+      "id": "FAM-005",
+      "filename": "father_sleeping_after_work.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Father asleep at table after physical work | Mundane photo | Quiet evidence of burden Tenuun noticed",
+      "runtimePath": "public/assets/case-001/runtime/father_sleeping_after_work.jpg",
+      "publicPath": "/assets/case-001/runtime/father_sleeping_after_work.jpg"
+    },
+    {
+      "id": "FAM-006",
+      "filename": "university_graduation_family.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Graduation day with whole family | Achievement | Family’s hope concentrated on Tenuun",
+      "runtimePath": "public/assets/case-001/runtime/university_graduation_family.jpg",
+      "publicPath": "/assets/case-001/runtime/university_graduation_family.jpg"
+    },
+    {
+      "id": "FAM-007",
+      "filename": "first_salary_groceries.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Groceries and small celebratory cake on kitchen table | Normal celebration | Tenuun’s early “I’ll provide” phase",
+      "runtimePath": "public/assets/case-001/runtime/first_salary_groceries.jpg",
+      "publicPath": "/assets/case-001/runtime/first_salary_groceries.jpg"
+    },
+    {
+      "id": "FAM-008",
+      "filename": "sibling_old_game_night.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Family playing cards/board game | Filler warmth | Makes later distance emotionally legible",
+      "runtimePath": "public/assets/case-001/runtime/sibling_old_game_night.jpg",
+      "publicPath": "/assets/case-001/runtime/sibling_old_game_night.jpg"
+    },
+    {
+      "id": "WORK-001",
+      "filename": "university_lab_tenuun_munkh.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Tenuun and Munkh in student computer lab | Old friends | Establishes pre-company bond",
+      "runtimePath": "public/assets/case-001/runtime/university_lab_tenuun_munkh.jpg",
+      "publicPath": "/assets/case-001/runtime/university_lab_tenuun_munkh.jpg"
+    },
+    {
+      "id": "WORK-002",
+      "filename": "hackathon_orgil_first_meeting.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Young Tenuun presenting at university tech event; Orgil in background | Career milestone | First mentor contact",
+      "runtimePath": "public/assets/case-001/runtime/hackathon_orgil_first_meeting.jpg",
+      "publicPath": "/assets/case-001/runtime/hackathon_orgil_first_meeting.jpg"
+    },
+    {
+      "id": "WORK-003",
+      "filename": "tenkhleg_first_day.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Tenuun at modest startup office | Normal career photo | Beginning of dependency on Orgil",
+      "runtimePath": "public/assets/case-001/runtime/tenkhleg_first_day.jpg",
+      "publicPath": "/assets/case-001/runtime/tenkhleg_first_day.jpg"
+    },
+    {
+      "id": "WORK-004",
+      "filename": "late_night_engineering_desk.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Laptop, cold coffee, notebooks, Tenuun’s hands; no readable secrets | Workaholic atmosphere | Increasing obsession",
+      "runtimePath": "public/assets/case-001/runtime/late_night_engineering_desk.jpg",
+      "publicPath": "/assets/case-001/runtime/late_night_engineering_desk.jpg"
+    },
+    {
+      "id": "WORK-005",
+      "filename": "team_dinner_orgil_tenuun.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Team dinner with Orgil and Tenuun, apparently close | Mentor bond | Complicates villain theory",
+      "runtimePath": "public/assets/case-001/runtime/team_dinner_orgil_tenuun.jpg",
+      "publicPath": "/assets/case-001/runtime/team_dinner_orgil_tenuun.jpg"
+    },
+    {
+      "id": "WORK-006",
+      "filename": "server_room_badge_partial.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Tenuun in secure infrastructure corridor; badge visible but no readable sensitive text | Workplace access | Shows he had legitimate proximity to systems",
+      "runtimePath": "public/assets/case-001/runtime/server_room_badge_partial.jpg",
+      "publicPath": "/assets/case-001/runtime/server_room_badge_partial.jpg"
+    },
+    {
+      "id": "WORK-007",
+      "filename": "munkh_office_glass_reflection.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Munkh visible in office glass while Tenuun photographs monitor-free workspace | Filler | Quietly plants Munkh’s repeated presence",
+      "runtimePath": "public/assets/case-001/runtime/munkh_office_glass_reflection.jpg",
+      "publicPath": "/assets/case-001/runtime/munkh_office_glass_reflection.jpg"
+    },
+    {
+      "id": "WORK-008",
+      "filename": "empty_desk_after_hours.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Tenuun’s desk at 02:00 feel, chair empty | Mood | Supports late-night timeline",
+      "runtimePath": "public/assets/case-001/runtime/empty_desk_after_hours.jpg",
+      "publicPath": "/assets/case-001/runtime/empty_desk_after_hours.jpg"
+    },
+    {
+      "id": "LIFE-001",
+      "filename": "cheap_noodle_lunch.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Ordinary phone food photo | Realistic filler",
+      "runtimePath": "public/assets/case-001/runtime/cheap_noodle_lunch.jpg",
+      "publicPath": "/assets/case-001/runtime/cheap_noodle_lunch.jpg"
+    },
+    {
+      "id": "LIFE-002",
+      "filename": "cracked_mug.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Old mug on desk | Filler recurring object",
+      "runtimePath": "public/assets/case-001/runtime/cracked_mug.jpg",
+      "publicPath": "/assets/case-001/runtime/cracked_mug.jpg"
+    },
+    {
+      "id": "LIFE-003",
+      "filename": "city_bus_window_snow.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Snowy Arvantai through bus window | Place/mood",
+      "runtimePath": "public/assets/case-001/runtime/city_bus_window_snow.jpg",
+      "publicPath": "/assets/case-001/runtime/city_bus_window_snow.jpg"
+    },
+    {
+      "id": "LIFE-004",
+      "filename": "street_dog_evening.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Friendly street dog near apartment | Seeds dog dream indirectly",
+      "runtimePath": "public/assets/case-001/runtime/street_dog_evening.jpg",
+      "publicPath": "/assets/case-001/runtime/street_dog_evening.jpg"
+    },
+    {
+      "id": "LIFE-005",
+      "filename": "grocery_receipt_bag_photo.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Grocery bag, not receipt text | Realism",
+      "runtimePath": "public/assets/case-001/runtime/grocery_receipt_bag_photo.jpg",
+      "publicPath": "/assets/case-001/runtime/grocery_receipt_bag_photo.jpg"
+    },
+    {
+      "id": "LIFE-006",
+      "filename": "broken_keyboard_key.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Keyboard repair | Tech personality",
+      "runtimePath": "public/assets/case-001/runtime/broken_keyboard_key.jpg",
+      "publicPath": "/assets/case-001/runtime/broken_keyboard_key.jpg"
+    },
+    {
+      "id": "LIFE-007",
+      "filename": "sunrise_from_office.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Sunrise after all-night work | Work pattern",
+      "runtimePath": "public/assets/case-001/runtime/sunrise_from_office.jpg",
+      "publicPath": "/assets/case-001/runtime/sunrise_from_office.jpg"
+    },
+    {
+      "id": "LIFE-008",
+      "filename": "rain_on_taxi_window.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Urban rainy night | Filler / time anchoring",
+      "runtimePath": "public/assets/case-001/runtime/rain_on_taxi_window.jpg",
+      "publicPath": "/assets/case-001/runtime/rain_on_taxi_window.jpg"
+    },
+    {
+      "id": "LIFE-009",
+      "filename": "convenience_store_coffee.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Generic fictional convenience-store coffee | Filler",
+      "runtimePath": "public/assets/case-001/runtime/convenience_store_coffee.jpg",
+      "publicPath": "/assets/case-001/runtime/convenience_store_coffee.jpg"
+    },
+    {
+      "id": "LIFE-010",
+      "filename": "unopened_running_shoes.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Running shoes still boxed | Small failed self-improvement joke",
+      "runtimePath": "public/assets/case-001/runtime/unopened_running_shoes.jpg",
+      "publicPath": "/assets/case-001/runtime/unopened_running_shoes.jpg"
+    },
+    {
+      "id": "LIFE-011",
+      "filename": "desk_plant_dying.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Neglected office plant | Light character beat",
+      "runtimePath": "public/assets/case-001/runtime/desk_plant_dying.jpg",
+      "publicPath": "/assets/case-001/runtime/desk_plant_dying.jpg"
+    },
+    {
+      "id": "LIFE-012",
+      "filename": "snowy_apartment_rooftops.jpg",
+      "mode": "generate",
+      "spoiler": "S0",
+      "delivery": "public",
+      "description": "Arvantai apartment roofs | World-building",
+      "runtimePath": "public/assets/case-001/runtime/snowy_apartment_rooftops.jpg",
+      "publicPath": "/assets/case-001/runtime/snowy_apartment_rooftops.jpg"
+    },
+    {
+      "id": "REL-001",
+      "filename": "cafe_table_two_cups.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Two hot drinks at roadside café table; winter window | Timestamp/location | Random café stop | Accidental Tenuun–Maral encounter",
+      "runtimePath": "private-assets/case-001/runtime/cafe_table_two_cups.jpg",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "REL-002",
+      "filename": "cafe_woman_partial_wrist.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Across-table crop of unnamed woman; only hand/wrist, sleeve, small scar visible | Wrist scar | Unknown café woman | Maral",
+      "runtimePath": "private-assets/case-001/runtime/cafe_woman_partial_wrist.jpg",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "REL-003",
+      "filename": "cafe_window_reflection_soft.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Weak reflection of woman, not enough for face ID | Hair/silhouette only | Atmosphere | Supports same-person inference but not decisive",
+      "runtimePath": "private-assets/case-001/runtime/cafe_window_reflection_soft.jpg",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "REL-004",
+      "filename": "raspberry_seedling_listing_save.jpg",
+      "mode": "ui-data",
+      "spoiler": "S2",
+      "delivery": "ui",
+      "description": "Browser saved page, rendered by app | Raspberry motif | Cabin/gardening interest | Café conversation persisted in his dream"
+    },
+    {
+      "id": "REL-005",
+      "filename": "cabin_sketch_notebook_photo.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Notebook with rough cabin + greenhouse sketch; avoid generated readable paragraph text | Cabin/greenhouse layout | Future fantasy | Shared conversation became emotionally important",
+      "runtimePath": "public/assets/case-001/runtime/cabin_sketch_notebook_photo.jpg",
+      "publicPath": "/assets/case-001/runtime/cabin_sketch_notebook_photo.jpg"
+    },
+    {
+      "id": "REL-006",
+      "filename": "raspberry_pot_early.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Small raspberry plant in cheap pot by window | Raspberry | Hobby experiment | Concrete memory of café stranger/Maral",
+      "runtimePath": "public/assets/case-001/runtime/raspberry_pot_early.jpg",
+      "publicPath": "/assets/case-001/runtime/raspberry_pot_early.jpg"
+    },
+    {
+      "id": "REL-007",
+      "filename": "voice_call_waveform",
+      "mode": "ui-data",
+      "spoiler": "S3",
+      "delivery": "ui",
+      "description": "Audio player waveform generated by runtime | Maral laugh | Anonymous old troubleshooting call | Player is hearing own forgotten laugh",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "REL-008",
+      "filename": "punctuation_comparison",
+      "mode": "ui-data",
+      "spoiler": "S3",
+      "delivery": "ui",
+      "description": "In-engine text comparison | Writing-style clue | Similar typing habit | F17/USER_6F21 = Maral",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "F17-IMG-001",
+      "filename": "f17_cafe_wrist_crop.jpg",
+      "mode": "derive",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Crop from REL-002 | Small wrist scar | Must be independently visible on Maral in current-day UI/avatar scene or authored reference",
+      "runtimePath": "private-assets/case-001/runtime/f17_cafe_wrist_crop.jpg",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "F17-IMG-002",
+      "filename": "f17_no_coriander_meal.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Meal photo with coriander visibly pushed aside / absent; no explanatory text | Food preference | Combine with Maral preference record",
+      "runtimePath": "private-assets/case-001/runtime/f17_no_coriander_meal.jpg",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "F17-IMG-003",
+      "filename": "f17_thumb_stress_frame.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Close hand posture showing thumb-scratch habit during stressful moment | Habit clue | Combine with present-day Maral animation/text behavior",
+      "runtimePath": "private-assets/case-001/runtime/f17_thumb_stress_frame.jpg",
+      "revealFactIds": [
+        "fact_18473_archive_open"
+      ]
+    },
+    {
+      "id": "F17-IMG-004",
+      "filename": "cafe_route_weather_context.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Snow-blocked roadside scene near fictional café | Date/location consistency | Match calendar/route data",
+      "runtimePath": "public/assets/case-001/runtime/cafe_route_weather_context.jpg",
+      "publicPath": "/assets/case-001/runtime/cafe_route_weather_context.jpg"
+    },
+    {
+      "id": "GR-001",
+      "filename": "secure_corridor_camera.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Institutional corridor CCTV-style frame | Places Tenuun near restricted environment",
+      "runtimePath": "public/assets/case-001/runtime/secure_corridor_camera.jpg",
+      "publicPath": "/assets/case-001/runtime/secure_corridor_camera.jpg"
+    },
+    {
+      "id": "GR-002",
+      "filename": "office_badge_on_table.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Tenuun’s access badge partly visible next to keys | Legitimate/illegitimate access ambiguity",
+      "runtimePath": "public/assets/case-001/runtime/office_badge_on_table.jpg",
+      "publicPath": "/assets/case-001/runtime/office_badge_on_table.jpg"
+    },
+    {
+      "id": "GR-003",
+      "filename": "handwritten_entity_resolution_shapes.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Abstract circles/lines notebook sketch, no sensitive readable labels | Shows matching/linkage thinking",
+      "runtimePath": "public/assets/case-001/runtime/handwritten_entity_resolution_shapes.jpg",
+      "publicPath": "/assets/case-001/runtime/handwritten_entity_resolution_shapes.jpg"
+    },
+    {
+      "id": "GR-004",
+      "filename": "server_rack_maintenance_photo.jpg",
+      "mode": "generate",
+      "spoiler": "S1",
+      "delivery": "public",
+      "description": "Infrastructure maintenance shot | Gives physical reality to system",
+      "runtimePath": "public/assets/case-001/runtime/server_rack_maintenance_photo.jpg",
+      "publicPath": "/assets/case-001/runtime/server_rack_maintenance_photo.jpg"
+    },
+    {
+      "id": "GR-005",
+      "filename": "sealed_envelope_audit_copy.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Physical sealed envelope / printed pages with unreadable body text | Suggests offline preservation of logs",
+      "runtimePath": "public/assets/case-001/runtime/sealed_envelope_audit_copy.jpg",
+      "publicPath": "/assets/case-001/runtime/sealed_envelope_audit_copy.jpg"
+    },
+    {
+      "id": "W47-001",
+      "filename": "winter_road_whiteout.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Severe winter road conditions outside Arvantai | Weather context | Makes the 47-minute urgency believable",
+      "runtimePath": "public/assets/case-001/runtime/winter_road_whiteout.jpg",
+      "publicPath": "/assets/case-001/runtime/winter_road_whiteout.jpg",
+      "revealFactIds": [
+        "fact_f17_is_maral"
+      ]
+    },
+    {
+      "id": "W47-002",
+      "filename": "anonymous_safe_apartment_hallway.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Nondescript apartment corridor, no people | Generic location | Shelter-network location class",
+      "runtimePath": "private-assets/case-001/runtime/anonymous_safe_apartment_hallway.jpg",
+      "revealFactIds": [
+        "fact_f17_is_maral"
+      ]
+    },
+    {
+      "id": "W47-003",
+      "filename": "child_medical_bag_on_chair.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Small emergency medication bag + coat on chair, no identity text | Missing girl’s urgency | Life genuinely at risk",
+      "runtimePath": "private-assets/case-001/runtime/child_medical_bag_on_chair.jpg",
+      "revealFactIds": [
+        "fact_f17_is_maral"
+      ]
+    },
+    {
+      "id": "W47-004",
+      "filename": "relocation_boxes_night.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Boxes/bags packed hurriedly in dim apartment | Aftermath | Vulnerable people forced to move",
+      "runtimePath": "private-assets/case-001/runtime/relocation_boxes_night.jpg",
+      "revealFactIds": [
+        "fact_f17_is_maral"
+      ]
+    },
+    {
+      "id": "W47-005",
+      "filename": "cracked_windshield_after_crash.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Non-graphic accident aftermath, icy road | Trauma evidence | Physical cause of Maral injury/memory gap",
+      "runtimePath": "private-assets/case-001/runtime/cracked_windshield_after_crash.jpg",
+      "revealFactIds": [
+        "fact_f17_is_maral"
+      ]
+    },
+    {
+      "id": "W47-006",
+      "filename": "volunteer_empty_seat_memorial.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Empty chair / simple flowers, no body | Loss | Volunteer died in crash aftermath",
+      "runtimePath": "private-assets/case-001/runtime/volunteer_empty_seat_memorial.jpg",
+      "revealFactIds": [
+        "fact_f17_is_maral"
+      ]
+    },
+    {
+      "id": "DEC-001",
+      "filename": "saruul_tenuun_blurred_meeting.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Distant security-camera-like frame of Saruul and Tenuun meeting | Initially suspicious contact",
+      "runtimePath": "public/assets/case-001/runtime/saruul_tenuun_blurred_meeting.jpg",
+      "publicPath": "/assets/case-001/runtime/saruul_tenuun_blurred_meeting.jpg",
+      "revealFactIds": [
+        "fact_tenuun_obscured"
+      ]
+    },
+    {
+      "id": "DEC-002",
+      "filename": "spare_phone_parts_table.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Cheap phones/SIM trays/chargers on table; no actionable illicit detail | Supports decoy-device theory",
+      "runtimePath": "private-assets/case-001/runtime/spare_phone_parts_table.jpg",
+      "revealFactIds": [
+        "fact_tenuun_obscured"
+      ]
+    },
+    {
+      "id": "DEC-003",
+      "filename": "handwritten_network_noise_diagram.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Abstract misleading-node sketch without operational detail | Visualizes decoy concept",
+      "runtimePath": "private-assets/case-001/runtime/handwritten_network_noise_diagram.jpg",
+      "revealFactIds": [
+        "fact_tenuun_obscured"
+      ]
+    },
+    {
+      "id": "DEC-004",
+      "filename": "bilguun_old_device_hand.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Younger brother holding old powered phone | Recontextualizes Hope #2",
+      "runtimePath": "private-assets/case-001/runtime/bilguun_old_device_hand.jpg",
+      "revealFactIds": [
+        "fact_tenuun_obscured"
+      ]
+    },
+    {
+      "id": "DEC-005",
+      "filename": "empty_bus_station_late_night.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Late-night departure area, no Tenuun visible | Misdirection / uncertainty",
+      "runtimePath": "public/assets/case-001/runtime/empty_bus_station_late_night.jpg",
+      "publicPath": "/assets/case-001/runtime/empty_bus_station_late_night.jpg",
+      "revealFactIds": [
+        "fact_tenuun_obscured"
+      ]
+    },
+    {
+      "id": "HOPE-001",
+      "filename": "recent_mug_condensation_safehouse.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Fresh condensation / recently used mug in otherwise empty wooden room | Hope #1 supporting image if authored path uses it | Ambiguous, logical evidence only",
+      "runtimePath": "public/assets/case-001/runtime/recent_mug_condensation_safehouse.jpg",
+      "publicPath": "/assets/case-001/runtime/recent_mug_condensation_safehouse.jpg"
+    },
+    {
+      "id": "HOPE-002",
+      "filename": "old_phone_powered_on.jpg",
+      "mode": "generate",
+      "spoiler": "S3",
+      "delivery": "server",
+      "description": "Old phone booted in Bilguun’s hand | Hope #2 | False positive caused by brother",
+      "runtimePath": "private-assets/case-001/runtime/old_phone_powered_on.jpg",
+      "revealFactIds": [
+        "fact_planned_disappearance"
+      ]
+    },
+    {
+      "id": "HOPE-003",
+      "filename": "wooden_safehouse_window_live.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Very recent-looking exterior/interior detail of remote wooden safehouse; no face | Hope #3 | Tenuun genuinely alive",
+      "runtimePath": "private-assets/case-001/runtime/wooden_safehouse_window_live.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ]
+    },
+    {
+      "id": "DIS-001",
+      "filename": "old_unregistered_car_generic.jpg",
+      "mode": "generate",
+      "spoiler": "S2",
+      "delivery": "public",
+      "description": "Older unremarkable vehicle in winter outskirts | Escape timeline clue",
+      "runtimePath": "public/assets/case-001/runtime/old_unregistered_car_generic.jpg",
+      "publicPath": "/assets/case-001/runtime/old_unregistered_car_generic.jpg"
+    },
+    {
+      "id": "DIS-002",
+      "filename": "wooden_safehouse_exterior.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Isolated modest wooden house outside city | Hidden-location visual",
+      "runtimePath": "private-assets/case-001/runtime/wooden_safehouse_exterior.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ]
+    },
+    {
+      "id": "DIS-003",
+      "filename": "safehouse_table_old_phone.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Old phone + encrypted-drive-like object on wooden table, no readable secrets | Evidence package preparation",
+      "runtimePath": "private-assets/case-001/runtime/safehouse_table_old_phone.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ]
+    },
+    {
+      "id": "DIS-004",
+      "filename": "safehouse_single_bed.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Sparse bed, folded coat, lonely room | Emotional cost",
+      "runtimePath": "private-assets/case-001/runtime/safehouse_single_bed.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ]
+    },
+    {
+      "id": "DIS-005",
+      "filename": "greenhouse_budget_objects.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Tape measure, rough house materials, raspberry seed packet; no readable budget | Quiet-life dream made physical",
+      "runtimePath": "private-assets/case-001/runtime/greenhouse_budget_objects.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ]
+    },
+    {
+      "id": "END-001",
+      "filename": "maral_balcony_empty_pot.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Balcony in Arvantai, simple empty pot before planting | Pre-ending transition",
+      "runtimePath": "private-assets/case-001/runtime/maral_balcony_empty_pot.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ],
+      "revealEndingIds": [
+        "ending_trace",
+        "ending_sever"
+      ]
+    },
+    {
+      "id": "END-002",
+      "filename": "raspberry_seedling_balcony.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Young raspberry seedling on balcony in evening light | Canon SEVER emotional image",
+      "runtimePath": "private-assets/case-001/runtime/raspberry_seedling_balcony.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ],
+      "revealEndingIds": [
+        "ending_trace",
+        "ending_sever"
+      ]
+    },
+    {
+      "id": "END-003",
+      "filename": "distant_wooden_house_no_person.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Distant safehouse-like cabin, intentionally non-confirmatory | Optional ambiguous emotional insert",
+      "runtimePath": "private-assets/case-001/runtime/distant_wooden_house_no_person.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ],
+      "revealEndingIds": [
+        "ending_trace",
+        "ending_sever"
+      ]
+    },
+    {
+      "id": "END-004",
+      "filename": "old_audio_device_closeup.jpg",
+      "mode": "generate",
+      "spoiler": "S4",
+      "delivery": "server",
+      "description": "Phone/audio device on table during recovered call | Supports final audio scene",
+      "runtimePath": "private-assets/case-001/runtime/old_audio_device_closeup.jpg",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ],
+      "revealEndingIds": [
+        "ending_trace",
+        "ending_sever"
+      ]
+    },
+    {
+      "id": "END-005",
+      "filename": "graph_node_zero_visual",
+      "mode": "ui-data",
+      "spoiler": "S4",
+      "delivery": "ui",
+      "description": "Runtime GRAPH/audit UI | Post-credit NODE: 0",
+      "revealFactIds": [
+        "fact_tenuun_alive"
+      ],
+      "revealEndingIds": [
+        "ending_trace",
+        "ending_sever"
+      ]
+    }
+  ]
+}

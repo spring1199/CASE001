@@ -499,7 +499,7 @@ describe('case bundle loading', () => {
   it('loads every authored Case #001 JSON source with explicit metadata', () => {
     const authoredFiles = readdirSync(
       new URL('../../content/cases/case-001/', import.meta.url),
-    ).filter((fileName) => fileName.endsWith('.json')).sort();
+    ).filter((fileName) => fileName.endsWith('.json') && fileName !== 'assets.json').sort();
 
     expect(authoredFiles).toEqual(expectedSourceFiles);
     expect(Object.values(case001Seed.sourceMetadata)

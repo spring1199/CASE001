@@ -43,6 +43,7 @@ export const phoneCollectionSchema = z.strictObject({
 });
 
 export const phoneVisualSchema = z.strictObject({
+  assetId: nonEmptyTextSchema.optional(),
   src: nonEmptyTextSchema.optional(),
   alt: nonEmptyTextSchema,
   description: nonEmptyTextSchema,

@@ -1,4 +1,9 @@
 import { case001Seed } from '@/game/content/case-001';
+import {
+  case001AssetRegistry,
+  resolveCaseAsset,
+  type CaseAssetAccessState,
+} from '@/game/assets/case-assets';
 import { createPhoneContentIndex, type PhoneAppId } from '@/phone/data/schema';
 
 const appLabels: Record<PhoneAppId, { label: string; shortLabel: string; iconLabel: string }> = {
@@ -20,7 +25,7 @@ type CommonRecord = {
   timestampLabel?: string;
   body?: string;
   metadata?: Array<{ label: string; value: string }>;
-  visual?: { alt: string; description: string; width?: number; height?: number };
+  visual?: { assetId: string; alt: string; description: string; width?: number; height?: number };
   audio?: {
     assetId?: string;
     durationLabel: string;
@@ -46,10 +51,12 @@ function projectCommon(record: CommonRecord) {
     body: record.body,
     metadata: record.metadata,
     visual: record.visual === undefined ? undefined : {
+      assetId: record.visual.assetId,
+      src: case001AssetRegistry.assets.find(({ id }) => id === record.visual?.assetId)?.publicPath,
       alt: record.visual.alt,
       description: record.visual.description,
-      width: record.visual.width,
-      height: record.visual.height,
+      width: record.visual.width ?? 1536,
+      height: record.visual.height ?? 1024,
     },
     audio: record.audio === undefined ? undefined : {
       src: `/api/case-audio/${record.audio.assetId ?? record.id}`,
@@ -75,10 +82,12 @@ const messages = case001Seed.messages.map((record) => ({
   messages: record.messages.map((message) => ({
     ...message,
     visual: message.visual === undefined ? undefined : {
+      assetId: message.visual.assetId,
+      src: case001AssetRegistry.assets.find(({ id }) => id === message.visual?.assetId)?.publicPath,
       alt: message.visual.alt,
       description: message.visual.description,
-      width: message.visual.width,
-      height: message.visual.height,
+      width: message.visual.width ?? 1536,
+      height: message.visual.height ?? 1024,
     },
     audio: message.audio === undefined ? undefined : {
       src: `/api/case-audio/${message.audio.assetId ?? message.id}`,
@@ -139,3 +148,63 @@ export const case001PhoneIndex = createPhoneContentIndex({
     }]),
   ],
 });
+
+const authoredGatesById = new Map(
+  [
+    ...case001Seed.artifacts,
+    ...case001Seed.browser,
+    ...case001Seed.calls,
+    ...case001Seed.emails,
+    ...case001Seed.locations,
+    ...case001Seed.messages,
+    ...case001Seed.notes,
+    ...case001Seed.photos,
+  ].map((record) => [record.id, {
+    facts: record.hiddenUntilFacts ?? [],
+    endings: record.hiddenUntilEndings ?? [],
+  }] as const),
+);
+
+function itemIsVisible(itemId: string, access: CaseAssetAccessState): boolean {
+  const gates = authoredGatesById.get(itemId);
+  if (gates === undefined) return true;
+  const facts = new Set(access.factIds);
+  return gates.facts.every((factId) => facts.has(factId))
+    && (gates.endings.length === 0
+      || (access.endingId !== null && gates.endings.includes(access.endingId)));
+}
+
+function revealVisual<Visual extends { assetId?: string; src?: string }>(
+  visual: Visual | undefined,
+  access: CaseAssetAccessState,
+): Visual | undefined {
+  if (visual?.assetId === undefined) return visual;
+  const resolution = resolveCaseAsset(visual.assetId, access);
+  const src = resolution.kind === 'public-url'
+    ? resolution.url
+    : resolution.kind === 'private-file'
+      ? `/api/case-assets/${visual.assetId}`
+      : undefined;
+  return { ...visual, src };
+}
+
+export function createCase001PhoneIndex(access: CaseAssetAccessState) {
+  return createPhoneContentIndex({
+    ...case001PhoneIndex.content,
+    apps: case001PhoneIndex.content.apps.map((appDescriptor) => ({
+      ...appDescriptor,
+      items: appDescriptor.items
+        .filter((item) => itemIsVisible(item.id, access))
+        .map((item) => ({
+          ...item,
+          visual: revealVisual(item.visual, access),
+          ...(item.kind === 'message-thread' ? {
+            messages: item.messages.map((message) => ({
+              ...message,
+              visual: revealVisual(message.visual, access),
+            })),
+          } : {}),
+        })),
+    })),
+  });
+}
