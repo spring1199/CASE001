@@ -18,6 +18,7 @@ export type PlayerState = {
   caseId: string;
   discoveredArtifactIds: string[];
   discoveredEvidenceIds: string[];
+  pinnedEvidenceIds: string[];
   unlockedAppIds: string[];
   unlockedContentIds: string[];
   completedDeductionIds: string[];
@@ -37,6 +38,7 @@ export function createInitialPlayerState(caseId: string, now: string): PlayerSta
     caseId,
     discoveredArtifactIds: [],
     discoveredEvidenceIds: [],
+    pinnedEvidenceIds: [],
     unlockedAppIds: [],
     unlockedContentIds: [],
     completedDeductionIds: [],

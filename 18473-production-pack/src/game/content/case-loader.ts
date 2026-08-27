@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { analyzeCaseProgression } from '@/game/engine/progression';
 import {
   caseBundleSchema,
   caseManifestSchema,
@@ -8,10 +9,13 @@ import {
   endingSchema,
   evidenceSchema,
   factSchema,
+  graphRecordSchema,
   lockSchema,
   objectiveSchema,
+  timelineRecordSchema,
   triggerSchema,
   type CaseBundle,
+  type Condition,
 } from '@/game/schema/case';
 
 type AuthoredSource = {
@@ -29,6 +33,8 @@ export type CaseBundleSources = {
   locks: AuthoredSource;
   triggers: AuthoredSource;
   endings: AuthoredSource;
+  graph: AuthoredSource;
+  timeline: AuthoredSource;
   artifacts: AuthoredSource;
   browser: AuthoredSource;
   calls: AuthoredSource;
@@ -37,7 +43,6 @@ export type CaseBundleSources = {
   messages: AuthoredSource;
   notes: AuthoredSource;
   photos: AuthoredSource;
-  timeline: AuthoredSource;
 };
 
 export const coreCaseSourceKeys = [
@@ -50,6 +55,8 @@ export const coreCaseSourceKeys = [
   'locks',
   'triggers',
   'endings',
+  'graph',
+  'timeline',
 ] as const;
 
 export const deferredCaseSourceKeys = [
@@ -61,7 +68,6 @@ export const deferredCaseSourceKeys = [
   'messages',
   'notes',
   'photos',
-  'timeline',
 ] as const;
 
 export type CoreCaseSourceKey = (typeof coreCaseSourceKeys)[number];
@@ -86,6 +92,10 @@ type CaseRecordByKind = {
   lock: CaseBundle['locks'][number];
   trigger: CaseBundle['triggers'][number];
   ending: CaseBundle['endings'][number];
+  'graph-node': Extract<CaseBundle['graph'][number], { recordType: 'node' }>;
+  'graph-edge': Extract<CaseBundle['graph'][number], { recordType: 'edge' }>;
+  'timeline-position': Extract<CaseBundle['timeline'][number], { recordType: 'position' }>;
+  'timeline-event': Extract<CaseBundle['timeline'][number], { recordType: 'event' }>;
 };
 
 export type CaseRecordKind = keyof CaseRecordByKind;
@@ -103,7 +113,17 @@ export type LoadedCaseBundle = CaseBundle & {
   sourceMetadata: CaseSourceMetadata;
 };
 
-type ReferenceTargetKind = 'character' | 'deduction' | 'ending' | 'evidence' | 'fact' | 'objective';
+type ReferenceTargetKind =
+  | 'character'
+  | 'deduction'
+  | 'ending'
+  | 'evidence'
+  | 'fact'
+  | 'graph edge'
+  | 'graph node'
+  | 'lock'
+  | 'objective'
+  | 'timeline position';
 
 function formatIssuePath(path: PropertyKey[]): string {
   if (path.length === 0) return '<root>';
@@ -179,27 +199,110 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
   const endingIds = new Set(bundle.endings.map(({ id }) => id));
   const evidenceIds = new Set(bundle.evidence.map(({ id }) => id));
   const factIds = new Set(bundle.facts.map(({ id }) => id));
+  const lockIds = new Set(bundle.locks.map(({ id }) => id));
   const objectiveIds = new Set(bundle.objectives.map(({ id }) => id));
+  const graphNodeIds = new Set(
+    bundle.graph.flatMap((record) => (record.recordType === 'node' ? [record.id] : [])),
+  );
+  const graphEdgeIds = new Set(
+    bundle.graph.flatMap((record) => (record.recordType === 'edge' ? [record.id] : [])),
+  );
+  const timelinePositionIds = new Set(
+    bundle.timeline.flatMap((record) => (record.recordType === 'position' ? [record.id] : [])),
+  );
 
+  // `artifactViewed` targets belong to the deferred artifact collection, so its
+  // referential check is intentionally added with that later-phase schema
+  // (mirroring Evidence.sourceArtifactId in ADR 0001).
   const validateCondition = (
-    condition: CaseBundle['locks'][number]['unlockWhen'],
+    condition: Condition,
     sourcePath: string,
     recordId: string,
     basePath: string,
-  ) => {
+  ): void => {
     if ('fact' in condition) {
       assertKnownReference(factIds, 'fact', condition.fact, sourcePath, recordId, `${basePath}.fact`);
-      return;
+    } else if ('allFacts' in condition) {
+      assertKnownReferences(
+        factIds,
+        'fact',
+        condition.allFacts,
+        sourcePath,
+        recordId,
+        `${basePath}.allFacts`,
+      );
+    } else if ('evidence' in condition) {
+      assertKnownReference(
+        evidenceIds,
+        'evidence',
+        condition.evidence,
+        sourcePath,
+        recordId,
+        `${basePath}.evidence`,
+      );
+    } else if ('allEvidence' in condition) {
+      assertKnownReferences(
+        evidenceIds,
+        'evidence',
+        condition.allEvidence,
+        sourcePath,
+        recordId,
+        `${basePath}.allEvidence`,
+      );
+    } else if ('evidenceThreshold' in condition) {
+      assertKnownReferences(
+        evidenceIds,
+        'evidence',
+        condition.evidenceThreshold.anyOf,
+        sourcePath,
+        recordId,
+        `${basePath}.evidenceThreshold.anyOf`,
+      );
+    } else if ('deductionCompleted' in condition) {
+      assertKnownReference(
+        deductionIds,
+        'deduction',
+        condition.deductionCompleted,
+        sourcePath,
+        recordId,
+        `${basePath}.deductionCompleted`,
+      );
+    } else if ('objectiveCompleted' in condition) {
+      assertKnownReference(
+        objectiveIds,
+        'objective',
+        condition.objectiveCompleted,
+        sourcePath,
+        recordId,
+        `${basePath}.objectiveCompleted`,
+      );
+    } else if ('edgeConfidenceAtLeast' in condition) {
+      assertKnownReference(
+        graphEdgeIds,
+        'graph edge',
+        condition.edgeConfidenceAtLeast.edgeId,
+        sourcePath,
+        recordId,
+        `${basePath}.edgeConfidenceAtLeast.edgeId`,
+      );
+    } else if ('endingSelected' in condition) {
+      assertKnownReference(
+        endingIds,
+        'ending',
+        condition.endingSelected,
+        sourcePath,
+        recordId,
+        `${basePath}.endingSelected`,
+      );
+    } else if ('allOf' in condition) {
+      condition.allOf.forEach((child, childIndex) => {
+        validateCondition(child, sourcePath, recordId, `${basePath}.allOf[${childIndex}]`);
+      });
+    } else if ('anyOf' in condition) {
+      condition.anyOf.forEach((child, childIndex) => {
+        validateCondition(child, sourcePath, recordId, `${basePath}.anyOf[${childIndex}]`);
+      });
     }
-
-    assertKnownReferences(
-      factIds,
-      'fact',
-      condition.allFacts,
-      sourcePath,
-      recordId,
-      `${basePath}.allFacts`,
-    );
   };
 
   assertKnownReference(
@@ -241,6 +344,16 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
     bundle.manifest.id,
     'initialObjectiveIds',
   );
+
+  const activeObjectiveIds = new Set(
+    bundle.objectives.flatMap((objective) => (objective.state === 'active' ? [objective.id] : [])),
+  );
+  bundle.manifest.initialObjectiveIds.forEach((objectiveId, objectiveIndex) => {
+    if (activeObjectiveIds.has(objectiveId)) return;
+    throw new Error(
+      `Invalid authored case reference:\n${sources.manifest.sourcePath} (record "${bundle.manifest.id}") at initialObjectiveIds[${objectiveIndex}]: objective "${objectiveId}" is not authored with state "active"`,
+    );
+  });
 
   bundle.characters.forEach((character, characterIndex) => {
     if (character.canonicalCharacterId !== undefined) {
@@ -359,6 +472,195 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
       `[${triggerIndex}].when`,
     );
   });
+
+  bundle.objectives.forEach((objective, objectiveIndex) => {
+    if (objective.activateWhen !== undefined) {
+      validateCondition(
+        objective.activateWhen,
+        sources.objectives.sourcePath,
+        objective.id,
+        `[${objectiveIndex}].activateWhen`,
+      );
+    }
+    if (objective.completeWhen !== undefined) {
+      validateCondition(
+        objective.completeWhen,
+        sources.objectives.sourcePath,
+        objective.id,
+        `[${objectiveIndex}].completeWhen`,
+      );
+    }
+  });
+
+  bundle.endings.forEach((ending, endingIndex) => {
+    if (ending.gateLockId !== undefined) {
+      assertKnownReference(
+        lockIds,
+        'lock',
+        ending.gateLockId,
+        sources.endings.sourcePath,
+        ending.id,
+        `[${endingIndex}].gateLockId`,
+      );
+    }
+    assertKnownReferences(
+      graphEdgeIds,
+      'graph edge',
+      ending.onSelect?.confirmGraphEdgeIds,
+      sources.endings.sourcePath,
+      ending.id,
+      `[${endingIndex}].onSelect.confirmGraphEdgeIds`,
+    );
+    assertKnownReferences(
+      graphEdgeIds,
+      'graph edge',
+      ending.onSelect?.severGraphEdgeIds,
+      sources.endings.sourcePath,
+      ending.id,
+      `[${endingIndex}].onSelect.severGraphEdgeIds`,
+    );
+  });
+
+  bundle.graph.forEach((record, recordIndex) => {
+    if (record.recordType === 'node') {
+      if (record.canonicalCharacterId !== undefined) {
+        assertKnownReference(
+          characterIds,
+          'character',
+          record.canonicalCharacterId,
+          sources.graph.sourcePath,
+          record.id,
+          `[${recordIndex}].canonicalCharacterId`,
+        );
+      }
+      if (record.identityRevealFact !== undefined) {
+        assertKnownReference(
+          factIds,
+          'fact',
+          record.identityRevealFact,
+          sources.graph.sourcePath,
+          record.id,
+          `[${recordIndex}].identityRevealFact`,
+        );
+      }
+      assertKnownReferences(
+        factIds,
+        'fact',
+        record.hiddenUntilFacts,
+        sources.graph.sourcePath,
+        record.id,
+        `[${recordIndex}].hiddenUntilFacts`,
+      );
+      return;
+    }
+
+    if (record.fromNodeId === record.toNodeId) {
+      throw new Error(
+        `Invalid authored case reference:\n${sources.graph.sourcePath} (record "${record.id}") at [${recordIndex}].toNodeId: edge endpoints must reference two different graph nodes`,
+      );
+    }
+    assertKnownReference(
+      graphNodeIds,
+      'graph node',
+      record.fromNodeId,
+      sources.graph.sourcePath,
+      record.id,
+      `[${recordIndex}].fromNodeId`,
+    );
+    assertKnownReference(
+      graphNodeIds,
+      'graph node',
+      record.toNodeId,
+      sources.graph.sourcePath,
+      record.id,
+      `[${recordIndex}].toNodeId`,
+    );
+    record.confidenceSources.forEach((source, sourceIndex) => {
+      assertKnownReference(
+        evidenceIds,
+        'evidence',
+        source.evidenceId,
+        sources.graph.sourcePath,
+        record.id,
+        `[${recordIndex}].confidenceSources[${sourceIndex}].evidenceId`,
+      );
+    });
+    assertKnownReferences(
+      factIds,
+      'fact',
+      record.hiddenUntilFacts,
+      sources.graph.sourcePath,
+      record.id,
+      `[${recordIndex}].hiddenUntilFacts`,
+    );
+  });
+
+  const seenPositionOrders = new Map<number, string>();
+  bundle.timeline.forEach((record, recordIndex) => {
+    if (record.recordType === 'position') {
+      const existingPositionId = seenPositionOrders.get(record.order);
+      if (existingPositionId !== undefined) {
+        throw new Error(
+          `Invalid authored case reference:\n${sources.timeline.sourcePath} (record "${record.id}") at [${recordIndex}].order: order ${record.order} is already used by position "${existingPositionId}"`,
+        );
+      }
+      seenPositionOrders.set(record.order, record.id);
+      return;
+    }
+
+    assertKnownReferences(
+      timelinePositionIds,
+      'timeline position',
+      record.acceptablePositionIds,
+      sources.timeline.sourcePath,
+      record.id,
+      `[${recordIndex}].acceptablePositionIds`,
+    );
+    assertKnownReferences(
+      evidenceIds,
+      'evidence',
+      record.requiredEvidenceIds,
+      sources.timeline.sourcePath,
+      record.id,
+      `[${recordIndex}].requiredEvidenceIds`,
+    );
+    assertKnownReferences(
+      factIds,
+      'fact',
+      record.hiddenUntilFacts,
+      sources.timeline.sourcePath,
+      record.id,
+      `[${recordIndex}].hiddenUntilFacts`,
+    );
+    assertKnownReferences(
+      factIds,
+      'fact',
+      record.grantsFactsWhenPlaced,
+      sources.timeline.sourcePath,
+      record.id,
+      `[${recordIndex}].grantsFactsWhenPlaced`,
+    );
+  });
+}
+
+/**
+ * A manifest that declares `progressionComplete: true` promises a finished,
+ * fair-play case: every authored record must be reachable. Cases still in
+ * production omit the flag and use `analyzeCaseProgression` reports instead,
+ * so enabling the flag later only adds validation and never weakens it.
+ */
+function enforceDeclaredCompleteProgression(
+  bundle: CaseBundle,
+  sources: CaseBundleSources,
+): void {
+  if (bundle.manifest.progressionComplete !== true) return;
+  const { issues } = analyzeCaseProgression(bundle);
+  if (issues.length === 0) return;
+
+  const details = issues.map((issue) => (
+    `${sources.manifest.sourcePath} (record "${bundle.manifest.id}") at progressionComplete: ${issue.message}`
+  ));
+  throw new Error(`Invalid authored case progression:\n${details.join('\n')}`);
 }
 
 export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
@@ -372,6 +674,8 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
     locks: parseSource(z.array(lockSchema), sources.locks),
     triggers: parseSource(z.array(triggerSchema), sources.triggers),
     endings: parseSource(z.array(endingSchema), sources.endings),
+    graph: parseSource(z.array(graphRecordSchema), sources.graph),
+    timeline: parseSource(z.array(timelineRecordSchema), sources.timeline),
     artifacts: parseSource(deferredEmptyCollectionSchema, sources.artifacts),
     browser: parseSource(deferredEmptyCollectionSchema, sources.browser),
     calls: parseSource(deferredEmptyCollectionSchema, sources.calls),
@@ -380,7 +684,6 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
     messages: parseSource(deferredEmptyCollectionSchema, sources.messages),
     notes: parseSource(deferredEmptyCollectionSchema, sources.notes),
     photos: parseSource(deferredEmptyCollectionSchema, sources.photos),
-    timeline: parseSource(deferredEmptyCollectionSchema, sources.timeline),
   });
 
   const coreIndex = new Map<string, CoreCaseIndexEntry>();
@@ -425,8 +728,15 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
   bundle.endings.forEach((value) => addRecord({
     kind: 'ending', sourcePath: sources.endings.sourcePath, value,
   }));
+  bundle.graph.forEach((value) => addRecord(value.recordType === 'node'
+    ? { kind: 'graph-node', sourcePath: sources.graph.sourcePath, value }
+    : { kind: 'graph-edge', sourcePath: sources.graph.sourcePath, value }));
+  bundle.timeline.forEach((value) => addRecord(value.recordType === 'position'
+    ? { kind: 'timeline-position', sourcePath: sources.timeline.sourcePath, value }
+    : { kind: 'timeline-event', sourcePath: sources.timeline.sourcePath, value }));
 
   validateCaseReferences(bundle, sources);
+  enforceDeclaredCompleteProgression(bundle, sources);
 
   const sourceMetadata: CaseSourceMetadata = {
     manifest: {
@@ -456,6 +766,12 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
     endings: {
       sourcePath: sources.endings.sourcePath, validation: 'core', indexed: true,
     },
+    graph: {
+      sourcePath: sources.graph.sourcePath, validation: 'core', indexed: true,
+    },
+    timeline: {
+      sourcePath: sources.timeline.sourcePath, validation: 'core', indexed: true,
+    },
     artifacts: {
       sourcePath: sources.artifacts.sourcePath, validation: 'deferred-empty', indexed: false,
     },
@@ -479,9 +795,6 @@ export function parseCaseBundle(sources: CaseBundleSources): LoadedCaseBundle {
     },
     photos: {
       sourcePath: sources.photos.sourcePath, validation: 'deferred-empty', indexed: false,
-    },
-    timeline: {
-      sourcePath: sources.timeline.sourcePath, validation: 'deferred-empty', indexed: false,
     },
   };
 

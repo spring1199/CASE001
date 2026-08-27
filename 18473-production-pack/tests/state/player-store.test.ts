@@ -197,6 +197,7 @@ describe('createInitialPlayerState', () => {
       caseId: 'case_custom',
       discoveredArtifactIds: [],
       discoveredEvidenceIds: [],
+      pinnedEvidenceIds: [],
       unlockedAppIds: [],
       unlockedContentIds: [],
       completedDeductionIds: [],

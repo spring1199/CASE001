@@ -1,26 +1,23 @@
+import { evaluateCondition, type ConditionContext } from '@/game/engine/conditions';
 import type { Condition, Trigger } from '@/game/schema/case';
 
 export function evaluateTrigger(
   condition: Condition,
-  knownFactIds: ReadonlySet<string>,
+  context: ConditionContext,
 ): boolean {
-  if ('fact' in condition) {
-    return knownFactIds.has(condition.fact);
-  }
-
-  return condition.allFacts.every((factId) => knownFactIds.has(factId));
+  return evaluateCondition(condition, context);
 }
 
 export function computeUnlocks(
   triggers: readonly Trigger[],
-  knownFactIds: ReadonlySet<string>,
+  context: ConditionContext,
   existingUnlockedTargetIds: ReadonlySet<string> = new Set<string>(),
 ): string[] {
   const seenTargetIds = new Set(existingUnlockedTargetIds);
   const unlockedTargetIds: string[] = [];
 
   for (const trigger of triggers) {
-    if (!evaluateTrigger(trigger.when, knownFactIds)) continue;
+    if (!evaluateTrigger(trigger.when, context)) continue;
 
     for (const effect of trigger.effects) {
       if (seenTargetIds.has(effect.target)) continue;

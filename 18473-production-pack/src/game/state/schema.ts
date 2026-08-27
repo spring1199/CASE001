@@ -81,6 +81,7 @@ export const playerStateSchema = z.strictObject({
   caseId: identifierSchema,
   discoveredArtifactIds: orderedUniqueIdentifierArraySchema,
   discoveredEvidenceIds: orderedUniqueIdentifierArraySchema,
+  pinnedEvidenceIds: orderedUniqueIdentifierArraySchema,
   unlockedAppIds: orderedUniqueIdentifierArraySchema,
   unlockedContentIds: orderedUniqueIdentifierArraySchema,
   completedDeductionIds: orderedUniqueIdentifierArraySchema,
@@ -94,6 +95,18 @@ export const playerStateSchema = z.strictObject({
   endingId: identifierSchema.nullable(),
   timestamps: playerTimestampsSchema,
 }).superRefine((state, context) => {
+  const discoveredEvidence = new Set(state.discoveredEvidenceIds);
+  const undiscoveredPinnedId = state.pinnedEvidenceIds.find(
+    (evidenceId) => !discoveredEvidence.has(evidenceId),
+  );
+  if (undiscoveredPinnedId !== undefined) {
+    context.addIssue({
+      code: 'custom',
+      path: ['pinnedEvidenceIds'],
+      message: `Evidence "${undiscoveredPinnedId}" cannot be pinned before it is discovered.`,
+    });
+  }
+
   const duplicateTimelineEventId = findDuplicate(
     state.timelinePlacements.map((placement) => placement.eventId),
   );

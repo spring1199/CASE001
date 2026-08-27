@@ -70,6 +70,8 @@ function createValidSources() {
         canon: true,
       }],
     },
+    graph: { sourcePath: 'content/cases/test/graph.json', data: [] },
+    timeline: { sourcePath: 'content/cases/test/timeline.json', data: [] },
     artifacts: { sourcePath: 'content/cases/test/artifacts.json', data: [] },
     browser: { sourcePath: 'content/cases/test/browser.json', data: [] },
     calls: { sourcePath: 'content/cases/test/calls.json', data: [] },
@@ -78,7 +80,6 @@ function createValidSources() {
     messages: { sourcePath: 'content/cases/test/messages.json', data: [] },
     notes: { sourcePath: 'content/cases/test/notes.json', data: [] },
     photos: { sourcePath: 'content/cases/test/photos.json', data: [] },
-    timeline: { sourcePath: 'content/cases/test/timeline.json', data: [] },
   };
 }
 
@@ -216,6 +217,170 @@ const danglingReferenceCases: Array<{
     }]),
     expected: /triggers\.json.*tr_test.*\[0\]\.when\.fact.*unknown fact ID "fact_missing"/s,
   },
+  {
+    name: 'rejects an unknown evidence ID inside a nested composite condition',
+    makeSources: (sources) => replaceSource(sources, 'triggers', [{
+      ...sources.triggers.data[0],
+      when: { allOf: [{ anyOf: [{ evidence: 'ev_missing' }] }] },
+    }]),
+    expected: /triggers\.json.*tr_test.*\[0\]\.when\.allOf\[0\]\.anyOf\[0\]\.evidence.*unknown evidence ID "ev_missing"/s,
+  },
+  {
+    name: 'rejects an unknown evidence-threshold candidate',
+    makeSources: (sources) => replaceSource(sources, 'triggers', [{
+      ...sources.triggers.data[0],
+      when: { evidenceThreshold: { anyOf: ['ev_missing'], minimum: 1 } },
+    }]),
+    expected: /triggers\.json.*tr_test.*\[0\]\.when\.evidenceThreshold\.anyOf\[0\].*unknown evidence ID "ev_missing"/s,
+  },
+  {
+    name: 'rejects an unknown deduction reference in a trigger condition',
+    makeSources: (sources) => replaceSource(sources, 'triggers', [{
+      ...sources.triggers.data[0],
+      when: { deductionCompleted: 'ded_missing' },
+    }]),
+    expected: /triggers\.json.*tr_test.*\[0\]\.when\.deductionCompleted.*unknown deduction ID "ded_missing"/s,
+  },
+  {
+    name: 'rejects an unknown edge reference in a confidence condition',
+    makeSources: (sources) => replaceSource(sources, 'triggers', [{
+      ...sources.triggers.data[0],
+      when: { edgeConfidenceAtLeast: { edgeId: 'edge_missing', minimum: 50 } },
+    }]),
+    expected: /triggers\.json.*tr_test.*\[0\]\.when\.edgeConfidenceAtLeast\.edgeId.*unknown graph edge ID "edge_missing"/s,
+  },
+  {
+    name: 'rejects an unknown ending reference in a trigger condition',
+    makeSources: (sources) => replaceSource(sources, 'triggers', [{
+      ...sources.triggers.data[0],
+      when: { endingSelected: 'ending_missing' },
+    }]),
+    expected: /triggers\.json.*tr_test.*\[0\]\.when\.endingSelected.*unknown ending ID "ending_missing"/s,
+  },
+  {
+    name: 'rejects an unknown objective activation condition fact',
+    makeSources: (sources) => replaceSource(sources, 'objectives', [
+      sources.objectives.data[0],
+      {
+        id: 'obj_gated',
+        title: 'Gated objective',
+        state: 'locked',
+        activateWhen: { fact: 'fact_missing' },
+      },
+    ]),
+    expected: /objectives\.json.*obj_gated.*\[1\]\.activateWhen\.fact.*unknown fact ID "fact_missing"/s,
+  },
+  {
+    name: 'rejects an unknown ending gate lock',
+    makeSources: (sources) => replaceSource(sources, 'endings', [{
+      ...sources.endings.data[0],
+      gateLockId: 'lock_missing',
+    }]),
+    expected: /endings\.json.*ending_test.*\[0\]\.gateLockId.*unknown lock ID "lock_missing"/s,
+  },
+  {
+    name: 'rejects an unknown ending edge effect',
+    makeSources: (sources) => replaceSource(sources, 'endings', [{
+      ...sources.endings.data[0],
+      onSelect: { severGraphEdgeIds: ['edge_missing'] },
+    }]),
+    expected: /endings\.json.*ending_test.*\[0\]\.onSelect\.severGraphEdgeIds\[0\].*unknown graph edge ID "edge_missing"/s,
+  },
+  {
+    name: 'rejects a graph edge referencing an unknown node',
+    makeSources: (sources) => replaceSource(sources, 'graph', [
+      {
+        recordType: 'node',
+        id: 'node_a',
+        nodeType: 'person',
+        publicLabel: 'A',
+      },
+      {
+        recordType: 'edge',
+        id: 'edge_test',
+        fromNodeId: 'node_a',
+        toNodeId: 'node_missing',
+        kind: 'observed',
+        confidenceSources: [],
+      },
+    ]),
+    expected: /graph\.json.*edge_test.*\[1\]\.toNodeId.*unknown graph node ID "node_missing"/s,
+  },
+  {
+    name: 'rejects a graph edge whose endpoints are the same node',
+    makeSources: (sources) => replaceSource(sources, 'graph', [
+      {
+        recordType: 'node',
+        id: 'node_a',
+        nodeType: 'person',
+        publicLabel: 'A',
+      },
+      {
+        recordType: 'edge',
+        id: 'edge_test',
+        fromNodeId: 'node_a',
+        toNodeId: 'node_a',
+        kind: 'observed',
+        confidenceSources: [],
+      },
+    ]),
+    expected: /graph\.json.*edge_test.*\[1\]\.toNodeId.*edge endpoints must reference two different graph nodes/s,
+  },
+  {
+    name: 'rejects a graph confidence source with unknown evidence',
+    makeSources: (sources) => replaceSource(sources, 'graph', [
+      {
+        recordType: 'node',
+        id: 'node_a',
+        nodeType: 'person',
+        publicLabel: 'A',
+      },
+      {
+        recordType: 'node',
+        id: 'node_b',
+        nodeType: 'device',
+        publicLabel: 'B',
+      },
+      {
+        recordType: 'edge',
+        id: 'edge_test',
+        fromNodeId: 'node_a',
+        toNodeId: 'node_b',
+        kind: 'inferred',
+        confidenceSources: [{ evidenceId: 'ev_missing', weight: 10 }],
+      },
+    ]),
+    expected: /graph\.json.*edge_test.*\[2\]\.confidenceSources\[0\]\.evidenceId.*unknown evidence ID "ev_missing"/s,
+  },
+  {
+    name: 'rejects a timeline event referencing an unknown position',
+    makeSources: (sources) => replaceSource(sources, 'timeline', [{
+      recordType: 'event',
+      id: 'tev_test',
+      title: 'Event',
+      acceptablePositionIds: ['tpos_missing'],
+    }]),
+    expected: /timeline\.json.*tev_test.*\[0\]\.acceptablePositionIds\[0\].*unknown timeline position ID "tpos_missing"/s,
+  },
+  {
+    name: 'rejects timeline positions with a duplicated order',
+    makeSources: (sources) => replaceSource(sources, 'timeline', [
+      { recordType: 'position', id: 'tpos_a', title: 'First', order: 1 },
+      { recordType: 'position', id: 'tpos_b', title: 'Second', order: 1 },
+    ]),
+    expected: /timeline\.json.*tpos_b.*\[1\]\.order.*order 1 is already used by position "tpos_a"/s,
+  },
+  {
+    name: 'rejects an initial objective that is not authored active',
+    makeSources: (sources) => {
+      const withLockedObjective = replaceSource(sources, 'objectives', [{
+        ...sources.objectives.data[0],
+        state: 'locked',
+      }]);
+      return withLockedObjective;
+    },
+    expected: /case\.json.*case_test.*initialObjectiveIds\[0\].*objective "obj_test" is not authored with state "active"/s,
+  },
 ];
 
 const deferredSourceCases = [
@@ -227,7 +392,6 @@ const deferredSourceCases = [
   ['messages', 'messages.json'],
   ['notes', 'notes.json'],
   ['photos', 'photos.json'],
-  ['timeline', 'timeline.json'],
 ] as const;
 
 const expectedSourceFiles = [
@@ -241,6 +405,7 @@ const expectedSourceFiles = [
   'endings.json',
   'evidence.json',
   'facts.json',
+  'graph.json',
   'locations.json',
   'locks.json',
   'messages.json',
@@ -267,7 +432,9 @@ describe('case bundle loading', () => {
       + case001Seed.objectives.length
       + case001Seed.locks.length
       + case001Seed.triggers.length
-      + case001Seed.endings.length;
+      + case001Seed.endings.length
+      + case001Seed.graph.length
+      + case001Seed.timeline.length;
 
     expect(case001Seed.coreIndex.size).toBe(expectedRecordCount);
   });
@@ -289,8 +456,18 @@ describe('case bundle loading', () => {
     expect(Object.values(case001Seed.sourceMetadata)
       .map(({ sourcePath }) => sourcePath.split('/').at(-1))
       .sort()).toEqual(authoredFiles);
-    expect(Object.keys(case001Seed.sourceMetadata)).toHaveLength(18);
+    expect(Object.keys(case001Seed.sourceMetadata)).toHaveLength(19);
   });
+
+  it.each(['graph', 'timeline'] as const)(
+    'classifies Phase 03 source %s as core and indexed',
+    (sourceKey) => {
+      expect(case001Seed.sourceMetadata[sourceKey]).toMatchObject({
+        validation: 'core',
+        indexed: true,
+      });
+    },
+  );
 
   it.each(deferredSourceCases)(
     'loads deferred source %s as an explicitly unindexed empty array',

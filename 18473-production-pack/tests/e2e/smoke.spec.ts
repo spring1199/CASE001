@@ -100,7 +100,13 @@ function buildProtectedValues(): ProtectedValue[] {
 
   const conditionFactIds = (
     condition: (typeof case001Seed.locks)[number]['unlockWhen'],
-  ): string[] => ('fact' in condition ? [condition.fact] : condition.allFacts);
+  ): string[] => {
+    if ('fact' in condition) return [condition.fact];
+    if ('allFacts' in condition) return condition.allFacts;
+    if ('allOf' in condition) return condition.allOf.flatMap(conditionFactIds);
+    if ('anyOf' in condition) return condition.anyOf.flatMap(conditionFactIds);
+    return [];
+  };
 
   case001Seed.locks.forEach((lock) => {
     if (!conditionFactIds(lock.unlockWhen).some((factId) => secretFactIds.has(factId))) return;

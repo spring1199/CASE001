@@ -8,6 +8,7 @@ import emails from '../../../content/cases/case-001/emails.json';
 import endings from '../../../content/cases/case-001/endings.json';
 import evidence from '../../../content/cases/case-001/evidence.json';
 import facts from '../../../content/cases/case-001/facts.json';
+import graph from '../../../content/cases/case-001/graph.json';
 import locations from '../../../content/cases/case-001/locations.json';
 import locks from '../../../content/cases/case-001/locks.json';
 import messages from '../../../content/cases/case-001/messages.json';
@@ -30,6 +31,7 @@ export const case001Seed = parseCaseBundle({
   locks: { sourcePath: `${case001Path}/locks.json`, data: locks },
   triggers: { sourcePath: `${case001Path}/triggers.json`, data: triggers },
   endings: { sourcePath: `${case001Path}/endings.json`, data: endings },
+  graph: { sourcePath: `${case001Path}/graph.json`, data: graph },
   artifacts: { sourcePath: `${case001Path}/artifacts.json`, data: artifacts },
   browser: { sourcePath: `${case001Path}/browser.json`, data: browser },
   calls: { sourcePath: `${case001Path}/calls.json`, data: calls },
