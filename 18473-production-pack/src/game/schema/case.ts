@@ -257,6 +257,7 @@ export const graphNodeSchema = z.object({
   canonicalCharacterId: idSchema.optional(),
   identityRevealFact: idSchema.optional(),
   hiddenUntilFacts: z.array(idSchema).optional(),
+  hiddenUntilEndings: z.array(idSchema).optional(),
 }).strict().superRefine((node, context) => {
   if ((node.canonicalCharacterId === undefined) !== (node.identityRevealFact === undefined)) {
     context.addIssue({

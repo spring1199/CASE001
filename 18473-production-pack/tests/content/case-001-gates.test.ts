@@ -177,48 +177,10 @@ describe('gate 7 — no explicit love confirmation exists in Case #001 content',
 });
 
 describe('gates 8, 9, 10 — reachability protection for Case #001', () => {
-  it('keeps the incomplete-content debt to the exact documented set', () => {
+  it('has zero progression debt after Phase 04 integration', () => {
     const analysis = analyzeCaseProgression(case001Seed);
-    const byKind = new Map<string, string[]>();
-    for (const issue of analysis.issues) {
-      const existing = byKind.get(issue.kind) ?? [];
-      byKind.set(issue.kind, [...existing, ...issue.recordIds].sort());
-    }
-
-    // Every entry below exists only because the authored Phase 04 content
-    // that grants `fact_18473_archive_open`, activates the later
-    // objectives, and reaches the finale is not written yet. Anything new
-    // appearing here is a regression, and this list must shrink to empty
-    // before Case #001 may declare progressionComplete.
-    expect(Object.fromEntries(byKind)).toEqual({
-      'unreachable-fact': [
-        'fact_18473_archive_open',
-        'fact_f17_is_maral',
-        'fact_maral_winter47_operator',
-        'fact_tenuun_alive',
-        'fact_tenuun_decoy',
-      ],
-      'undiscoverable-evidence': ['ev_winter47_operator'],
-      'uncompletable-deduction': [
-        'ded_f17_identity',
-        'ded_maral_winter47',
-        'ded_tenuun_alive',
-        'ded_tenuun_decoy',
-      ],
-      'unopenable-lock': [
-        'lock_18473_archive',
-        'lock_final_choice',
-        'lock_winter47_operator',
-      ],
-      'unactivatable-objective': [
-        'obj_find_tenuun',
-        'obj_identify_f17',
-        'obj_reconstruct_winter47',
-        'obj_understand_graph',
-      ],
-      'unfirable-trigger': ['tr_unlock_final', 'tr_unlock_winter47'],
-      'ineligible-ending': ['ending_sever', 'ending_trace'],
-    });
+    expect(analysis.issues).toEqual([]);
+    expect(case001Seed.manifest.progressionComplete).toBe(true);
   });
 
   it('has no dependency cycles in the authored chains', () => {

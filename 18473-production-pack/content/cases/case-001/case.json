@@ -3,7 +3,7 @@
   "title": "18473",
   "version": 1,
   "locale": "mn",
-  "targetMinutes": 145,
+  "targetMinutes": 150,
   "initialObjectiveIds": [
     "obj_find_sender"
   ],
@@ -14,7 +14,9 @@
     "mail",
     "browser",
     "notes",
-    "files"
+    "files",
+    "settings"
   ],
-  "canonEndingId": "ending_sever"
+  "canonEndingId": "ending_sever",
+  "progressionComplete": true
 }

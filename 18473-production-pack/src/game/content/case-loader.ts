@@ -598,6 +598,14 @@ function validateCaseReferences(bundle: CaseBundle, sources: CaseBundleSources):
         record.id,
         `[${recordIndex}].hiddenUntilFacts`,
       );
+      assertKnownReferences(
+        endingIds,
+        'ending',
+        record.hiddenUntilEndings,
+        sources.graph.sourcePath,
+        record.id,
+        `[${recordIndex}].hiddenUntilEndings`,
+      );
       return;
     }
 

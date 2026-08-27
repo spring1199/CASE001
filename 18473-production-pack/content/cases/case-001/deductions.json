@@ -1,5 +1,87 @@
 [
   {
+    "id": "ded_planned_disappearance",
+    "title": "Тэнүүн амиа хорлохоор бус, алга болохоор төлөвлөсөн",
+    "requiredAll": [
+      "ev_cabin_plan",
+      "ev_vehicle_trace",
+      "ev_tuya_drive"
+    ],
+    "grantsFacts": [
+      "fact_planned_disappearance"
+    ]
+  },
+  {
+    "id": "ded_orgil_context",
+    "title": "Оргилын сүрдүүлэг бодит боловч аллагын нотолгоо биш",
+    "requiredAll": [
+      "ev_ceo_threat",
+      "ev_architecture_access",
+      "ev_munkh_last_call"
+    ],
+    "grantsFacts": [
+      "fact_orgil_threat_context"
+    ]
+  },
+  {
+    "id": "ded_munkh_reported",
+    "title": "Мөнх Тэнүүнийг мэдээлсэн",
+    "requiredAll": [
+      "ev_munkh_last_call",
+      "ev_tenuun_query",
+      "ev_ceo_threat"
+    ],
+    "grantsFacts": [
+      "fact_munkh_reported"
+    ]
+  },
+  {
+    "id": "ded_bilguun_device",
+    "title": "Hope #2 бол Билгүүний асаасан төхөөрөмж",
+    "requiredAll": [
+      "ev_device_hope2",
+      "ev_bilguun_device"
+    ],
+    "grantsFacts": [
+      "fact_bilguun_device"
+    ]
+  },
+  {
+    "id": "ded_graph_relationships",
+    "title": "GRAPH identities-аас гадна relationships resolve хийдэг",
+    "requiredAll": [
+      "ev_graph_matrix",
+      "ev_sealed_audit",
+      "ev_relationship_expansion"
+    ],
+    "grantsFacts": [
+      "fact_graph_relationships"
+    ]
+  },
+  {
+    "id": "ded_access_violation",
+    "title": "Тэнүүн whistleblower болохоосоо өмнө access boundary зөрчсөн",
+    "requiredAll": [
+      "ev_architecture_access",
+      "ev_tenuun_query"
+    ],
+    "grantsFacts": [
+      "fact_access_violation"
+    ]
+  },
+  {
+    "id": "ded_f17_cafe",
+    "title": "F17 ба кафены эмэгтэй нэг хүн",
+    "requiredAll": [
+      "ev_cafe_receipt",
+      "ev_f17_scar",
+      "ev_f17_cafe_route"
+    ],
+    "grantsFacts": [
+      "fact_f17_cafe_match"
+    ]
+  },
+  {
     "id": "ded_f17_identity",
     "title": "F17 бол Марал",
     "requiredAll": [
@@ -18,49 +100,131 @@
     ],
     "minimumFromAnyGroup": 4,
     "prerequisiteFacts": [
-      "fact_18473_archive_open"
+      "fact_18473_archive_open",
+      "fact_f17_cafe_match"
     ],
     "grantsFacts": [
       "fact_f17_is_maral"
+    ]
+  },
+  {
+    "id": "ded_winter47_saved",
+    "title": "Winter 47 охиныг аварсан",
+    "requiredAll": [
+      "ev_winter47_incident",
+      "ev_black_ice",
+      "ev_accident_report"
+    ],
+    "grantsFacts": [
+      "fact_winter47_saved"
+    ]
+  },
+  {
+    "id": "ded_winter47_exposed",
+    "title": "Winter 47 shelter network-ийг ил болгосон",
+    "requiredAll": [
+      "ev_relationship_expansion",
+      "ev_shelter_map",
+      "ev_relocation_harm"
+    ],
+    "grantsFacts": [
+      "fact_winter47_exposed"
     ]
   },
   {
     "id": "ded_maral_winter47",
     "title": "Winter 47 query-г Марал хийсэн",
     "requiredAll": [
-      "ev_winter47_operator"
+      "ev_winter47_operator",
+      "ev_private_identity_note"
+    ],
+    "grantsFacts": [
+      "fact_maral_winter47_operator"
     ],
     "prerequisiteFacts": [
       "fact_f17_is_maral"
+    ]
+  },
+  {
+    "id": "ded_tenuun_obscured",
+    "title": "Тэнүүн Маралын attribution-ийг нуусан",
+    "requiredAll": [
+      "ev_audit_obscured",
+      "ev_tenuun_query",
+      "ev_private_identity_note"
     ],
     "grantsFacts": [
+      "fact_tenuun_obscured"
+    ],
+    "prerequisiteFacts": [
       "fact_maral_winter47_operator"
     ]
   },
   {
     "id": "ded_tenuun_decoy",
-    "title": "Тэнүүн өөрийгөө decoy node болгосон",
+    "title": "Тэнүүн өөрийгөө decoy super-node болгосон",
     "requiredAll": [
-      "ev_decoy_topology"
-    ],
-    "prerequisiteFacts": [
-      "fact_maral_winter47_operator"
+      "ev_decoy_plan",
+      "ev_decoy_topology",
+      "ev_saruul_decoy"
     ],
     "grantsFacts": [
       "fact_tenuun_decoy"
+    ],
+    "prerequisiteFacts": [
+      "fact_tenuun_obscured"
     ]
   },
   {
     "id": "ded_tenuun_alive",
     "title": "Тэнүүн одоо амьд",
     "requiredAll": [
-      "ev_live_signal"
-    ],
-    "prerequisiteFacts": [
-      "fact_tenuun_decoy"
+      "ev_live_signal",
+      "ev_safehouse_geometry"
     ],
     "grantsFacts": [
       "fact_tenuun_alive"
+    ],
+    "prerequisiteFacts": [
+      "fact_tenuun_decoy"
+    ]
+  },
+  {
+    "id": "ded_graph_confidence_cost",
+    "title": "Мөрдлөг үргэлжлэх тусам GRAPH confidence нэмэгддэг",
+    "requiredAll": [
+      "ev_graph_confidence",
+      "ev_graph_confidence_tutorial"
+    ],
+    "grantsFacts": [
+      "fact_graph_confidence_cost"
+    ]
+  },
+  {
+    "id": "ded_autonomy_conflict",
+    "title": "Хамгаалалт autonomy-г зөрчиж чадна",
+    "requiredAll": [
+      "ev_maral_voice",
+      "ev_audit_obscured"
+    ],
+    "grantsFacts": [
+      "fact_autonomy_conflict"
+    ],
+    "kind": "contradiction"
+  },
+  {
+    "id": "ded_inaction_choice",
+    "title": "Юу ч хийхгүй байх нь бас сонголт",
+    "requiredAll": [
+      "ev_winter47_incident",
+      "ev_winter47_operator"
+    ],
+    "grantsFacts": [
+      "fact_inaction_choice"
+    ],
+    "kind": "contradiction",
+    "prerequisiteFacts": [
+      "fact_f17_is_maral"
     ]
   }
 ]

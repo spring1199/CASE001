@@ -47,9 +47,13 @@ export type GraphView = Readonly<{
 
 function isRecordVisible(
   hiddenUntilFacts: readonly string[] | undefined,
+  hiddenUntilEndings: readonly string[] | undefined,
+  selectedEndingId: string | null,
   context: ConditionContext,
 ): boolean {
-  return (hiddenUntilFacts ?? []).every((factId) => context.knownFactIds.has(factId));
+  return (hiddenUntilFacts ?? []).every((factId) => context.knownFactIds.has(factId))
+    && (hiddenUntilEndings === undefined
+      || (selectedEndingId !== null && hiddenUntilEndings.includes(selectedEndingId)));
 }
 
 function projectNodeLabel(
@@ -83,7 +87,12 @@ export function projectGraphView(
   const severedEdgeIds = new Set(state.severedGraphEdgeIds);
 
   const visibleNodes = nodes
-    .filter((node) => isRecordVisible(node.hiddenUntilFacts, context))
+    .filter((node) => isRecordVisible(
+      node.hiddenUntilFacts,
+      node.hiddenUntilEndings,
+      state.endingId,
+      context,
+    ))
     .map((node): VisibleGraphNode => Object.freeze({
       id: node.id,
       nodeType: node.nodeType,
@@ -92,7 +101,7 @@ export function projectGraphView(
   const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
 
   const visibleEdges = edges
-    .filter((edge) => isRecordVisible(edge.hiddenUntilFacts, context)
+    .filter((edge) => isRecordVisible(edge.hiddenUntilFacts, undefined, state.endingId, context)
       && visibleNodeIds.has(edge.fromNodeId)
       && visibleNodeIds.has(edge.toNodeId))
     .map((edge): VisibleGraphEdge => {

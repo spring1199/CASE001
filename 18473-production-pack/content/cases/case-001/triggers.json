@@ -1,5 +1,17 @@
 [
   {
+    "id": "tr_unlock_18473",
+    "when": {
+      "fact": "fact_18473_archive_open"
+    },
+    "effects": [
+      {
+        "type": "unlock",
+        "target": "msg_inc_18473"
+      }
+    ]
+  },
+  {
     "id": "tr_unlock_winter47",
     "when": {
       "fact": "fact_f17_is_maral"
@@ -8,6 +20,30 @@
       {
         "type": "unlock",
         "target": "audit_winter47"
+      }
+    ]
+  },
+  {
+    "id": "tr_unlock_decoy",
+    "when": {
+      "fact": "fact_tenuun_obscured"
+    },
+    "effects": [
+      {
+        "type": "unlock",
+        "target": "file_decoy_plan"
+      }
+    ]
+  },
+  {
+    "id": "tr_unlock_live",
+    "when": {
+      "fact": "fact_tenuun_decoy"
+    },
+    "effects": [
+      {
+        "type": "unlock",
+        "target": "graph_live_signal"
       }
     ]
   },
