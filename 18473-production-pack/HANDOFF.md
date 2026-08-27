@@ -8,17 +8,17 @@ This file is a navigation and workflow guide. It does not replace canon or techn
 
 ## Source map and precedence
 
-Use this order when starting work:
+Authority is separated by purpose:
 
-1. The user's explicit current task and phase boundary.
-2. `AGENTS.md` for mandatory process, safety, and reading rules.
-3. `PROJECT_STATE.md` for the latest approved operational state and exact continuation point.
-4. The current file in `docs/exec-plans/` and its matching file in `tasks/`.
-5. Relevant authoritative documents under `docs/`.
-6. `docs/decisions/` for accepted architecture decisions.
-7. This `HANDOFF.md` as a map only.
+1. The user's explicit current instruction authorizes task scope and the phase boundary. Only explicit user approval may authorize a canon change.
+2. `AGENTS.md` defines mandatory process, safety, and reading rules.
+3. `PROJECT_STATE.md` records the latest approved operational state and exact continuation point.
+4. Relevant canonical domain documents under `docs/` govern narrative facts, product rules, architecture, and acceptance criteria.
+5. The current file in `docs/exec-plans/` and its matching file in `tasks/` define implementation scope for an authorized phase; recorded plans/specifications define non-phase operational work.
+6. `docs/decisions/` records accepted architecture decisions.
+7. This `HANDOFF.md` is a map only.
 
-If an operational summary conflicts with canonical `docs/`, the canonical document wins. If Git state conflicts with `PROJECT_STATE.md` or the phase/task documents, stop and report the conflict instead of guessing.
+Phase plans, task briefs, state files, and handoff files cannot override canonical domain documents. If any of them conflict with canon, product rules, Git state, or each other, stop and report the conflict unless the user explicitly authorized that exact change. Do not guess which stale instruction to follow.
 
 ## Where authority lives
 
@@ -57,7 +57,7 @@ git branch --show-current
 git rev-parse HEAD
 ```
 
-Then read `AGENTS.md`, `PROJECT_STATE.md`, this file, the current phase execution plan, its task file, and only the relevant source documents. Compare the Git state with the approved commit and exact continuation point recorded in `PROJECT_STATE.md`.
+Then read `AGENTS.md`, `PROJECT_STATE.md`, this file, and the task sources named by the exact continuation point. For phase work, those sources must include the phase execution plan and matching task brief. For non-phase operational work, use the recorded plan/specification; do not invent a matching phase task file. Read only the relevant canonical documents. Compare Git state with the approved commit and exact continuation point recorded in `PROJECT_STATE.md`.
 
 ## Continuing from the approved state
 

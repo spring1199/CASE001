@@ -34,7 +34,11 @@ def complete_project_state() -> str:
         "Next expected task": "Review and merge continuity; wait for Phase 03 approval.",
         "Exact continuation point": "Start from the clean continuity branch HEAD.",
         "Source-of-truth documents": (
-            "Read `AGENTS.md`, `HANDOFF.md`, `docs/`, `docs/exec-plans/`, and `tasks/`."
+            "- Workflow: `AGENTS.md`.\n"
+            "- Handoff map: `HANDOFF.md`.\n"
+            "- Canon and product authority: `docs/`.\n"
+            "- Phase specifications: `docs/exec-plans/`.\n"
+            "- Executable task briefs: `tasks/`."
         ),
         "Things that must NOT be changed without explicit approval": (
             "Canon, reveal gates, phase boundaries, and approved architecture."
@@ -101,6 +105,24 @@ class ContinuityValidationTests(unittest.TestCase):
         self.assertIn("Current phase must be explicitly declared", errors)
         self.assertIn("Next expected task must be explicitly declared", errors)
 
+    def test_rejects_placeholder_led_phase_or_next_task(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_repo(root)
+            state = complete_project_state().replace(
+                "Post-Phase 02 continuity hardening; Phase 03 not started.",
+                "TBD — awaiting user direction.",
+            ).replace(
+                "Review and merge continuity; wait for Phase 03 approval.",
+                "Unknown until the next agent investigates.",
+            )
+            (root / "PROJECT_STATE.md").write_text(state, encoding="utf-8")
+
+            errors = VALIDATOR.validate_continuity(root)
+
+        self.assertIn("Current phase must be explicitly declared", errors)
+        self.assertIn("Next expected task must be explicitly declared", errors)
+
     def test_requires_task_commit_and_validation_results(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -134,7 +156,13 @@ class ContinuityValidationTests(unittest.TestCase):
             root = Path(directory)
             self.make_repo(root)
             state = complete_project_state().replace(
-                "Read `AGENTS.md`, `HANDOFF.md`, `docs/`, `docs/exec-plans/`, and `tasks/`.",
+                (
+                    "- Workflow: `AGENTS.md`.\n"
+                    "- Handoff map: `HANDOFF.md`.\n"
+                    "- Canon and product authority: `docs/`.\n"
+                    "- Phase specifications: `docs/exec-plans/`.\n"
+                    "- Executable task briefs: `tasks/`."
+                ),
                 "See the usual project files.",
             )
             (root / "PROJECT_STATE.md").write_text(state, encoding="utf-8")
@@ -142,6 +170,36 @@ class ContinuityValidationTests(unittest.TestCase):
             errors = VALIDATOR.validate_continuity(root)
 
         self.assertTrue(any("source-of-truth reference" in error for error in errors))
+
+    def test_rejects_negated_source_of_truth_references(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_repo(root)
+            state = complete_project_state().replace(
+                (
+                    "- Workflow: `AGENTS.md`.\n"
+                    "- Handoff map: `HANDOFF.md`.\n"
+                    "- Canon and product authority: `docs/`.\n"
+                    "- Phase specifications: `docs/exec-plans/`.\n"
+                    "- Executable task briefs: `tasks/`."
+                ),
+                (
+                    "- Do not read `AGENTS.md`.\n"
+                    "- Ignore `HANDOFF.md`.\n"
+                    "- Never use `docs/`.\n"
+                    "- Exclude `docs/exec-plans/`.\n"
+                    "- Do not consult `tasks/`."
+                ),
+            )
+            (root / "PROJECT_STATE.md").write_text(state, encoding="utf-8")
+
+            errors = VALIDATOR.validate_continuity(root)
+
+        for reference in VALIDATOR.REQUIRED_SOURCE_REFERENCES:
+            self.assertIn(
+                f"Missing source-of-truth reference in PROJECT_STATE.md: {reference}",
+                errors,
+            )
 
 
 if __name__ == "__main__":

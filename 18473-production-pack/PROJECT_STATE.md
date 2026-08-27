@@ -42,7 +42,7 @@ Continuity files, mandatory agent rules, bootstrap routing, and lightweight cont
 
 - Pack validation: 51 authored IDs passed.
 - Continuity validation: 4 files and 21 required state fields passed.
-- Continuity unit tests: 6/6 passed.
+- Continuity unit tests: 8/8 passed, including placeholder-led and negated-reference rejection.
 - Lint and strict typecheck: passed.
 - Project unit tests: 188/188 passed.
 - Playwright: 12/12 passed.
@@ -100,7 +100,7 @@ Review and merge the continuity branch. After a separate explicit approval, begi
 
 ## Exact continuation point
 
-Checkout `codex/continuity-handoff`, confirm a clean worktree, verify implementation commit `bb84b540fb4a8ff76baa6d13ff6b44be5b0b2de2`, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review/merge the continuity work if approved. The following state-only commit records this handoff. Do not start Phase 03 from this continuation point.
+Checkout `codex/continuity-handoff`, confirm a clean worktree, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review the continuity work against `docs/superpowers/specs/2026-08-27-continuity-handoff-design.md` and `docs/superpowers/plans/2026-08-27-continuity-handoff.md`. This non-phase operational task has no separate file under `tasks/`. Merge only after explicit approval. After merge, sync `main`, immediately refresh the active branch, approved commit, task status, next task, and continuation point in `PROJECT_STATE.md`, run continuity validation, and commit that state transition; do not start Phase 03.
 
 ## Source-of-truth documents
 
@@ -108,6 +108,7 @@ Checkout `codex/continuity-handoff`, confirm a clean worktree, verify implementa
 - Canon/product sources: `docs/`, especially `docs/00-PROJECT-VISION.md` through the relevant domain documents.
 - Phase specifications: `docs/exec-plans/`.
 - Executable task briefs: `tasks/`.
+- Current non-phase continuity brief: `docs/superpowers/specs/2026-08-27-continuity-handoff-design.md` and `docs/superpowers/plans/2026-08-27-continuity-handoff.md` (no separate `tasks/` file).
 - Architecture and schema: `docs/09-CASE-ENGINE.md`, `docs/12-TECH-ARCHITECTURE.md`, `docs/13-DATA-SCHEMA.md`.
 - Acceptance and reveal gates: `docs/14-TESTING-ACCEPTANCE.md`.
 - Architectural decisions: `docs/decisions/`.

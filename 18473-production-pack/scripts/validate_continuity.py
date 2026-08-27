@@ -43,7 +43,14 @@ REQUIRED_SOURCE_REFERENCES = (
     "tasks/",
 )
 
-PLACEHOLDERS = {"tbd", "todo", "unknown", "n/a"}
+PLACEHOLDER_PREFIX = re.compile(
+    r"^\s*(?:[-*_`>#]+\s*)?(?:tbd|todo|unknown|n/?a)(?=$|\s|[—–:;,.!-])",
+    re.IGNORECASE,
+)
+NEGATED_REFERENCE = re.compile(
+    r"\b(?:do\s+not|don't|never|ignore|exclude|omit|avoid)\b",
+    re.IGNORECASE,
+)
 
 
 def parse_sections(markdown: str) -> tuple[dict[str, str], list[str]]:
@@ -68,6 +75,22 @@ def parse_sections(markdown: str) -> tuple[dict[str, str], list[str]]:
     )
 
 
+def is_placeholder_value(value: str) -> bool:
+    return PLACEHOLDER_PREFIX.match(value) is not None
+
+
+def has_positive_reference(source_section: str, reference: str) -> bool:
+    exact_reference = f"`{reference}`"
+    for line in source_section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("-") or exact_reference not in stripped:
+            continue
+        if NEGATED_REFERENCE.search(stripped):
+            continue
+        return True
+    return False
+
+
 def validate_continuity(root: Path) -> list[str]:
     errors: list[str] = []
 
@@ -89,17 +112,17 @@ def validate_continuity(root: Path) -> list[str]:
         elif not sections[heading]:
             errors.append(f"Empty PROJECT_STATE.md section: {heading}")
 
-    current_phase = sections.get("Current phase", "").strip().lower()
-    if current_phase in PLACEHOLDERS:
+    current_phase = sections.get("Current phase", "")
+    if is_placeholder_value(current_phase):
         errors.append("Current phase must be explicitly declared")
 
-    next_task = sections.get("Next expected task", "").strip().lower()
-    if next_task in PLACEHOLDERS:
+    next_task = sections.get("Next expected task", "")
+    if is_placeholder_value(next_task):
         errors.append("Next expected task must be explicitly declared")
 
     source_section = sections.get("Source-of-truth documents", "")
     for reference in REQUIRED_SOURCE_REFERENCES:
-        if reference not in source_section:
+        if not has_positive_reference(source_section, reference):
             errors.append(
                 f"Missing source-of-truth reference in PROJECT_STATE.md: {reference}"
             )

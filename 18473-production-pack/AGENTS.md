@@ -17,9 +17,12 @@ Every agent must use repository state, never prior chat history, as the continua
 3. Read `HANDOFF.md` completely.
 4. Inspect `git status --short --branch`, the current branch/HEAD, and relevant recent history.
 5. Identify the latest approved commit recorded in `PROJECT_STATE.md` and verify it against Git.
-6. Read the current phase execution plan and matching task file.
-7. Read only the canonical/source-of-truth documents relevant to that task.
-8. Confirm the authorized phase boundary before implementation.
+6. Resolve the task sources from the exact continuation point in `PROJECT_STATE.md`:
+   - for phase work, read the current phase execution plan and matching task file;
+   - for non-phase operational work, read the recorded plan/specification and note when no separate `tasks/` brief exists.
+7. If the required task sources are absent or ambiguous, stop and report the gap instead of searching for a substitute.
+8. Read only the canonical/source-of-truth documents relevant to that task.
+9. Confirm the authorized phase boundary before implementation.
 
 ### During every task
 
