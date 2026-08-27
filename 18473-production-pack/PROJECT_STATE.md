@@ -6,27 +6,27 @@
 
 ## Current phase
 
-Phase 03 — Case Engine: implemented and fully validated on `codex/phase-03-case-engine`, awaiting user review/approval. Phase 04 has not started.
+Phase 03 — Case Engine: completed, approved, and merged into `main` via PR #4. Phase 04 has not started, and no Case #001 authored narrative content exists yet.
 
 ## Last completed and approved phase
 
-Phase 02 — Fake Phone OS, approved and merged through PR #2.
+Phase 03 — Case Engine, approved and merged through PR #4 (previously Phase 02 — Fake Phone OS through PR #2).
 
 ## Current active branch
 
-`codex/phase-03-case-engine` (created from `main` at `9254bcc6a002de63e53a4d46b93b8633601b6aef`).
+`main`
 
 ## Latest approved commit hash
 
-`bcee8e101e7950779c408176f33dac9c2e3e2b03` on `main` (continuity merge commit, PR #3), followed by state-only refresh `9254bcc6a002de63e53a4d46b93b8633601b6aef`.
+`e0af251e4e66b49dab8717792510d53d05faa89a` on `main` (Phase 03 merge commit, PR #4).
 
 ## Current task implementation commit
 
-`79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df` (Phase 03 case engine implementation). This state-only refresh commit follows it because a commit cannot contain its own hash.
+`5f8d9cfac82b3056c3694fa1f886198f2b454f67` (final Phase 03 branch commit, merged via PR #4; implementation commit `79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df`). This state-only refresh commit follows the merge because a commit cannot contain its own hash.
 
 ## Current implementation status
 
-Phases 01 and 02 are implemented and merged; continuity infrastructure is merged via PR #3. Phase 03 adds the reusable case engine on `codex/phase-03-case-engine`: a recursive authored condition vocabulary; `graph` and `timeline` as validated core collections; a pure deterministic event processor with monotone derived-state settlement; deduction/contradiction evaluation; conditioned objectives; lock/trigger evaluation; timeline reconstruction; gated graph projection with evidence-weighted confidence; lock-gated ending eligibility with the TRACE/SEVER location boundary; reachability/cycle/final-choice progression analysis (fail-closed when a manifest declares `progressionComplete`); evidence-board pins with save envelope v2 and a chained v0→v1→v2 migration; the spoiler-safe `projectCaseView` engine-to-UI surface; and a store-integrated `createCaseRuntime` bridge. Architecture decisions are recorded in `docs/decisions/0004-phase03-case-engine.md`. A synthetic mini-case (`tests/fixtures/mini-case.ts`) proves the engine end-to-end under strict progression validation.
+Phases 01, 02, and 03 are implemented and merged; continuity infrastructure is merged via PR #3. Phase 03 added the reusable case engine, now on `main`: a recursive authored condition vocabulary; `graph` and `timeline` as validated core collections; a pure deterministic event processor with monotone derived-state settlement; deduction/contradiction evaluation; conditioned objectives; lock/trigger evaluation; timeline reconstruction; gated graph projection with evidence-weighted confidence; lock-gated ending eligibility with the TRACE/SEVER location boundary; reachability/cycle/final-choice progression analysis (fail-closed when a manifest declares `progressionComplete`); evidence-board pins with save envelope v2 and a chained v0→v1→v2 migration; the spoiler-safe `projectCaseView` engine-to-UI surface; and a store-integrated `createCaseRuntime` bridge. Architecture decisions are recorded in `docs/decisions/0004-phase03-case-engine.md`. A synthetic mini-case (`tests/fixtures/mini-case.ts`) proves the engine end-to-end under strict progression validation.
 
 ## Completed milestones
 
@@ -34,15 +34,16 @@ Phases 01 and 02 are implemented and merged; continuity infrastructure is merged
 - Phase 02 phone OS: lock/home, Messages, Gallery, Calls, Mail, Browser, Notes, Files, Settings, deep links, metadata, zoom, audio transcripts, discovery persistence, accessibility, and responsive QA.
 - Phase 02 PR: [#2](https://github.com/spring1199/CASE001/pull/2), merged as `1c2d8b75b632c855cde06052a517eeaa5a6757ee`.
 - Continuity handoff PR: [#3](https://github.com/spring1199/CASE001/pull/3), merged as `bcee8e101e7950779c408176f33dac9c2e3e2b03`.
-- Phase 03 case engine implemented on `codex/phase-03-case-engine` (`79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df`), including the docs/14 narrative gate tests automated against real Case #001 data.
+- Phase 03 case engine implemented as `79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df`, including the docs/14 narrative gate tests automated against real Case #001 data.
+- Phase 03 PR: [#4](https://github.com/spring1199/CASE001/pull/4), approved and merged as `e0af251e4e66b49dab8717792510d53d05faa89a`.
 
 ## Current task status
 
-Phase 03 is implemented and fully validated on `codex/phase-03-case-engine` (2026-08-27). All Phase 01/02 behavior is preserved (273/273 unit tests, 12/12 Playwright including the browser-delivery spoiler scan). The branch awaits user review; do not merge without explicit approval, and do not start Phase 04.
+Phase 03 was explicitly approved by the user and merged into `main` via PR #4 on 2026-08-27, with the full local validation matrix re-run green immediately before the merge. This commit records the post-merge state transition. Phase 04 has not started: no Case #001 authored narrative content (chats, messages, emails, photos, audio, timeline events, clues, deductions, or dialogue) has been created, and none may be created until the dedicated Phase 04 Content Production Pack is provided and explicitly authorized.
 
 ## Validation and test results
 
-Run on 2026-08-27 at Phase 03 completion (`79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df`):
+Re-run in full on 2026-08-27 immediately before the PR #4 merge (branch HEAD `5f8d9cfac82b3056c3694fa1f886198f2b454f67`):
 
 - Pack validation: 51 authored IDs passed, including the new `graph.json`/`timeline.json` scan and the SEVER-never-reveals-location assertion.
 - Continuity validation: 4 files and 21 required state fields passed.
@@ -55,14 +56,14 @@ Run on 2026-08-27 at Phase 03 completion (`79dbcc48ad23d5a36f47f47e918bdd9d7ffe7
 
 ## Open tasks
 
-- Review and merge `codex/phase-03-case-engine` after explicit approval.
-- Do not begin Phase 04 or author final Case #001 narrative content until explicitly requested.
+- Wait for the dedicated Phase 04 Content Production Pack and explicit authorization before beginning Phase 04.
+- Do not author any Case #001 narrative content until then.
 
 ## Known limitations
 
 - Phone content is deliberately neutral placeholder content, not final Case #001 narrative content.
 - Case #001 `graph.json` and `timeline.json` are validated core collections but intentionally empty until Phase 04 authors them; eight phone-content collections remain deferred-empty.
-- Case #001 progression is intentionally incomplete: nothing grants `fact_18473_archive_open`, four objectives lack activation conditions, and both endings are therefore unreachable in normal play. The exact debt is pinned by `tests/content/case-001-gates.test.ts` and must shrink to empty before the manifest may declare `progressionComplete: true`.
+- Case #001 progression is intentionally incomplete: the 21 pinned progression-debt items (unreachable facts, undiscoverable evidence, uncompletable deductions, unopenable locks, unactivatable objectives, unfirable triggers, ineligible endings) remain deliberately unresolved for Phase 04 authoring. The exact debt is pinned by `tests/content/case-001-gates.test.ts` and must shrink to empty before the manifest may declare `progressionComplete: true`.
 - The phone UI does not yet consume the case engine (`createCaseRuntime`/`projectCaseView`); wiring the investigation surfaces is later-phase work.
 - Time/pacing trigger gates are deferred pending a determinism design decision (ADR 0004).
 - Physical notched-device testing remains useful beyond Chromium safe-area checks.
@@ -84,9 +85,9 @@ Run on 2026-08-27 at Phase 03 completion (`79dbcc48ad23d5a36f47f47e918bdd9d7ffe7
 
 ## Unresolved decisions
 
-- Time/pacing trigger gates (docs/09 lists them; deferred for determinism, ADR 0004).
+- Time/pacing trigger gates remain an unresolved Phase 04 authoring decision (docs/09 lists them; deferred for determinism, ADR 0004).
+- The mechanical ending gate wiring (`gateLockId`, `revealsExactLocation` on Case #001 endings) was merged with Phase 03 approval but must be validated against the final Phase 04 authored progression before Case #001 declares `progressionComplete`.
 - Whether Phase 04 wires the phone UI to the case runtime or a dedicated UI phase does; resolve from the Phase 04 execution plan and user direction.
-- The mechanical ending gate wiring (`gateLockId`, `revealsExactLocation` on Case #001 endings) encodes documented canon; flag it during review if the user considers it a canon-adjacent change.
 
 ## Current spoiler/reveal gates
 
@@ -110,11 +111,11 @@ Authoritative details and automated expectations live in `AGENTS.md`, `docs/01-M
 
 ## Next expected task
 
-Review and merge `codex/phase-03-case-engine` after explicit user approval. After a separate explicit authorization, begin Phase 04 by reading `docs/exec-plans/PHASE-04-CASE001-CONTENT.md`, `tasks/04-case001-content.md` if present, and every document they reference.
+Phase 04 — Case #001 Content is the next expected phase. Begin only after the user provides the dedicated Phase 04 Content Production Pack and explicit authorization, then read `docs/exec-plans/PHASE-04-CASE001-CONTENT.md`, the matching `tasks/` brief if present, that production pack, and every canonical document they reference.
 
 ## Exact continuation point
 
-Checkout `codex/phase-03-case-engine`, confirm a clean worktree, verify implementation commit `79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df` followed by the state-only refresh at branch HEAD, inspect `git log -5 --oneline` and `git diff main...HEAD`, then review the Phase 03 work against `docs/exec-plans/PHASE-03-CASE-ENGINE.md`, `tasks/03-case-engine.md`, and `docs/decisions/0004-phase03-case-engine.md`. Merge only after explicit approval. After merge, sync `main`, immediately refresh the active branch, approved commit, task status, next task, and continuation point in `PROJECT_STATE.md`, run continuity validation, and commit that state transition; do not start Phase 04.
+From `main` at `e0af251e4e66b49dab8717792510d53d05faa89a` with a clean worktree, wait for the dedicated Phase 04 Content Production Pack and explicit user authorization. When authorized, create a `codex/phase-04-case001-content` branch, read `docs/exec-plans/PHASE-04-CASE001-CONTENT.md`, the matching task brief if present, and the narrative read-order in `AGENTS.md`, then author Case #001 content in small reviewable batches that shrink the pinned 21-item progression debt in `tests/content/case-001-gates.test.ts`, running the spoiler-gate tests after each batch. Do not invent chats, messages, emails, photos, audio, timeline events, clues, deductions, or character dialogue before that pack arrives. Resolve the time/pacing gate decision and validate the ending gate wiring against the final authored progression during Phase 04.
 
 ## Source-of-truth documents
 
@@ -135,4 +136,4 @@ Checkout `codex/phase-03-case-engine`, confirm a clean worktree, verify implemen
 - Phase 01/02 approved behavior or fail-closed validation.
 - Case #001 data-driven boundaries by hardcoding narrative into reusable engine/UI code.
 - Intentionally deferred collections before their designated phases.
-- The active phase boundary: Phase 03 must not start without explicit instruction.
+- The active phase boundary: Phase 04 must not start without the dedicated Phase 04 Content Production Pack and explicit instruction.
