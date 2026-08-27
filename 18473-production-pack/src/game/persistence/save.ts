@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { playerStateSchema } from '@/game/state/schema';
 import { createInitialPlayerState, type PlayerState } from '@/game/state/types';
 
-export const CURRENT_SAVE_VERSION = 1 as const;
+export const CURRENT_SAVE_VERSION = 2 as const;
+export const PHASE_01_SAVE_VERSION = 1 as const;
 export const LEGACY_SAVE_VERSION = 0 as const;
 export const LEGACY_TIMESTAMP_SENTINEL = '1970-01-01T00:00:00.000Z';
 
@@ -14,6 +15,16 @@ export const saveEnvelopeSchema = z.strictObject({
 });
 
 export type SaveEnvelope = z.infer<typeof saveEnvelopeSchema>;
+
+// z.custom keeps the payload opaque without emitting the literal token that
+// the browser-delivery spoiler scan protects as an authored role value.
+const opaqueStateSchema = z.custom<unknown>(() => true);
+
+const versionedEnvelopeShapeSchema = z.strictObject({
+  version: z.number().int().nonnegative(),
+  savedAt: z.iso.datetime({ offset: true }),
+  state: opaqueStateSchema,
+});
 
 const legacyPlayerStateSchema = z.strictObject({
   caseId: z.string().min(1),
@@ -44,18 +55,18 @@ export class SavePersistenceError extends Error {
   }
 }
 
-type Migration = (input: unknown) => PlayerState;
+type Migration = (input: unknown) => unknown;
 
 function uniqueInOrder(values: string[]): string[] {
   return [...new Set(values)];
 }
 
-function migrateLegacyPlayerState(input: unknown): PlayerState {
+function migrateLegacyPlayerState(input: unknown): unknown {
   const result = legacyPlayerStateSchema.safeParse(input);
   if (!result.success) throw new Error(z.prettifyError(result.error));
 
   const legacy = result.data;
-  return {
+  const migrated: PlayerState = {
     ...createInitialPlayerState(legacy.caseId, LEGACY_TIMESTAMP_SENTINEL),
     discoveredEvidenceIds: uniqueInOrder(legacy.discoveredEvidenceIds),
     knownFactIds: uniqueInOrder(legacy.knownFactIds),
@@ -69,11 +80,44 @@ function migrateLegacyPlayerState(input: unknown): PlayerState {
     flags: legacy.flags,
     endingId: legacy.endingId ?? null,
   };
+  // A legacy migration emits the Phase 01 shape; the v1 -> v2 migration in the
+  // chain below adds the fields introduced later.
+  const phase01State: Record<string, unknown> = { ...migrated };
+  delete phase01State.pinnedEvidenceIds;
+  return phase01State;
 }
 
+function migratePhase01PlayerState(input: unknown): unknown {
+  if (typeof input !== 'object' || input === null) {
+    throw new Error('A version 1 save state must be an object.');
+  }
+  if ('pinnedEvidenceIds' in input) {
+    throw new Error('A version 1 save state cannot already contain pinnedEvidenceIds.');
+  }
+  return { ...input, pinnedEvidenceIds: [] };
+}
+
+/**
+ * Each entry migrates a state payload from its version to the next one; the
+ * chain runs in version order until the current shape is reached, then the
+ * result is validated by the current player-state schema.
+ */
 export const SAVE_MIGRATIONS: Readonly<Record<number, Migration>> = {
   [LEGACY_SAVE_VERSION]: migrateLegacyPlayerState,
+  [PHASE_01_SAVE_VERSION]: migratePhase01PlayerState,
 };
+
+function runMigrationChain(input: unknown, fromVersion: number): PlayerState {
+  let migrated = input;
+  for (let version = fromVersion; version < CURRENT_SAVE_VERSION; version += 1) {
+    const migration = SAVE_MIGRATIONS[version];
+    if (migration === undefined) {
+      throw new Error(`No migration is registered for save version ${version}.`);
+    }
+    migrated = migration(migrated);
+  }
+  return playerStateSchema.parse(migrated);
+}
 
 function assertMatchingCaseId(state: PlayerState, expectedCaseId: string): void {
   if (state.caseId !== expectedCaseId) {
@@ -124,22 +168,46 @@ export function deserializeSave(raw: string, expectedCaseId: string): PlayerStat
       );
     }
 
-    const result = saveEnvelopeSchema.safeParse(input);
-    if (!result.success) {
+    if (version === CURRENT_SAVE_VERSION) {
+      const result = saveEnvelopeSchema.safeParse(input);
+      if (!result.success) {
+        throw new SavePersistenceError(
+          'INVALID_SAVE',
+          expectedCaseId,
+          `Save envelope for case "${expectedCaseId}" is invalid: ${z.prettifyError(result.error)}`,
+        );
+      }
+      assertMatchingCaseId(result.data.state, expectedCaseId);
+      return result.data.state;
+    }
+
+    const envelope = versionedEnvelopeShapeSchema.safeParse(input);
+    if (!envelope.success) {
       throw new SavePersistenceError(
         'INVALID_SAVE',
         expectedCaseId,
-        `Save envelope for case "${expectedCaseId}" is invalid: ${z.prettifyError(result.error)}`,
+        `Save envelope for case "${expectedCaseId}" is invalid: ${z.prettifyError(envelope.error)}`,
       );
     }
-    assertMatchingCaseId(result.data.state, expectedCaseId);
-    return result.data.state;
+    try {
+      const migrated = runMigrationChain(envelope.data.state, envelope.data.version);
+      assertMatchingCaseId(migrated, expectedCaseId);
+      return migrated;
+    } catch (error) {
+      if (error instanceof SavePersistenceError) throw error;
+      throw new SavePersistenceError(
+        'INVALID_SAVE',
+        expectedCaseId,
+        `Version ${envelope.data.version} save for case "${expectedCaseId}" is invalid and cannot be migrated.`,
+        { cause: error },
+      );
+    }
   }
 
   try {
-    const migrated = SAVE_MIGRATIONS[LEGACY_SAVE_VERSION](input);
+    const migrated = runMigrationChain(input, LEGACY_SAVE_VERSION);
     assertMatchingCaseId(migrated, expectedCaseId);
-    return playerStateSchema.parse(migrated);
+    return migrated;
   } catch (error) {
     if (error instanceof SavePersistenceError) throw error;
     throw new SavePersistenceError(

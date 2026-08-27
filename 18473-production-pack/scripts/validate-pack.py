@@ -15,7 +15,7 @@ for path in CASE.glob("*.json"):
 
 # Unique IDs across typed content files where IDs are expected.
 seen: dict[str, Path] = {}
-for name in ["characters.json", "evidence.json", "deductions.json", "objectives.json", "facts.json", "locks.json", "triggers.json", "endings.json"]:
+for name in ["characters.json", "evidence.json", "deductions.json", "objectives.json", "facts.json", "locks.json", "triggers.json", "endings.json", "graph.json", "timeline.json"]:
     path = CASE / name
     data = json.loads(path.read_text(encoding="utf-8"))
     for item in data:
@@ -37,6 +37,10 @@ endings = json.loads((CASE / "endings.json").read_text(encoding="utf-8"))
 canon = [e for e in endings if e.get("canon")]
 if len(canon) != 1 or canon[0].get("id") != "ending_sever":
     errors.append("SEVER must be the sole canon ending in Case #001")
+
+sever = next((e for e in endings if e.get("id") == "ending_sever"), None)
+if sever is not None and sever.get("revealsExactLocation") is True:
+    errors.append("SEVER must never reveal the exact location in Case #001")
 
 if errors:
     print("PACK VALIDATION FAILED")

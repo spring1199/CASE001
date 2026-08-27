@@ -9,6 +9,8 @@ import type { FlagValue, ObjectiveState, PlayerState } from '@/game/state/types'
 export type PlayerStoreActions = {
   discoverArtifacts(ids: string[]): void;
   discoverEvidence(ids: string[]): void;
+  pinEvidence(ids: string[]): void;
+  unpinEvidence(ids: string[]): void;
   unlockApps(ids: string[]): void;
   unlockContent(ids: string[]): void;
   completeDeductions(ids: string[]): void;
@@ -243,6 +245,7 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
       key:
         | 'discoveredArtifactIds'
         | 'discoveredEvidenceIds'
+        | 'pinnedEvidenceIds'
         | 'unlockedAppIds'
         | 'unlockedContentIds'
         | 'completedDeductionIds'
@@ -340,6 +343,28 @@ export function createPlayerStore(options: CreatePlayerStoreOptions): StoreApi<P
     const actions: PlayerStoreActions = {
       discoverArtifacts: (ids) => appendIds('discoveredArtifactIds', ids),
       discoverEvidence: (ids) => appendIds('discoveredEvidenceIds', ids),
+      pinEvidence: (ids) => {
+        const orderedIds = [...ids];
+        updateProgress((state) => {
+          const discovered = new Set(state.discoveredEvidenceIds);
+          const nextIds = appendUnique(
+            state.pinnedEvidenceIds,
+            orderedIds.filter((id) => discovered.has(id)),
+          );
+          return nextIds === state.pinnedEvidenceIds
+            ? state
+            : { ...state, pinnedEvidenceIds: nextIds };
+        });
+      },
+      unpinEvidence: (ids) => {
+        const removing = new Set(ids);
+        updateProgress((state) => {
+          const remaining = state.pinnedEvidenceIds.filter((id) => !removing.has(id));
+          return remaining.length === state.pinnedEvidenceIds.length
+            ? state
+            : { ...state, pinnedEvidenceIds: remaining };
+        });
+      },
       unlockApps: (ids) => appendIds('unlockedAppIds', ids),
       unlockContent: (ids) => appendIds('unlockedContentIds', ids),
       completeDeductions: (ids) => appendIds('completedDeductionIds', ids),
