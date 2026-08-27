@@ -21,8 +21,8 @@ import {
 import { InvestigationWorkspace } from '@/phone/polish/InvestigationWorkspace';
 import {
   PresentationCheckpointStorage,
+  presentationCheckpointAfterEndingSelection,
   presentationStageForEnding,
-  resetEndingPresentation,
   setEndingPresentationStage,
   type EndingPresentationStage,
   type PresentationCheckpoint,
@@ -30,7 +30,9 @@ import {
 import {
   RuntimeMutationError,
   RuntimeMutationQueue,
+  RuntimeRetryRegistry,
   shouldFocusAfterRuntimeOutcomes,
+  type RuntimeRetryEntry,
 } from '@/phone/runtime-mutation-queue';
 import type {
   DeepReadonly,
@@ -107,7 +109,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const [activeSurface, setActiveSurface] = useState<ExperienceSurface>('phone');
   const [status, setStatus] = useState('Төхөөрөмж түгжээтэй байна.');
   const [runtimeMutationPending, setRuntimeMutationPending] = useState(false);
-  const [retryRuntimeMutation, setRetryRuntimeMutation] = useState<(() => void) | null>(null);
+  const [runtimeRetries, setRuntimeRetries] = useState<readonly RuntimeRetryEntry[]>([]);
   const [presentationPersistenceLimited, setPresentationPersistenceLimited] = useState(false);
   const [focusStatusRevision, setFocusStatusRevision] = useState(0);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -130,6 +132,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       onPendingChange: setRuntimeMutationPending,
     })
   ), [persistenceAdapter, playerStore]);
+  const runtimeRetryRegistry = useMemo(
+    () => new RuntimeRetryRegistry(setRuntimeRetries),
+    [],
+  );
 
   const prepareNavigation = useCallback(
     (mode: ScrollNavigationMode): void => {
@@ -232,7 +238,6 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   }, [caseView?.ending?.endingId, commitPresentationCheckpoint]);
 
   async function dispatchCaseEvent(event: PlayerCaseEngineEvent): Promise<void> {
-    setRetryRuntimeMutation(null);
     setStatus('Мөрдлөгийн үйлдлийг шалгаж байна.');
 
     try {
@@ -240,15 +245,13 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         (latestState) => requestCasePhoneProjection(latestState, undefined, event),
         (previous, committedProjection) => {
           const selectedEndingId = committedProjection.view.ending?.endingId;
-          if (
-            selectedEndingId !== undefined
-            && committedProjection.outcomes.some(({ type }) => type === 'ending-selected')
-            && presentationCheckpointRef.current.endingId !== selectedEndingId
-          ) {
-            commitPresentationCheckpoint(resetEndingPresentation(
-              presentationCheckpointRef.current,
-              selectedEndingId,
-            ));
+          const endingCheckpoint = presentationCheckpointAfterEndingSelection(
+            presentationCheckpointRef.current,
+            committedProjection.outcomes,
+            selectedEndingId ?? null,
+          );
+          if (endingCheckpoint !== presentationCheckpointRef.current) {
+            commitPresentationCheckpoint(endingCheckpoint);
           }
           applyProjection(previous, committedProjection);
           if (shouldFocusAfterRuntimeOutcomes(committedProjection.outcomes)) {
@@ -265,7 +268,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       setStatus(error instanceof RuntimeMutationError && error.stage === 'persist'
         ? 'Өөрчлөлтийг хадгалж чадсангүй. Өмнөх төлөв хэвээр байна.'
         : 'Мөрдлөгийн төлөвийг шинэчилж чадсангүй. Өмнөх төлөв хэвээр байна.');
-      setRetryRuntimeMutation(() => () => { void dispatchCaseEvent(event); });
+      runtimeRetryRegistry.add(() => { void dispatchCaseEvent(event); });
     }
   }
 
@@ -279,10 +282,8 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         ? [...item.discovery.unlockContentIds]
         : undefined,
     };
-    setRetryRuntimeMutation(null);
     void refreshProjection(discovery).then(
       (changed) => {
-        setRetryRuntimeMutation(null);
         setStatus(
           changed.unlocks
             ? 'Шинэ агуулга нээгдлээ.'
@@ -293,7 +294,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       },
       () => {
         setStatus('Илрүүлэлтийг хадгалж чадсангүй. Өмнөх төлөв хэвээр байна.');
-        setRetryRuntimeMutation(() => () => recordDiscovery(item));
+        runtimeRetryRegistry.add(() => recordDiscovery(item));
       },
     );
   }
@@ -407,7 +408,6 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
   function unlockDevice(): void {
     setIsUnlocking(true);
-    setRetryRuntimeMutation(null);
     setStatus('Хэргийн өгөгдлийг аюулгүй ачаалж байна.');
     void refreshProjection().then(
       () => {
@@ -417,7 +417,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       },
       () => {
         setStatus('Хэргийн өгөгдлийг хадгалж ачаалж чадсангүй. Өмнөх төлөв хэвээр байна.');
-        setRetryRuntimeMutation(() => unlockDevice);
+        runtimeRetryRegistry.add(unlockDevice);
       },
     ).finally(() => setIsUnlocking(false));
   }
@@ -460,16 +460,22 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
               Дахин оролдох
             </button>
           ) : null}
-          {retryRuntimeMutation && !initializationFailure ? (
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              data-action-label
-              disabled={runtimeMutationPending}
-              onClick={retryRuntimeMutation}
-            >
-              Хадгалалтыг дахин оролдох
-            </button>
+          {runtimeRetries.length > 0 ? (
+            <div role="group" aria-label="Амжилтгүй үйлдлүүд">
+              <p role="alert">{runtimeRetries.length} үйлдлийг дахин оролдох шаардлагатай.</p>
+              {runtimeRetries.map((entry, index) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={styles.secondaryButton}
+                  data-action-label
+                  disabled={runtimeMutationPending}
+                  onClick={() => runtimeRetryRegistry.invoke(entry.id)}
+                >
+                  Үйлдэл {index + 1}-ийг дахин оролдох
+                </button>
+              ))}
+            </div>
           ) : null}
         </div>
       </section>
@@ -545,15 +551,21 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           Дахин оролдох
         </button>
       ) : null}
-      {retryRuntimeMutation ? (
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          disabled={runtimeMutationPending}
-          onClick={retryRuntimeMutation}
-        >
-          Үйлдлийг дахин оролдох
-        </button>
+      {runtimeRetries.length > 0 ? (
+        <div role="group" aria-label="Амжилтгүй үйлдлүүд">
+          <p role="alert">{runtimeRetries.length} үйлдлийг дахин оролдох шаардлагатай.</p>
+          {runtimeRetries.map((entry, index) => (
+            <button
+              key={entry.id}
+              type="button"
+              className={styles.secondaryButton}
+              disabled={runtimeMutationPending}
+              onClick={() => runtimeRetryRegistry.invoke(entry.id)}
+            >
+              Үйлдэл {index + 1}-ийг дахин оролдох
+            </button>
+          ))}
+        </div>
       ) : null}
 
       <div

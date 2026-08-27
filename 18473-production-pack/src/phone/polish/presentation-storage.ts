@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import type { EngineOutcome } from '@/game/engine/engine';
 import type { KeyValueStorage } from '@/phone/polish/audio-preferences';
 
 export const presentationCheckpointSchema = z.strictObject({
@@ -50,6 +51,16 @@ export function presentationStageForEnding(
   return checkpoint.endingId === endingId && checkpoint.endingStage !== null
     ? checkpoint.endingStage
     : 'decision';
+}
+
+export function presentationCheckpointAfterEndingSelection(
+  checkpoint: PresentationCheckpoint,
+  outcomes: readonly EngineOutcome[],
+  projectedEndingId: string | null,
+): PresentationCheckpoint {
+  return projectedEndingId !== null && outcomes.some(({ type }) => type === 'ending-selected')
+    ? resetEndingPresentation(checkpoint, projectedEndingId)
+    : checkpoint;
 }
 
 const defaultStorageFactory: PresentationStorageFactory = () => {

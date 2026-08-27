@@ -82,3 +82,43 @@ const FOCUS_HANDOFF_OUTCOMES: ReadonlySet<EngineOutcome['type']> = new Set([
 export function shouldFocusAfterRuntimeOutcomes(outcomes: readonly EngineOutcome[]): boolean {
   return outcomes.some(({ type }) => FOCUS_HANDOFF_OUTCOMES.has(type));
 }
+
+export type RuntimeRetryEntry = Readonly<{
+  id: number;
+  retry(): void;
+}>;
+
+/** Keeps failed operations independent until the player retries that exact entry. */
+export class RuntimeRetryRegistry {
+  private entries: RuntimeRetryEntry[] = [];
+  private nextId = 1;
+
+  constructor(
+    private readonly onChange: (entries: readonly RuntimeRetryEntry[]) => void,
+  ) {}
+
+  add(retry: () => void): number {
+    const entry = Object.freeze({ id: this.nextId, retry });
+    this.nextId += 1;
+    this.entries = [...this.entries, entry];
+    this.emit();
+    return entry.id;
+  }
+
+  invoke(id: number): boolean {
+    const entry = this.entries.find((candidate) => candidate.id === id);
+    if (entry === undefined) return false;
+    this.entries = this.entries.filter((candidate) => candidate.id !== id);
+    this.emit();
+    entry.retry();
+    return true;
+  }
+
+  snapshot(): readonly RuntimeRetryEntry[] {
+    return [...this.entries];
+  }
+
+  private emit(): void {
+    this.onChange(this.snapshot());
+  }
+}

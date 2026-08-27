@@ -8,6 +8,7 @@ import {
 import {
   DEFAULT_PRESENTATION_CHECKPOINT,
   PresentationCheckpointStorage,
+  presentationCheckpointAfterEndingSelection,
   presentationStageForEnding,
   resetEndingPresentation,
   setEndingPresentationStage,
@@ -106,6 +107,24 @@ describe('presentation checkpoint storage', () => {
     });
     expect(presentationStageForEnding(checkpoint, 'ending_alpha')).toBe('aftermath');
     expect(presentationStageForEnding(checkpoint, 'ending_beta')).toBe('decision');
+  });
+
+  test('resets a same-ending replay from postcredit back to decision', () => {
+    const checkpoint = {
+      version: 1 as const,
+      acknowledgedBeatKeys: ['opaque:ending'],
+      endingId: 'ending_same',
+      endingStage: 'postcredit' as const,
+    };
+
+    expect(presentationCheckpointAfterEndingSelection(
+      checkpoint,
+      [{ type: 'ending-selected', endingId: 'ending_same' }],
+      'ending_same',
+    )).toEqual({
+      ...checkpoint,
+      endingStage: 'decision',
+    });
   });
 
   test('keeps a volatile in-session round trip when persistent storage is denied', () => {

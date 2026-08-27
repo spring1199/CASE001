@@ -4,6 +4,7 @@ import type { PlayerState } from '@/game/state/types';
 import {
   RuntimeMutationError,
   RuntimeMutationQueue,
+  RuntimeRetryRegistry,
   shouldFocusAfterRuntimeOutcomes,
 } from '@/phone/runtime-mutation-queue';
 
@@ -135,5 +136,22 @@ describe('serialized runtime mutations', () => {
       thresholdMatched: 1,
       thresholdRequired: 2,
     } }])).toBe(false);
+  });
+
+  it('retains failure A across success B and removes only A when its retry runs', () => {
+    const snapshots: number[][] = [];
+    const retryA = vi.fn();
+    const retries = new RuntimeRetryRegistry(
+      (entries) => snapshots.push(entries.map(({ id }) => id)),
+    );
+
+    const retryAId = retries.add(retryA);
+    // Operation B succeeds and therefore does not mutate the failed-operation ledger.
+    expect(retries.snapshot().map(({ id }) => id)).toEqual([retryAId]);
+
+    expect(retries.invoke(retryAId)).toBe(true);
+    expect(retryA).toHaveBeenCalledTimes(1);
+    expect(retries.snapshot()).toEqual([]);
+    expect(snapshots).toEqual([[retryAId], []]);
   });
 });
