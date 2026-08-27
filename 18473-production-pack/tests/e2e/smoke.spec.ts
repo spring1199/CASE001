@@ -335,6 +335,19 @@ test('unlocks the neutral phone and exposes every Phase 02 app shell', async ({ 
   await expect(page.getByRole('button', { name: 'Файл хадгалах сан' })).toBeEnabled();
 });
 
+test('keeps programmatic screen-heading focus visually unobtrusive', async ({ page }) => {
+  await page.goto('/');
+
+  const lockHeading = page.getByRole('heading', { name: publicCaseSummary.title });
+  await expect(lockHeading).toBeFocused();
+  await expect(lockHeading).toHaveCSS('outline-style', 'none');
+
+  await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
+  const homeHeading = page.getByRole('heading', { name: 'Аппын нүүр', exact: true });
+  await expect(homeHeading).toBeFocused();
+  await expect(homeHeading).toHaveCSS('outline-style', 'none');
+});
+
 test('supports search, deep links, dialogs, zoom, transcripts, and keyboard history', async ({ page }) => {
   await unlockPhone(page);
 

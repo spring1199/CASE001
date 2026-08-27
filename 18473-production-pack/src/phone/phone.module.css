@@ -169,6 +169,11 @@
   overflow-wrap: anywhere;
 }
 
+.lockTitle:focus,
+.screenTitle:focus {
+  outline: none;
+}
+
 .scrollRegion {
   min-width: 0;
   min-height: 0;
