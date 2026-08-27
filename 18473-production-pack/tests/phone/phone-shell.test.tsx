@@ -49,7 +49,7 @@ describe('data-driven phone application views', () => {
     },
   );
 
-  it('renders browser search without requiring authored case logic', () => {
+  it('renders distinct neutral Browser collections without requiring authored case logic', () => {
     const markup = renderToStaticMarkup(
       <PhoneAppView
         app={neutralPhoneIndex.appsById.browser}
@@ -59,8 +59,27 @@ describe('data-driven phone application views', () => {
     );
 
     expect(markup).toContain('type="search"');
-    expect(markup).toContain('Хадгалсан хуудсаас хайх');
-    expect(markup).toContain('Долоо хоногийн цаг агаар');
+    expect(markup).toContain('Хөтчийн бүртгэлээс хайх');
+    expect(markup).toContain('>Түүх</button>');
+    expect(markup).toContain('>Хадгалсан</button>');
+    expect(markup).toContain('>Өмнөх хайлтууд</button>');
+    expect(markup).toContain('Хотын дугуйн замын зураг');
+  });
+
+  it('renders Gallery timeline groups and neutral album shells', () => {
+    const markup = renderToStaticMarkup(
+      <PhoneAppView
+        app={neutralPhoneIndex.appsById.gallery}
+        unlockedContentIds={new Set<string>()}
+        onOpenItem={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain('>Цагийн шугам</button>');
+    expect(markup).toContain('>Нуусан</button>');
+    expect(markup).toContain('>Саяхан устгасан</button>');
+    expect(markup).toContain('data-collection-group="8 сарын 24"');
+    expect(markup).toContain('data-collection-group="8 сарын 23"');
   });
 
   it('uses native metadata and audio controls with an available transcript', () => {

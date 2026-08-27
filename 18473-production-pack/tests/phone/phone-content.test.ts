@@ -31,6 +31,7 @@ describe('phone content boundary', () => {
     const messageApp = neutralPhoneIndex.appsById.messages;
     const galleryItem = neutralPhoneIndex.appsById.gallery.items[0]!;
     const mailItem = neutralPhoneIndex.appsById.mail.items[0]!;
+    const browserCollections = neutralPhoneIndex.appsById.browser.collections;
 
     expect(messageItem).toBeDefined();
     if (messageItem?.kind !== 'message-thread') {
@@ -43,6 +44,8 @@ describe('phone content boundary', () => {
     expect(Object.isFrozen(neutralPhoneIndex.content.apps)).toBe(true);
     expect(Object.isFrozen(neutralPhoneIndex.appsById)).toBe(true);
     expect(Object.isFrozen(neutralPhoneIndex.itemsById)).toBe(true);
+    expect(Object.isFrozen(neutralPhoneIndex.collectionsByAppId)).toBe(true);
+    expect(Object.isFrozen(neutralPhoneIndex.collectionsByAppId.browser)).toBe(true);
     expect(Object.isFrozen(messageApp)).toBe(true);
     expect(Object.isFrozen(messageApp.items)).toBe(true);
     expect(Object.isFrozen(messageItem)).toBe(true);
@@ -57,6 +60,9 @@ describe('phone content boundary', () => {
     expect(Object.isFrozen(mailItem.deepLinks)).toBe(true);
     expect(Object.isFrozen(mailItem.deepLinks![0])).toBe(true);
     expect(Object.isFrozen(mailItem.deepLinks![0]!.target)).toBe(true);
+    expect(Object.isFrozen(browserCollections)).toBe(true);
+    expect(Object.isFrozen(browserCollections![0])).toBe(true);
+    expect(neutralPhoneIndex.collectionsByAppId.browser.history?.label).toBe('Түүх');
 
     expect(() => {
       (neutralPhoneIndex.content.apps as unknown as PhoneAppDescriptor[]).push(
@@ -140,6 +146,41 @@ describe('phone content boundary', () => {
     thread.messages[1]!.id = thread.messages[0]!.id;
 
     expect(() => parsePhoneContent(duplicate)).toThrow(/Duplicate message ID/);
+  });
+
+  it('rejects duplicate collection IDs within an app', () => {
+    const duplicate = mutableNeutralClone();
+    const browser = duplicate.apps.find((app) => app.id === 'browser')!;
+    browser.collections![1]!.id = browser.collections![0]!.id;
+
+    expect(() => parsePhoneContent(duplicate)).toThrow(/Duplicate collection ID/);
+  });
+
+  it('rejects missing and broken collection references', () => {
+    const missing = mutableNeutralClone();
+    const browserWithoutReference = missing.apps.find((app) => app.id === 'browser')!;
+    delete browserWithoutReference.items[0]!.collectionId;
+    expect(() => parsePhoneContent(missing)).toThrow(/requires a collection reference/);
+
+    const broken = mutableNeutralClone();
+    const browserWithBrokenReference = broken.apps.find((app) => app.id === 'browser')!;
+    browserWithBrokenReference.items[0]!.collectionId = 'missing-collection';
+    expect(() => parsePhoneContent(broken)).toThrow(/Broken collection reference/);
+  });
+
+  it('models neutral Browser and Gallery collections without narrative content', () => {
+    expect(neutralPhoneIndex.appsById.browser.collections?.map(({ id }) => id)).toEqual([
+      'history',
+      'saved-pages',
+      'prior-searches',
+    ]);
+    expect(neutralPhoneIndex.appsById.gallery.collections?.map(({ id }) => id)).toEqual([
+      'timeline',
+      'hidden',
+      'recently-deleted',
+    ]);
+    expect(neutralPhoneIndex.appsById.gallery.items.every((item) => item.collectionId)).toBe(true);
+    expect(neutralPhoneIndex.appsById.gallery.items.some((item) => item.groupLabel)).toBe(true);
   });
 
   it('requires accessible visual descriptions, metadata labels, and audio transcripts', () => {

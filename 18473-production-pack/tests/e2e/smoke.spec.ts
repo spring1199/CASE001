@@ -339,7 +339,8 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
   await unlockPhone(page);
 
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
-  const search = page.getByRole('searchbox', { name: 'Хадгалсан хуудсаас хайх' });
+  await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
+  const search = page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' });
   await search.fill('бороо');
   await expect(page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ })).toBeVisible();
   await page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ }).click();
@@ -351,6 +352,8 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
   await expect(page.locator('audio')).toHaveAttribute('controls', '');
   await page.keyboard.press('Alt+ArrowLeft');
   await expect(page.locator('[data-app-shell="browser"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Хадгалсан', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ })).toBeVisible();
   await goHome(page);
 
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
@@ -396,6 +399,17 @@ for (const width of [320, 375, 414, 768]) {
   });
 }
 
+test('keeps Gallery card titles readable at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await unlockPhone(page);
+  await page.getByRole('button', { name: 'Зургийн цомог' }).click();
+
+  const firstTitle = page.getByRole('button', { name: /Борооны дараах цэцэрлэг/ }).locator('strong');
+  const titleWidth = await firstTitle.evaluate((element) => element.getBoundingClientRect().width);
+
+  expect(titleWidth).toBeGreaterThanOrEqual(80);
+});
+
 test('protects narrow actions and both horizontal safe-area edges', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await unlockPhone(page);
@@ -416,7 +430,8 @@ test('protects narrow actions and both horizontal safe-area edges', async ({ pag
   expect(phoneCss).toContain('env(safe-area-inset-right)');
 
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
-  await page.getByRole('searchbox', { name: 'Хадгалсан хуудсаас хайх' }).fill('бороо');
+  await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' }).fill('бороо');
   await page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ }).click();
   const deepLink = page.getByRole('button', { name: 'Төлөвлөгөөний зурвас нээх' });
   const actionBox = await deepLink.evaluate((element) => ({
@@ -424,6 +439,48 @@ test('protects narrow actions and both horizontal safe-area edges', async ({ pag
     scrollWidth: element.scrollWidth,
   }));
   expect(actionBox.scrollWidth).toBeLessThanOrEqual(actionBox.clientWidth);
+});
+
+test('switches Browser and Gallery collections and restores route scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 360 });
+  await unlockPhone(page);
+
+  await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
+  await expect(page.getByRole('button', { name: 'Түүх', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Өмнөх хайлтууд', exact: true }).click();
+  await expect(page.getByRole('button', { name: /бороотой өдөр дугуй унах зөвлөмж/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ })).toBeVisible();
+  await goHome(page);
+
+  await page.getByRole('button', { name: 'Зургийн цомог' }).click();
+  await expect(page.locator('[data-collection-group="8 сарын 24"]')).toBeVisible();
+  await expect(page.locator('[data-collection-group="8 сарын 23"]')).toBeVisible();
+  await expect(page.getByRole('region', { name: '8 сарын 24' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '8 сарын 23' })).toBeVisible();
+  await page.getByRole('button', { name: 'Нуусан', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Нуусан зураг алга.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Саяхан устгасан', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Саяхан устгасан зураг алга.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Цагийн шугам', exact: true }).click();
+
+  const scrollRegion = page.locator('[data-phone-scroll-region]');
+  await expect.poll(() => scrollRegion.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+  const finalPhoto = page.getByRole('button', { name: /Дугуйн урд гэрэл/ });
+  await finalPhoto.scrollIntoViewIfNeeded();
+  const timelineScrollTop = await scrollRegion.evaluate((element) => element.scrollTop);
+  expect(timelineScrollTop).toBeGreaterThan(0);
+  await finalPhoto.click();
+  await expect(page.getByRole('heading', { name: 'Дугуйн урд гэрэл', exact: true })).toBeVisible();
+  await expect.poll(() => scrollRegion.evaluate((element) => element.scrollTop)).toBe(0);
+
+  await page.getByRole('button', { name: 'Буцах' }).click();
+  await expect(page.locator('[data-app-shell="gallery"]')).toBeVisible();
+  await expect.poll(() => scrollRegion.evaluate((element) => element.scrollTop)).toBe(timelineScrollTop);
+
+  await goHome(page);
+  await page.getByRole('button', { name: 'Зургийн цомог' }).click();
+  await expect.poll(() => scrollRegion.evaluate((element) => element.scrollTop)).toBe(0);
 });
 
 test('reduces phone motion without removing state feedback', async ({ page }) => {

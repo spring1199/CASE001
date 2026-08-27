@@ -33,6 +33,15 @@ export const phoneMetadataRowSchema = z.strictObject({
   value: nonEmptyTextSchema,
 });
 
+export const phoneCollectionPresentationSchema = z.enum(['list', 'timeline-grid']);
+
+export const phoneCollectionSchema = z.strictObject({
+  id: identifierSchema,
+  label: nonEmptyTextSchema,
+  presentation: phoneCollectionPresentationSchema,
+  emptyLabel: nonEmptyTextSchema.optional(),
+});
+
 export const phoneVisualSchema = z.strictObject({
   src: nonEmptyTextSchema.optional(),
   alt: nonEmptyTextSchema,
@@ -84,6 +93,8 @@ export const phoneMessageRecordSchema = z.strictObject({
 const commonItemShape = {
   id: identifierSchema,
   title: nonEmptyTextSchema,
+  collectionId: identifierSchema.optional(),
+  groupLabel: nonEmptyTextSchema.optional(),
   subtitle: nonEmptyTextSchema.optional(),
   timestampLabel: nonEmptyTextSchema.optional(),
   body: nonEmptyTextSchema.optional(),
@@ -124,6 +135,7 @@ export const phoneAppDescriptorSchema = z.strictObject({
   shortLabel: nonEmptyTextSchema,
   iconLabel: nonEmptyTextSchema,
   lockedInitially: z.boolean(),
+  collections: z.array(phoneCollectionSchema).min(1).optional(),
   items: z.array(phoneItemSchema),
 });
 
@@ -153,7 +165,38 @@ export const phoneContentSchema = z.strictObject({
       appIndexById.set(app.id, appIndex);
     }
 
+    const firstCollectionIndexById = new Map<string, number>();
+    app.collections?.forEach((collection, collectionIndex) => {
+      const firstCollectionIndex = firstCollectionIndexById.get(collection.id);
+      if (firstCollectionIndex !== undefined) {
+        context.addIssue({
+          code: 'custom',
+          path: ['apps', appIndex, 'collections', collectionIndex, 'id'],
+          message: `Duplicate collection ID "${collection.id}" in app "${app.id}" (first declared at collections.${firstCollectionIndex}).`,
+        });
+      } else {
+        firstCollectionIndexById.set(collection.id, collectionIndex);
+      }
+    });
+
     app.items.forEach((item, itemIndex) => {
+      if (app.collections !== undefined && item.collectionId === undefined) {
+        context.addIssue({
+          code: 'custom',
+          path: ['apps', appIndex, 'items', itemIndex, 'collectionId'],
+          message: `Item "${item.id}" requires a collection reference in app "${app.id}".`,
+        });
+      } else if (
+        item.collectionId !== undefined &&
+        !firstCollectionIndexById.has(item.collectionId)
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['apps', appIndex, 'items', itemIndex, 'collectionId'],
+          message: `Broken collection reference "${item.collectionId}" in app "${app.id}".`,
+        });
+      }
+
       const firstOwner = itemOwnerById.get(item.id);
       if (firstOwner !== undefined) {
         context.addIssue({
@@ -230,6 +273,7 @@ export const phoneContentSchema = z.strictObject({
 });
 
 export type PhoneAppId = z.infer<typeof phoneAppIdSchema>;
+export type PhoneCollectionDescriptor = z.infer<typeof phoneCollectionSchema>;
 export type PhoneDeepLinkTarget = z.infer<typeof phoneDeepLinkTargetSchema>;
 export type PhoneDiscoveryEffects = z.infer<typeof phoneDiscoveryEffectsSchema>;
 export type PhoneVisual = z.infer<typeof phoneVisualSchema>;
@@ -248,6 +292,12 @@ export type DeepReadonly<T> = T extends (...args: never[]) => unknown
 export type PhoneContentIndex = Readonly<{
   content: DeepReadonly<PhoneContent>;
   appsById: Readonly<Record<PhoneAppId, DeepReadonly<PhoneAppDescriptor>>>;
+  collectionsByAppId: Readonly<
+    Record<
+      PhoneAppId,
+      Readonly<Record<string, DeepReadonly<PhoneCollectionDescriptor> | undefined>>
+    >
+  >;
   itemsById: Readonly<Record<string, DeepReadonly<PhoneItem> | undefined>>;
   itemAppIds: Readonly<Record<string, PhoneAppId | undefined>>;
 }>;
@@ -282,10 +332,19 @@ export function createPhoneContentIndex(input: unknown): PhoneContentIndex {
   const itemOwnerEntries = content.apps.flatMap((app) =>
     app.items.map((item) => [item.id, app.id] as const),
   );
+  const collectionEntries = content.apps.map((app) => [
+    app.id,
+    createFrozenLookup(
+      (app.collections ?? []).map((collection) => [collection.id, collection] as const),
+    ),
+  ] as const);
 
   return Object.freeze({
     content,
     appsById,
+    collectionsByAppId: createFrozenLookup(
+      collectionEntries,
+    ) as PhoneContentIndex['collectionsByAppId'],
     itemsById: createFrozenLookup(itemEntries),
     itemAppIds: createFrozenLookup(itemOwnerEntries),
   });

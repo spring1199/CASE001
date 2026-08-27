@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand';
 
 import type { PublicCaseSummary } from '@/game/content/public-case-summary';
@@ -25,6 +25,7 @@ import {
   navigateToApp,
   navigateToDeepLink,
   navigateToItem,
+  phoneRouteKey,
   unlockPhone,
 } from '@/phone/navigation';
 import {
@@ -39,6 +40,8 @@ import styles from '@/phone/phone.module.css';
 type PhoneExperienceProps = Readonly<{
   caseSummary: PublicCaseSummary;
 }>;
+
+type ScrollNavigationMode = 'reset' | 'restore';
 
 const INITIAL_UNLOCKED_APP_IDS: PhoneAppId[] = neutralPhoneIndex.content.apps
   .filter((app) => !app.lockedInitially)
@@ -74,7 +77,27 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const [status, setStatus] = useState('Төхөөрөмж түгжээтэй байна.');
   const [initializationFailure, setInitializationFailure] =
     useState<PhoneInitializationFailure | null>(null);
+  const [collectionSelections, setCollectionSelections] = useState<
+    Partial<Record<PhoneAppId, string>>
+  >({});
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const scrollRegionRef = useRef<HTMLDivElement>(null);
+  const scrollPositionsRef = useRef(new Map<string, number>());
+  const scrollNavigationModeRef = useRef<ScrollNavigationMode>('reset');
+
+  const prepareNavigation = useCallback(
+    (mode: ScrollNavigationMode): void => {
+      const scrollRegion = scrollRegionRef.current;
+      if (scrollRegion) {
+        scrollPositionsRef.current.set(
+          phoneRouteKey(navigation.current),
+          scrollRegion.scrollTop,
+        );
+      }
+      scrollNavigationModeRef.current = mode;
+    },
+    [navigation],
+  );
 
   const unlockedAppIds = useMemo(() => {
     const unlocked = new Set<PhoneAppId>(INITIAL_UNLOCKED_APP_IDS);
@@ -142,8 +165,15 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     void result.saveOperation?.catch(() => setStatus('Илрүүлэлтийг хадгалж чадсангүй.'));
   };
 
-  useEffect(() => {
-    headingRef.current?.focus();
+  useLayoutEffect(() => {
+    const scrollRegion = scrollRegionRef.current;
+    if (scrollRegion) {
+      scrollRegion.scrollTop =
+        scrollNavigationModeRef.current === 'restore'
+          ? (scrollPositionsRef.current.get(phoneRouteKey(navigation.current)) ?? 0)
+          : 0;
+    }
+    headingRef.current?.focus({ preventScroll: true });
   }, [navigation]);
 
   useEffect(() => {
@@ -158,6 +188,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
       if (event.key === 'Home' && !isEditableTarget && navigation.current.screen !== 'home') {
         event.preventDefault();
+        prepareNavigation('reset');
         setNavigation((current) => goHome(current));
         setStatus('Аппын нүүр рүү шилжлээ.');
         return;
@@ -168,19 +199,21 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       const next = goBack(navigation);
       if (next === navigation) return;
       event.preventDefault();
+      prepareNavigation('restore');
       setNavigation(next);
       setStatus('Өмнөх дэлгэц рүү буцлаа.');
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigation]);
+  }, [navigation, prepareNavigation]);
 
   const openApp = (app: DeepReadonly<PhoneAppDescriptor>): void => {
     if (!unlockedAppIds.has(app.id)) {
       setStatus(`${app.label} апп түгжээтэй байна.`);
       return;
     }
+    prepareNavigation('reset');
     setNavigation((current) =>
       navigateToApp(current, app.id, neutralPhoneIndex, unlockedAppIds),
     );
@@ -195,6 +228,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       return;
     }
     recordDiscovery(item);
+    prepareNavigation('reset');
     setNavigation((current) =>
       navigateToItem(current, appId, item.id, neutralPhoneIndex, unlockedAppIds),
     );
@@ -216,6 +250,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     }
     const targetItem = target.itemId ? neutralPhoneIndex.itemsById[target.itemId] : undefined;
     if (targetItem) recordDiscovery(targetItem);
+    prepareNavigation('reset');
     setNavigation((current) =>
       navigateToDeepLink(current, target, neutralPhoneIndex, unlockedAppIds),
     );
@@ -243,6 +278,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
             className={styles.primaryButton}
             data-action-label
             onClick={() => {
+              prepareNavigation('reset');
               setNavigation((current) => unlockPhone(current));
               setStatus('Төхөөрөмжийн түгжээ тайлагдлаа.');
             }}
@@ -288,11 +324,14 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       canGoBack={navigation.history.length > 0}
       canGoHome={route.screen !== 'home'}
       headingRef={headingRef}
+      scrollRegionRef={scrollRegionRef}
       onBack={() => {
+        prepareNavigation('restore');
         setNavigation((current) => goBack(current));
         setStatus('Өмнөх дэлгэц рүү буцлаа.');
       }}
       onHome={() => {
+        prepareNavigation('reset');
         setNavigation((current) => goHome(current));
         setStatus('Аппын нүүр рүү шилжлээ.');
       }}
@@ -330,6 +369,13 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           app={currentApp}
           unlockedContentIds={unlockedContentIds}
           gatedContentIds={GATED_CONTENT_IDS}
+          initialCollectionId={collectionSelections[currentApp.id]}
+          onCollectionChange={(collectionId) => {
+            setCollectionSelections((current) => ({
+              ...current,
+              [currentApp.id]: collectionId,
+            }));
+          }}
           onOpenItem={openItem}
         />
       ) : null}

@@ -18,6 +18,12 @@ export type PhoneNavigationState = Readonly<{
 const LOCK_ROUTE: PhoneRoute = Object.freeze({ screen: 'lock' });
 const HOME_ROUTE: PhoneRoute = Object.freeze({ screen: 'home' });
 
+export function phoneRouteKey(route: PhoneRoute): string {
+  if (route.screen === 'lock' || route.screen === 'home') return route.screen;
+  if (route.screen === 'app') return `app:${route.appId}`;
+  return `item:${route.appId}:${route.itemId}`;
+}
+
 export function createPhoneNavigationState(): PhoneNavigationState {
   return { current: LOCK_ROUTE, history: [] };
 }

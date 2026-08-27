@@ -194,6 +194,7 @@
 .primaryButton,
 .secondaryButton,
 .navButton,
+.collectionButton,
 .appIcon,
 .listButton,
 .deepLinkButton,
@@ -238,9 +239,25 @@
   white-space: nowrap;
 }
 
+.collectionButton {
+  flex: 0 0 auto;
+  padding: var(--space-2xs) var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.collectionButton[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-surface-raised);
+  color: var(--color-accent);
+}
+
 .primaryButton:active,
 .secondaryButton:active,
 .navButton:active,
+.collectionButton:active,
 .appIcon:active,
 .listButton:active,
 .deepLinkButton:active,
@@ -258,6 +275,7 @@
 .primaryButton:disabled,
 .secondaryButton:disabled,
 .navButton:disabled,
+.collectionButton:disabled,
 .appIcon:disabled,
 .appIcon[aria-disabled='true'],
 .listButton:disabled,
@@ -271,6 +289,7 @@
 .primaryButton:focus-visible,
 .secondaryButton:focus-visible,
 .navButton:focus-visible,
+.collectionButton:focus-visible,
 .appIcon:focus-visible,
 .listButton:focus-visible,
 .deepLinkButton:focus-visible,
@@ -358,6 +377,17 @@
   overflow-wrap: anywhere;
 }
 
+.collectionNav {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-2xs);
+  margin-block-start: var(--space-sm);
+  padding-block: var(--space-3xs);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
 .searchForm {
   display: grid;
   gap: var(--space-2xs);
@@ -421,6 +451,32 @@
   gap: var(--space-xs);
 }
 
+.timelineGroups,
+.collectionGroup {
+  display: grid;
+  min-width: 0;
+}
+
+.timelineGroups {
+  gap: var(--space-lg);
+  margin-block-start: var(--space-md);
+}
+
+.collectionGroupHeading {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.035em;
+  overflow-wrap: anywhere;
+}
+
+.collectionGroup .galleryList {
+  margin-block-start: var(--space-xs);
+}
+
 .itemListItem,
 .galleryListItem,
 .messageListItem {
@@ -439,7 +495,12 @@
 
 .galleryList .listButton {
   min-height: 9rem;
+  grid-template-columns: minmax(0, 1fr);
   align-content: end;
+}
+
+.galleryList .timestamp {
+  grid-column: 1;
 }
 
 .itemTitle {
@@ -733,6 +794,7 @@
 
   .secondaryButton:hover,
   .navButton:hover,
+  .collectionButton:hover,
   .listButton:hover,
   .deepLinkButton:hover,
   .dialogButton:hover,
@@ -770,6 +832,7 @@
   .primaryButton,
   .secondaryButton,
   .navButton,
+  .collectionButton,
   .appIcon,
   .listButton,
   .deepLinkButton,

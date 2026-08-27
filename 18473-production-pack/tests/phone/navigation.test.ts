@@ -9,6 +9,7 @@ import {
   navigateToApp,
   navigateToDeepLink,
   navigateToItem,
+  phoneRouteKey,
   unlockPhone,
 } from '@/phone/navigation';
 
@@ -19,6 +20,15 @@ const initiallyUnlocked: ReadonlySet<PhoneAppId> = new Set(
 );
 
 describe('phone navigation', () => {
+  it('provides stable route keys for route-specific UI state', () => {
+    expect(phoneRouteKey({ screen: 'lock' })).toBe('lock');
+    expect(phoneRouteKey({ screen: 'home' })).toBe('home');
+    expect(phoneRouteKey({ screen: 'app', appId: 'gallery' })).toBe('app:gallery');
+    expect(phoneRouteKey({ screen: 'item', appId: 'gallery', itemId: 'photo-1' })).toBe(
+      'item:gallery:photo-1',
+    );
+  });
+
   it('tracks lock, home, app, and item routes in order', () => {
     const messageItemId = neutralPhoneIndex.appsById.messages.items[0]!.id;
     let state = createPhoneNavigationState();

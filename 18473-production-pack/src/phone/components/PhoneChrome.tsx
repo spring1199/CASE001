@@ -8,6 +8,7 @@ type PhoneChromeProps = Readonly<{
   canGoBack: boolean;
   canGoHome: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
+  scrollRegionRef: RefObject<HTMLDivElement | null>;
   onBack(): void;
   onHome(): void;
   children: ReactNode;
@@ -19,6 +20,7 @@ export function PhoneChrome({
   canGoBack,
   canGoHome,
   headingRef,
+  scrollRegionRef,
   onBack,
   onHome,
   children,
@@ -61,7 +63,7 @@ export function PhoneChrome({
           {title}
         </h1>
       </header>
-      <div className={styles.scrollRegion} data-phone-scroll-region>
+      <div ref={scrollRegionRef} className={styles.scrollRegion} data-phone-scroll-region>
         {children}
       </div>
     </section>
