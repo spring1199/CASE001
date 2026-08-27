@@ -5,30 +5,35 @@ import styles from '@/phone/phone.module.css';
 type PhoneChromeProps = Readonly<{
   title: string;
   screen: 'home' | 'app' | 'item';
+  activeSurface: 'phone' | 'investigation';
   canGoBack: boolean;
   canGoHome: boolean;
   headingRef: RefObject<HTMLHeadingElement | null>;
   scrollRegionRef: RefObject<HTMLDivElement | null>;
   onBack(): void;
   onHome(): void;
+  onSurfaceChange(surface: 'phone' | 'investigation'): void;
   children: ReactNode;
 }>;
 
 export function PhoneChrome({
   title,
   screen,
+  activeSurface,
   canGoBack,
   canGoHome,
   headingRef,
   scrollRegionRef,
   onBack,
   onHome,
+  onSurfaceChange,
   children,
 }: PhoneChromeProps) {
   return (
     <section
       aria-labelledby="phone-screen-heading"
       data-phone-screen={screen}
+      data-active-surface={activeSurface}
       className={styles.phoneSurface}
     >
       <header className={styles.phoneHeader}>
@@ -62,6 +67,30 @@ export function PhoneChrome({
         <h1 id="phone-screen-heading" ref={headingRef} tabIndex={-1} className={styles.screenTitle}>
           {title}
         </h1>
+        <div role="tablist" aria-label="Үндсэн ажлын талбар" className={styles.collectionNav}>
+          <button
+            type="button"
+            role="tab"
+            id="phone-surface-tab"
+            aria-controls="phone-surface-panel"
+            aria-selected={activeSurface === 'phone'}
+            className={styles.collectionButton}
+            onClick={() => onSurfaceChange('phone')}
+          >
+            Утас
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="investigation-surface-tab"
+            aria-controls="investigation-surface-panel"
+            aria-selected={activeSurface === 'investigation'}
+            className={styles.collectionButton}
+            onClick={() => onSurfaceChange('investigation')}
+          >
+            Мөрдлөг
+          </button>
+        </div>
       </header>
       <div ref={scrollRegionRef} className={styles.scrollRegion} data-phone-scroll-region>
         {children}
