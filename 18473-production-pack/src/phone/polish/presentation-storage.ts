@@ -3,38 +3,55 @@ import { z } from 'zod';
 import type { EngineOutcome } from '@/game/engine/engine';
 import type { KeyValueStorage } from '@/phone/polish/audio-preferences';
 
+const presentationBeatSchema = z.enum([
+  'ordinary', 'hope1', 'hope2', 'f17', 'winter47',
+  'decoy', 'hope3', 'ending', 'postcredit',
+]);
+
+const projectedPresentationRecordSchema = z.strictObject({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  tags: z.array(z.string().min(1)),
+});
+
+const pendingPresentationSchema = z.strictObject({
+  beat: presentationBeatSchema,
+  key: z.string().min(1),
+  records: z.array(projectedPresentationRecordSchema),
+});
+
 export const presentationCheckpointSchema = z.strictObject({
+  version: z.literal(2),
+  acknowledgedBeatKeys: z.array(z.string().min(1)),
+  endingId: z.string().min(1).nullable(),
+  endingStage: z.enum(['decision', 'aftermath', 'closure', 'postcredit']).nullable(),
+  pendingPresentations: z.array(pendingPresentationSchema),
+});
+
+const legacyPendingPresentationSchema = z.strictObject({
+  beat: presentationBeatSchema,
+  key: z.string().min(1),
+  recordIds: z.array(z.string().min(1)),
+});
+
+const legacyPresentationCheckpointSchema = z.strictObject({
   version: z.literal(1),
   acknowledgedBeatKeys: z.array(z.string().min(1)),
   endingId: z.string().min(1).nullable(),
   endingStage: z.enum(['decision', 'aftermath', 'closure', 'postcredit']).nullable(),
-  pendingPresentation: z.strictObject({
-    beat: z.enum([
-      'ordinary', 'hope1', 'hope2', 'f17', 'winter47',
-      'decoy', 'hope3', 'ending', 'postcredit',
-    ]),
-    key: z.string().min(1),
-    recordIds: z.array(z.string().min(1)),
-  }).nullable().optional(),
-  pendingPresentations: z.array(z.strictObject({
-    beat: z.enum([
-      'ordinary', 'hope1', 'hope2', 'f17', 'winter47',
-      'decoy', 'hope3', 'ending', 'postcredit',
-    ]),
-    key: z.string().min(1),
-    recordIds: z.array(z.string().min(1)),
-  })).optional(),
+  pendingPresentation: legacyPendingPresentationSchema.nullable().optional(),
+  pendingPresentations: z.array(legacyPendingPresentationSchema).optional(),
 });
 
 export type PresentationCheckpoint = z.infer<typeof presentationCheckpointSchema>;
 export type EndingPresentationStage = NonNullable<PresentationCheckpoint['endingStage']>;
 
 export const DEFAULT_PRESENTATION_CHECKPOINT: PresentationCheckpoint = Object.freeze({
-  version: 1,
+  version: 2,
   acknowledgedBeatKeys: [],
   endingId: null,
   endingStage: null,
-  pendingPresentation: null,
   pendingPresentations: [],
 });
 
@@ -42,22 +59,27 @@ export const PRESENTATION_CHECKPOINT_STORAGE_KEY = '18473:presentation-checkpoin
 
 export type PresentationStorageFactory = () => KeyValueStorage | null;
 
-export type PendingPresentationCheckpoint = NonNullable<PresentationCheckpoint['pendingPresentation']>;
+export type PendingPresentationCheckpoint = PresentationCheckpoint['pendingPresentations'][number];
+export type PendingPresentationInput = Readonly<{
+  beat: PendingPresentationCheckpoint['beat'];
+  key: string;
+  records: readonly Readonly<{
+    id: string;
+    title: string;
+    description: string;
+    tags: readonly string[];
+  }>[];
+}>;
 
 export function pendingPresentationQueue(
   checkpoint: PresentationCheckpoint,
 ): PendingPresentationCheckpoint[] {
-  const source = checkpoint.pendingPresentations
-    ?? (checkpoint.pendingPresentation ? [checkpoint.pendingPresentation] : []);
-  return source.map((pending) => ({
-    ...pending,
-    recordIds: [...pending.recordIds],
-  }));
+  return checkpoint.pendingPresentations.map(copyPendingPresentation);
 }
 
 export function setPendingPresentation(
   checkpoint: PresentationCheckpoint,
-  pendingPresentation: PendingPresentationCheckpoint,
+  pendingPresentation: PendingPresentationInput,
 ): PresentationCheckpoint {
   const queue = pendingPresentationQueue(checkpoint);
   if (
@@ -66,12 +88,11 @@ export function setPendingPresentation(
   ) return copyCheckpoint(checkpoint);
   const pendingPresentations = [
     ...queue,
-    { ...pendingPresentation, recordIds: [...pendingPresentation.recordIds] },
+    copyPendingPresentation(pendingPresentation),
   ];
   return {
     ...checkpoint,
     acknowledgedBeatKeys: [...checkpoint.acknowledgedBeatKeys],
-    pendingPresentation: pendingPresentations[0] ?? null,
     pendingPresentations,
   };
 }
@@ -86,7 +107,6 @@ export function acknowledgePendingPresentation(
   return {
     ...checkpoint,
     acknowledgedBeatKeys: [...new Set([...checkpoint.acknowledgedBeatKeys, pending.key])],
-    pendingPresentation: pendingPresentations[0] ?? null,
     pendingPresentations,
   };
 }
@@ -161,12 +181,23 @@ export class PresentationCheckpointStorage {
         return copyCheckpoint(DEFAULT_PRESENTATION_CHECKPOINT);
       }
       const parsed = presentationCheckpointSchema.safeParse(decoded);
-      if (!parsed.success) {
-        volatileCheckpoints.delete(this.key);
-        return copyCheckpoint(DEFAULT_PRESENTATION_CHECKPOINT);
+      let checkpoint: PresentationCheckpoint;
+      if (parsed.success) {
+        checkpoint = copyCheckpoint(parsed.data);
+      } else {
+        const legacy = legacyPresentationCheckpointSchema.safeParse(decoded);
+        if (!legacy.success) {
+          volatileCheckpoints.delete(this.key);
+          return copyCheckpoint(DEFAULT_PRESENTATION_CHECKPOINT);
+        }
+        checkpoint = migrateLegacyCheckpoint(legacy.data);
       }
-      const checkpoint = copyCheckpoint(parsed.data);
       volatileCheckpoints.set(this.key, checkpoint);
+      if (!parsed.success) {
+        try {
+          storage.setItem(this.key, JSON.stringify(checkpoint));
+        } catch {}
+      }
       return copyCheckpoint(checkpoint);
     } catch {}
     return copyCheckpoint(volatileCheckpoints.get(this.key) ?? DEFAULT_PRESENTATION_CHECKPOINT);
@@ -193,7 +224,32 @@ function copyCheckpoint(checkpoint: PresentationCheckpoint): PresentationCheckpo
   return {
     ...checkpoint,
     acknowledgedBeatKeys: [...checkpoint.acknowledgedBeatKeys],
-    pendingPresentation: pendingPresentations[0] ?? null,
     pendingPresentations,
+  };
+}
+
+function copyPendingPresentation(
+  pending: PendingPresentationInput,
+): PendingPresentationCheckpoint {
+  return {
+    ...pending,
+    records: pending.records.map((record) => ({
+      ...record,
+      tags: [...record.tags],
+    })),
+  };
+}
+
+function migrateLegacyCheckpoint(
+  legacy: z.infer<typeof legacyPresentationCheckpointSchema>,
+): PresentationCheckpoint {
+  return {
+    version: 2,
+    acknowledgedBeatKeys: [...legacy.acknowledgedBeatKeys],
+    endingId: legacy.endingId,
+    endingStage: legacy.endingStage,
+    // Version one retained only record IDs, so replaying it cannot preserve the
+    // exact already-visible label/description. Drop those pending beats safely.
+    pendingPresentations: [],
   };
 }

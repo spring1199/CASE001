@@ -75,18 +75,66 @@ describe('presentation director', () => {
 });
 
 describe('presentation checkpoint storage', () => {
+  test('preserves two immutable snapshots of the same GRAPH edge across reload and acknowledgement', () => {
+    const storage = new MemoryStorage();
+    const checkpoints = new PresentationCheckpointStorage(() => storage);
+    const atFiftySeven = setPendingPresentation(DEFAULT_PRESENTATION_CHECKPOINT, {
+      beat: 'ordinary',
+      key: 'ordinary:graph-visible:57',
+      records: [{
+        id: 'graph:visible-edge',
+        title: 'Visible relationship',
+        description: '57% · unresolved',
+        tags: ['graph'],
+      }],
+    });
+    const atSeventyThree = setPendingPresentation(atFiftySeven, {
+      beat: 'ordinary',
+      key: 'ordinary:graph-visible:73',
+      records: [{
+        id: 'graph:visible-edge',
+        title: 'Visible relationship',
+        description: '73% · confirmed',
+        tags: ['graph'],
+      }],
+    });
+
+    expect(checkpoints.save(atSeventyThree)).toBe(true);
+    const reloaded = new PresentationCheckpointStorage(() => storage).load();
+    expect(reloaded.pendingPresentations.map(({ records }) => records[0]?.description))
+      .toEqual(['57% · unresolved', '73% · confirmed']);
+
+    const afterFirst = acknowledgePendingPresentation(reloaded);
+    expect(afterFirst.pendingPresentations[0]?.records[0]).toEqual({
+      id: 'graph:visible-edge',
+      title: 'Visible relationship',
+      description: '73% · confirmed',
+      tags: ['graph'],
+    });
+  });
+
   test('persists two pending reveals in FIFO order without overwriting the first', () => {
     const storage = new MemoryStorage();
     const checkpoints = new PresentationCheckpointStorage(() => storage);
     const first = setPendingPresentation(DEFAULT_PRESENTATION_CHECKPOINT, {
       beat: 'hope1',
       key: 'hope1:first',
-      recordIds: ['evidence:first'],
+      records: [{
+        id: 'evidence:first',
+        title: 'First visible record',
+        description: 'First visible description',
+        tags: ['hope1'],
+      }],
     });
     const queued = setPendingPresentation(first, {
       beat: 'f17',
       key: 'f17:second',
-      recordIds: ['deduction:second'],
+      records: [{
+        id: 'deduction:second',
+        title: 'Second visible record',
+        description: 'Second visible description',
+        tags: ['f17'],
+      }],
     });
 
     expect(queued.pendingPresentations?.map(({ key }) => key))
@@ -110,47 +158,87 @@ describe('presentation checkpoint storage', () => {
     const pending = setPendingPresentation(DEFAULT_PRESENTATION_CHECKPOINT, {
       beat: 'f17',
       key: 'f17:deduction-completed:visible-a:deduction:visible-a',
-      recordIds: ['deduction:visible-a'],
+      records: [{
+        id: 'deduction:visible-a',
+        title: 'Visible deduction',
+        description: 'Visible deduction description',
+        tags: ['f17'],
+      }],
     });
 
     expect(checkpoints.save(pending)).toBe(true);
-    expect(new PresentationCheckpointStorage(() => storage).load().pendingPresentation)
-      .toEqual(pending.pendingPresentation);
+    expect(new PresentationCheckpointStorage(() => storage).load().pendingPresentations)
+      .toEqual(pending.pendingPresentations);
 
     const acknowledged = acknowledgePendingPresentation(pending);
-    expect(acknowledged.pendingPresentation).toBeNull();
-    expect(acknowledged.acknowledgedBeatKeys).toContain(pending.pendingPresentation?.key);
+    expect(acknowledged.pendingPresentations).toEqual([]);
+    expect(acknowledged.acknowledgedBeatKeys).toContain(pending.pendingPresentations[0]?.key);
     expect(checkpoints.save(acknowledged)).toBe(true);
-    expect(new PresentationCheckpointStorage(() => storage).load().pendingPresentation).toBeNull();
+    expect(new PresentationCheckpointStorage(() => storage).load().pendingPresentations).toEqual([]);
   });
 
-  test('loads existing version-one checkpoints that predate pending-presentation persistence', () => {
+  test('migrates version-one metadata and safely drops ID-only pending beats that cannot be exact', () => {
     const storage = new MemoryStorage();
     storage.value = JSON.stringify({
       version: 1,
       acknowledgedBeatKeys: ['older-key'],
       endingId: null,
       endingStage: null,
+      pendingPresentation: {
+        beat: 'ordinary' as const,
+        key: 'legacy-id-only',
+        recordIds: ['graph:visible-edge'],
+      },
+      pendingPresentations: [{
+        beat: 'ordinary',
+        key: 'legacy-id-only',
+        recordIds: ['graph:visible-edge'],
+      }],
     });
 
     expect(new PresentationCheckpointStorage(() => storage).load()).toEqual({
-      version: 1,
+      version: 2,
       acknowledgedBeatKeys: ['older-key'],
       endingId: null,
       endingStage: null,
-      pendingPresentation: null,
       pendingPresentations: [],
     });
+    expect(JSON.parse(storage.value ?? '{}')).toMatchObject({
+      version: 2,
+      acknowledgedBeatKeys: ['older-key'],
+      pendingPresentations: [],
+    });
+  });
+
+  test('rejects non-projected raw fields from persisted presentation snapshots', () => {
+    const storage = new MemoryStorage();
+    const checkpoints = new PresentationCheckpointStorage(() => storage);
+    const unsafe = {
+      ...DEFAULT_PRESENTATION_CHECKPOINT,
+      pendingPresentations: [{
+        beat: 'ordinary' as const,
+        key: 'unsafe-extra-field',
+        records: [{
+          id: 'graph:visible-edge',
+          title: 'Visible relationship',
+          description: '57% · unresolved',
+          tags: ['graph'],
+          rawAuthoringSecret: 'must-not-persist',
+        }],
+      }],
+    };
+
+    expect(checkpoints.save(unsafe)).toBe(false);
+    expect(storage.value).toBeNull();
   });
   test('round trips acknowledged beats and ending stage', () => {
     const storage = new MemoryStorage();
     const checkpoints = new PresentationCheckpointStorage(() => storage);
     const checkpoint = {
-      version: 1 as const,
+      version: 2 as const,
       acknowledgedBeatKeys: ['hope3:signal'],
       endingId: 'ending_alpha',
       endingStage: 'aftermath' as const,
-      pendingPresentation: null,
       pendingPresentations: [],
     };
 
@@ -161,10 +249,11 @@ describe('presentation checkpoint storage', () => {
 
   test('updates and resets only presentation stage while preserving acknowledged beats', () => {
     const checkpoint = {
-      version: 1 as const,
+      version: 2 as const,
       acknowledgedBeatKeys: ['opaque:beat'],
       endingId: 'ending_alpha',
       endingStage: 'aftermath' as const,
+      pendingPresentations: [],
     };
 
     expect(setEndingPresentationStage(checkpoint, 'ending_alpha', 'closure')).toEqual({
@@ -182,10 +271,11 @@ describe('presentation checkpoint storage', () => {
 
   test('resets a same-ending replay from postcredit back to decision', () => {
     const checkpoint = {
-      version: 1 as const,
+      version: 2 as const,
       acknowledgedBeatKeys: ['opaque:ending'],
       endingId: 'ending_same',
       endingStage: 'postcredit' as const,
+      pendingPresentations: [],
     };
 
     expect(presentationCheckpointAfterEndingSelection(
@@ -213,7 +303,7 @@ describe('presentation checkpoint storage', () => {
     const checkpoints = new PresentationCheckpointStorage(() => storage);
     storage.value = '{oops';
     expect(checkpoints.load()).toEqual(DEFAULT_PRESENTATION_CHECKPOINT);
-    storage.value = JSON.stringify({ version: 2, acknowledgedBeatKeys: [] });
+    storage.value = JSON.stringify({ version: 3, acknowledgedBeatKeys: [] });
     expect(checkpoints.load()).toEqual(DEFAULT_PRESENTATION_CHECKPOINT);
 
     const unavailable = new PresentationCheckpointStorage(() => { throw new Error('denied'); });

@@ -35,7 +35,6 @@ import type { PresentationBeat } from '@/phone/polish/presentation';
 import {
   createPresentationSnapshot,
   derivePresentationChange,
-  presentationRecordsForIds,
   type PresentationSnapshot,
 } from '@/phone/polish/presentation-flow';
 import {
@@ -277,11 +276,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     if (previousSnapshot === null) {
       const persistedPending = pendingPresentationQueue(presentationCheckpointRef.current)[0];
       if (persistedPending !== undefined) {
-        const pendingRecordIds = new Set(persistedPending.recordIds);
         setPendingPresentationState({
           beat: persistedPending.beat,
           key: persistedPending.key,
-          records: presentationRecordsForIds(currentSnapshot, [...pendingRecordIds]),
+          records: persistedPending.records,
         });
       }
     } else {
@@ -296,7 +294,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           {
             beat: change.beat,
             key: change.key,
-            recordIds: change.records.map(({ id }) => id),
+            records: change.records,
           },
         );
         commitPresentationCheckpoint(checkpoint);
@@ -656,13 +654,12 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     );
     commitPresentationCheckpoint(checkpoint);
     const next = pendingPresentationQueue(checkpoint)[0];
-    const snapshot = presentationSnapshotRef.current;
-    setPendingPresentationState(next === undefined || snapshot === null
+    setPendingPresentationState(next === undefined
       ? null
       : {
           beat: next.beat,
           key: next.key,
-          records: presentationRecordsForIds(snapshot, next.recordIds),
+          records: next.records,
         });
   };
 
