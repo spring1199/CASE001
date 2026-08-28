@@ -6,23 +6,23 @@
 
 ## Current phase
 
-Phase 04 — Case #001 Content: implemented and validated on the dedicated branch. The branch is intentionally unmerged and awaits explicit review/merge approval. Phase 05 has not started.
+Phase 04 — Case #001 Content: completed, approved, and merged into `main` through PR #5. Phase 05 is the current next phase; its implementation exists on `codex/phase-05-polish` and must be restacked onto this merged main state before technical acceptance or review.
 
 ## Last completed and approved phase
 
-Phase 03 — Case Engine, approved and merged through PR #4. The latest approved `main` state is `a7cbd62df2ff06b1ece60144377f620a47042ae1`.
+Phase 04 — Case #001 Content, approved and merged through PR #5 at merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`.
 
 ## Current active branch
 
-`codex/phase-04-case001-content`
+`main`
 
 ## Latest approved commit hash
 
-`a7cbd62df2ff06b1ece60144377f620a47042ae1` on `main`.
+`caf1acdddea1a2e545256a9ec5fc439cc1b238a6` is the approved Phase 04 merge commit on `main`. A state-only post-merge refresh follows because a commit cannot contain its own hash.
 
 ## Current task implementation commit
 
-`eb1ce6db8cfc085fde8688485d72d6e95af43e1f` is the final Phase 04 implementation commit before this state-only handoff refresh. The final branch HEAD is the subsequent state-only commit because a commit cannot contain its own hash.
+`eb1ce6db8cfc085fde8688485d72d6e95af43e1f` is the final Phase 04 implementation commit, `455c79882f61ca06ed14d1d2ffe31688e2aca772` is the approved Phase 04 branch head, and `caf1acdddea1a2e545256a9ec5fc439cc1b238a6` is the Phase 04 merge commit.
 
 ## Current implementation status
 
@@ -44,11 +44,11 @@ Authored Case #001 and engine data remain server-only. The client requests a val
 
 ## Current task status
 
-Phase 04 implementation is complete on its dedicated branch and is undergoing the final continuity refresh. It is not merged. No Phase 05 implementation has begun.
+Phase 04 is complete, approved, and merged into `main`. `progressionComplete = true`, progression debt is 0, and all required visual assets are integrated. Phase 05 is implemented on a separate branch but remains unmerged and must be restacked onto this main state. Full human story/pacing playthrough testing is intentionally pending until after Phase 05 technical validation. Phase 06 has not started.
 
 ## Validation and test results
 
-Final Phase 04 verification on 2026-08-27:
+Fresh Phase 04 pre-merge verification on 2026-08-28:
 
 - Corrected production pack: 40/40 SHA-256 entries verified before branch creation.
 - Pack validation: passed, 154 unique authored IDs checked.
@@ -66,9 +66,9 @@ Final Phase 04 verification on 2026-08-27:
 
 ## Open tasks
 
-- Review the unmerged Phase 04 branch and approve or request changes.
-- Merge only after explicit user approval.
-- Keep Phase 05 unstarted until separately authorized.
+- Restack `codex/phase-05-polish` onto the latest approved `main` state without duplicating Phase 04 history.
+- Rerun the complete Phase 05 validation matrix, including browser-backed Playwright and the normal production build.
+- Keep Phase 05 unmerged pending human playtest and explicit approval.
 
 ## Known limitations
 
@@ -107,17 +107,17 @@ Final Phase 04 verification on 2026-08-27:
 
 ## Deferred work
 
-- Phase 05 audio and emotional polish, only after explicit authorization.
-- Optional human art-direction pass and physical-device QA.
-- Optional production anti-tamper/session hardening if required by the eventual hosting model.
+- Full 2–3 hour human playthrough after Phase 05 technical validation.
+- Phase 06 human-playtest feedback, regression QA, and release-readiness work only after explicit authorization.
+- Optional human art-direction pass, physical-device QA, and production anti-tamper/session hardening.
 
 ## Next expected task
 
-Review and approve the unmerged Phase 04 branch. Merge only with explicit user approval. Phase 05 is the next possible phase after Phase 04 approval, but it has not been started or authorized.
+Retarget/rebase `codex/phase-05-polish` onto the latest approved `main`, rerun the full Phase 05 validation matrix, and prepare the branch for the pending full human playthrough. Do not merge Phase 05 or start Phase 06.
 
 ## Exact continuation point
 
-Continue from the clean `codex/phase-04-case001-content` branch at the state-only commit following implementation commit `eb1ce6db8cfc085fde8688485d72d6e95af43e1f`. Review the Phase 04 diff and validation evidence. Do not merge and do not begin Phase 05 without explicit user approval. The corrected production pack remains an external handoff artifact and was not committed as repository product code.
+Continue from `codex/phase-05-polish` at `49f6b3c2916a89eac5d4456d1fa240b50939040f`. Confirm `main` contains Phase 04 merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6` plus this state-only refresh, then restack only the Phase 05 commits after the former Phase 04 head `455c79882f61ca06ed14d1d2ffe31688e2aca772`. Preserve canon, rerun the full validation matrix, and stop before Phase 05 merge or Phase 06.
 
 ## Source-of-truth documents
 
@@ -137,5 +137,5 @@ Continue from the clean `codex/phase-04-case001-content` branch at the state-onl
 - Narrative canon, character truths, true timeline, ending canon, or reveal order.
 - Spoiler/reveal gates or server-projected delivery protection.
 - Case #001 data-driven boundaries by hardcoding story answers into reusable UI or engine code.
-- The completed Phase 04 branch through merge without explicit approval.
-- Phase 05 scope or implementation before explicit authorization.
+- Phase 05 merge without explicit approval and the pending full human playtest.
+- Phase 06 scope or implementation before explicit authorization.
