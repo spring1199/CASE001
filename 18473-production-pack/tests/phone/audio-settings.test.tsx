@@ -125,7 +125,10 @@ describe('Phase 05 deterministic presentation layer', () => {
       />,
     );
 
+    expect(markup).toContain('role="dialog"');
+    expect(markup).toContain('aria-modal="true"');
     expect(markup).toContain('aria-live="assertive"');
+    expect(markup).toContain('autofocus=""');
     expect(markup).toContain('data-presentation-beat="hope3"');
     expect(markup).toContain('>Шинэ дохио</h2>');
     expect(markup).toContain('Тоглогчид аль хэдийн харагдсан тайлбар.');
@@ -182,20 +185,22 @@ describe('Phase 05 deterministic presentation layer', () => {
 });
 
 describe('spoiler-safe projected presentation semantics', () => {
-  it('withholds ending-tagged phone records before an ending and projects semantic tags afterwards', () => {
+  it('withholds all phone presentation semantics before an ending and projects narrow roles afterwards', () => {
     const locked = createCase001PhoneIndex({ factIds: [], endingId: null });
     const ended = createCase001PhoneIndex({ factIds: [], endingId: 'ending_sever' });
-    const lockedTaggedItems = locked.content.apps.flatMap((app) => app.items)
-      .filter((item) => item.presentationTags?.includes('ending'));
-    const endedTaggedItems = ended.content.apps.flatMap((app) => app.items)
-      .filter((item) => item.presentationTags?.includes('ending'));
-    const raspberryTaggedItems = ended.content.apps.flatMap((app) => app.items)
-      .filter((item) => item.presentationTags?.includes('raspberry'));
+    const lockedSerialized = JSON.stringify(locked.content);
+    const endedItems = ended.content.apps.flatMap((app) => app.items);
+    const endingAudioItems = endedItems
+      .filter((item) => item.presentationRole === 'ending-audio');
+    const raspberryItems = endedItems
+      .filter((item) => item.presentationRole === 'ending-raspberry');
 
-    expect(lockedTaggedItems).toEqual([]);
-    expect(endedTaggedItems).toHaveLength(1);
-    expect(endedTaggedItems[0]?.audio?.transcript).toBeTruthy();
-    expect(raspberryTaggedItems.length).toBeGreaterThan(0);
-    expect(raspberryTaggedItems.some((item) => item.body || item.visual)).toBe(true);
+    expect(lockedSerialized).not.toContain('presentationTags');
+    expect(lockedSerialized).not.toContain('presentationRole');
+    expect(endingAudioItems).toHaveLength(1);
+    expect(endingAudioItems[0]?.audio?.transcript).toBeTruthy();
+    expect(raspberryItems.length).toBeGreaterThan(0);
+    expect(raspberryItems.some((item) => item.body || item.visual)).toBe(true);
+    expect(JSON.stringify(ended.content)).not.toContain('presentationTags');
   });
 });

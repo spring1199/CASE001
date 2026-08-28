@@ -28,9 +28,28 @@ describe('Case #001 server runtime projection', () => {
     expect(payload.state.unlockedAppIds).toHaveLength(8);
     expect(payload.view.caseId).toBe('case_001');
     expect(payload.view.evidence).toEqual([]);
+    expect(JSON.stringify(payload.content)).not.toContain('presentationTags');
+    expect(JSON.stringify(payload.content)).not.toContain('presentationRole');
     expect(JSON.stringify(payload.content)).not.toContain('CALL_18473_03');
     expect(JSON.stringify(payload.content)).not.toContain('fact_tenuun_alive');
     expect(JSON.stringify(payload.view)).not.toContain('fact_tenuun_alive');
+  });
+
+  it('does not project unearned phone presentation semantics after an unrelated partial discovery', async () => {
+    const state = createInitialPlayerState('case_001', '2026-08-27T00:00:00.000Z');
+    const response = await POST(requestFor({
+      state,
+      discovery: {
+        artifactIds: ['art_package_note'],
+        evidenceIds: ['ev_18473_paper'],
+      },
+    }));
+    const payload = await response.json();
+    const serializedContent = JSON.stringify(payload.content);
+
+    expect(response.status).toBe(200);
+    expect(serializedContent).not.toContain('presentationTags');
+    expect(serializedContent).not.toContain('presentationRole');
   });
 
   it('runs discovery through the engine before returning a refreshed projection', async () => {

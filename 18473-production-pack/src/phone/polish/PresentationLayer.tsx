@@ -1,3 +1,11 @@
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react';
+
 import { AudioNote } from '@/phone/components/AudioNote';
 import {
   presentationBeatKey,
@@ -34,6 +42,7 @@ type PresentationLayerProps = Readonly<{
   reducedMotion: boolean;
   endingStage?: EndingPresentationStage;
   aftermath?: EndingAftermath;
+  returnFocusRef?: RefObject<HTMLElement | null>;
   onAcknowledge(): void;
 }>;
 
@@ -65,25 +74,64 @@ export function PresentationLayer({
   reducedMotion,
   endingStage,
   aftermath,
+  returnFocusRef,
   onAcknowledge,
 }: PresentationLayerProps) {
+  const titleId = useId();
+  const dialogRef = useRef<HTMLElement>(null);
+  const continueRef = useRef<HTMLButtonElement>(null);
   const duration = presentationDuration(beat, reducedMotion);
   const isEndingAftermath = endingStage === 'aftermath';
   const heading = records[0]?.title ?? beatLabels[beat];
 
+  useLayoutEffect(() => {
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const fallbackFocus = returnFocusRef?.current;
+    continueRef.current?.focus({ preventScroll: true });
+    return () => {
+      const returnTarget = previouslyFocused?.isConnected
+        ? previouslyFocused
+        : fallbackFocus;
+      returnTarget?.focus({ preventScroll: true });
+    };
+  }, [returnFocusRef]);
+
+  const keepFocusInside = (event: KeyboardEvent<HTMLElement>): void => {
+    if (event.key !== 'Tab') return;
+    const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), audio[controls], summary, [tabindex]:not([tabindex="-1"])',
+    ) ?? [])];
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable.at(-1)!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   return (
     <aside
-      role="status"
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
       aria-live="assertive"
       aria-atomic="true"
       data-presentation-beat={beat}
       data-presentation-duration={duration}
       data-ending-aftermath={isEndingAftermath || undefined}
       className={styles.presentationLayer}
+      onKeyDown={keepFocusInside}
     >
       <div className={styles.presentationCard}>
         <p className={styles.eyebrow}>{beatLabels[beat]}</p>
-        <h2>{heading}</h2>
+        <h2 id={titleId}>{heading}</h2>
 
         {records.map((record) => (
           <div key={record.id} className={styles.presentationRecord}>
@@ -103,7 +151,9 @@ export function PresentationLayer({
         ) : null}
 
         <button
+          ref={continueRef}
           type="button"
+          autoFocus
           className={styles.primaryButton}
           data-action-label
           onClick={onAcknowledge}

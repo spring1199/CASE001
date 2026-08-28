@@ -16,6 +16,14 @@ export const presentationCheckpointSchema = z.strictObject({
     key: z.string().min(1),
     recordIds: z.array(z.string().min(1)),
   }).nullable().optional(),
+  pendingPresentations: z.array(z.strictObject({
+    beat: z.enum([
+      'ordinary', 'hope1', 'hope2', 'f17', 'winter47',
+      'decoy', 'hope3', 'ending', 'postcredit',
+    ]),
+    key: z.string().min(1),
+    recordIds: z.array(z.string().min(1)),
+  })).optional(),
 });
 
 export type PresentationCheckpoint = z.infer<typeof presentationCheckpointSchema>;
@@ -27,6 +35,7 @@ export const DEFAULT_PRESENTATION_CHECKPOINT: PresentationCheckpoint = Object.fr
   endingId: null,
   endingStage: null,
   pendingPresentation: null,
+  pendingPresentations: [],
 });
 
 export const PRESENTATION_CHECKPOINT_STORAGE_KEY = '18473:presentation-checkpoint:v1';
@@ -35,29 +44,50 @@ export type PresentationStorageFactory = () => KeyValueStorage | null;
 
 export type PendingPresentationCheckpoint = NonNullable<PresentationCheckpoint['pendingPresentation']>;
 
+export function pendingPresentationQueue(
+  checkpoint: PresentationCheckpoint,
+): PendingPresentationCheckpoint[] {
+  const source = checkpoint.pendingPresentations
+    ?? (checkpoint.pendingPresentation ? [checkpoint.pendingPresentation] : []);
+  return source.map((pending) => ({
+    ...pending,
+    recordIds: [...pending.recordIds],
+  }));
+}
+
 export function setPendingPresentation(
   checkpoint: PresentationCheckpoint,
   pendingPresentation: PendingPresentationCheckpoint,
 ): PresentationCheckpoint {
+  const queue = pendingPresentationQueue(checkpoint);
+  if (
+    checkpoint.acknowledgedBeatKeys.includes(pendingPresentation.key)
+    || queue.some(({ key }) => key === pendingPresentation.key)
+  ) return copyCheckpoint(checkpoint);
+  const pendingPresentations = [
+    ...queue,
+    { ...pendingPresentation, recordIds: [...pendingPresentation.recordIds] },
+  ];
   return {
     ...checkpoint,
     acknowledgedBeatKeys: [...checkpoint.acknowledgedBeatKeys],
-    pendingPresentation: {
-      ...pendingPresentation,
-      recordIds: [...pendingPresentation.recordIds],
-    },
+    pendingPresentation: pendingPresentations[0] ?? null,
+    pendingPresentations,
   };
 }
 
 export function acknowledgePendingPresentation(
   checkpoint: PresentationCheckpoint,
 ): PresentationCheckpoint {
-  const pending = checkpoint.pendingPresentation;
-  if (pending === null || pending === undefined) return checkpoint;
+  const queue = pendingPresentationQueue(checkpoint);
+  const pending = queue[0];
+  if (pending === undefined) return copyCheckpoint(checkpoint);
+  const pendingPresentations = queue.slice(1);
   return {
     ...checkpoint,
     acknowledgedBeatKeys: [...new Set([...checkpoint.acknowledgedBeatKeys, pending.key])],
-    pendingPresentation: null,
+    pendingPresentation: pendingPresentations[0] ?? null,
+    pendingPresentations,
   };
 }
 
@@ -159,16 +189,11 @@ export class PresentationCheckpointStorage {
 }
 
 function copyCheckpoint(checkpoint: PresentationCheckpoint): PresentationCheckpoint {
+  const pendingPresentations = pendingPresentationQueue(checkpoint);
   return {
     ...checkpoint,
     acknowledgedBeatKeys: [...checkpoint.acknowledgedBeatKeys],
-    pendingPresentation: checkpoint.pendingPresentation === undefined
-      ? null
-      : checkpoint.pendingPresentation === null
-        ? null
-        : {
-            ...checkpoint.pendingPresentation,
-            recordIds: [...checkpoint.pendingPresentation.recordIds],
-          },
+    pendingPresentation: pendingPresentations[0] ?? null,
+    pendingPresentations,
   };
 }

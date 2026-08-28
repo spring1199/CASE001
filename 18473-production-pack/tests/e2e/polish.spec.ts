@@ -143,15 +143,21 @@ test('uses a short crossfade for an actual reveal and persists acknowledgement a
   await unlock(page);
   await page.getByRole('button', { name: 'Зурвас апп' }).click();
   await page.getByRole('button', { name: '18473 217' }).click();
-  const layer = page.locator('[data-presentation-beat]');
+  const layer = page.getByRole('dialog');
   await expect(layer).toBeVisible();
   await expect(layer).toHaveAttribute('data-presentation-duration', /^(?:[0-9]|[1-9][0-9]|1[0-4][0-9]|150)$/);
   const beat = await layer.getAttribute('data-presentation-beat');
+  const continueButton = layer.getByRole('button', { name: 'Үргэлжлүүлэх' });
+  await expect(continueButton).toBeFocused();
+  await expect(page.locator('[data-phone-chrome-content]')).toHaveAttribute('inert', '');
+  await page.keyboard.press('Tab');
+  await expect(continueButton).toBeFocused();
 
   await page.reload();
   await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
   await expect(layer).toHaveAttribute('data-presentation-beat', beat!);
   await layer.getByRole('button', { name: 'Үргэлжлүүлэх' }).click();
+  await expect(page.locator('#phone-screen-heading')).toBeFocused();
   await page.reload();
   await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
   await expect(layer).toHaveCount(0);

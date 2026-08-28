@@ -103,7 +103,7 @@ export const phoneMessageRecordSchema = z.strictObject({
 const commonItemShape = {
   id: identifierSchema,
   title: nonEmptyTextSchema,
-  presentationTags: z.array(nonEmptyTextSchema).optional(),
+  presentationRole: z.enum(['ending-audio', 'ending-raspberry']).optional(),
   collectionId: identifierSchema.optional(),
   groupLabel: nonEmptyTextSchema.optional(),
   subtitle: nonEmptyTextSchema.optional(),

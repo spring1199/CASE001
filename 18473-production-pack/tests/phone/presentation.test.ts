@@ -75,6 +75,35 @@ describe('presentation director', () => {
 });
 
 describe('presentation checkpoint storage', () => {
+  test('persists two pending reveals in FIFO order without overwriting the first', () => {
+    const storage = new MemoryStorage();
+    const checkpoints = new PresentationCheckpointStorage(() => storage);
+    const first = setPendingPresentation(DEFAULT_PRESENTATION_CHECKPOINT, {
+      beat: 'hope1',
+      key: 'hope1:first',
+      recordIds: ['evidence:first'],
+    });
+    const queued = setPendingPresentation(first, {
+      beat: 'f17',
+      key: 'f17:second',
+      recordIds: ['deduction:second'],
+    });
+
+    expect(queued.pendingPresentations?.map(({ key }) => key))
+      .toEqual(['hope1:first', 'f17:second']);
+    expect(checkpoints.save(queued)).toBe(true);
+    const reloaded = new PresentationCheckpointStorage(() => storage).load();
+    expect(reloaded.pendingPresentations?.map(({ key }) => key))
+      .toEqual(['hope1:first', 'f17:second']);
+
+    const afterFirst = acknowledgePendingPresentation(reloaded);
+    expect(afterFirst.acknowledgedBeatKeys).toContain('hope1:first');
+    expect(afterFirst.pendingPresentations?.map(({ key }) => key)).toEqual(['f17:second']);
+    const afterSecond = acknowledgePendingPresentation(afterFirst);
+    expect(afterSecond.acknowledgedBeatKeys).toContain('f17:second');
+    expect(afterSecond.pendingPresentations).toEqual([]);
+  });
+
   test('persists an unacknowledged reveal across reload and suppresses it after acknowledgement', () => {
     const storage = new MemoryStorage();
     const checkpoints = new PresentationCheckpointStorage(() => storage);
@@ -110,6 +139,7 @@ describe('presentation checkpoint storage', () => {
       endingId: null,
       endingStage: null,
       pendingPresentation: null,
+      pendingPresentations: [],
     });
   });
   test('round trips acknowledged beats and ending stage', () => {
@@ -121,6 +151,7 @@ describe('presentation checkpoint storage', () => {
       endingId: 'ending_alpha',
       endingStage: 'aftermath' as const,
       pendingPresentation: null,
+      pendingPresentations: [],
     };
 
     expect(checkpoints.save(checkpoint)).toBe(true);

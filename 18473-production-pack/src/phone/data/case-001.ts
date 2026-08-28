@@ -42,13 +42,9 @@ type CommonRecord = {
 };
 
 function projectCommon(record: CommonRecord) {
-  const presentationTags = case001Seed.evidence
-    .filter(({ sourceArtifactId }) => sourceArtifactId === record.id)
-    .flatMap(({ tags }) => tags);
   return {
     id: record.id,
     title: record.title,
-    presentationTags: presentationTags.length > 0 ? [...new Set(presentationTags)] : undefined,
     groupLabel: record.groupLabel,
     subtitle: record.subtitle,
     timestampLabel: record.timestampLabel,
@@ -206,6 +202,18 @@ const authoredGatesById = new Map(
   }] as const),
 );
 
+type EndingPresentationRole = 'ending-audio' | 'ending-raspberry';
+
+const endingPresentationRoleEntries: Array<readonly [string, EndingPresentationRole]> = [];
+for (const record of case001Seed.evidence) {
+  if (record.tags.includes('ending')) {
+    endingPresentationRoleEntries.push([record.sourceArtifactId, 'ending-audio']);
+  } else if (record.tags.includes('raspberry')) {
+    endingPresentationRoleEntries.push([record.sourceArtifactId, 'ending-raspberry']);
+  }
+}
+const endingPresentationRolesByItemId = new Map(endingPresentationRoleEntries);
+
 function itemIsVisible(itemId: string, access: CaseAssetAccessState): boolean {
   const gates = authoredGatesById.get(itemId);
   if (gates === undefined) return true;
@@ -238,6 +246,9 @@ export function createCase001PhoneIndex(access: CaseAssetAccessState) {
         .filter((item) => itemIsVisible(item.id, access))
         .map((item) => ({
           ...item,
+          presentationRole: access.endingId === null
+            ? undefined
+            : endingPresentationRolesByItemId.get(item.id),
           visual: revealVisual(item.visual, access),
           ...(item.kind === 'message-thread' ? {
             messages: item.messages.map((message) => ({

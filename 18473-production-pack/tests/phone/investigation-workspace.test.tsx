@@ -210,6 +210,30 @@ describe('investigation workspace semantics', () => {
     expect(markup).toContain('hidden="" inert=""');
   });
 
+  it('makes all phone chrome content inert while a blocking presentation overlay is open', () => {
+    const markup = renderToStaticMarkup(
+      <PhoneChrome
+        title="Аппын нүүр"
+        screen="home"
+        activeSurface="phone"
+        canGoBack={false}
+        canGoHome={false}
+        contentInert
+        headingRef={createRef<HTMLHeadingElement>()}
+        scrollRegionRef={createRef<HTMLDivElement>()}
+        onBack={vi.fn()}
+        onHome={vi.fn()}
+        onSurfaceChange={vi.fn()}
+        overlay={<div role="dialog">Blocking reveal</div>}
+      >
+        <button type="button">Background action</button>
+      </PhoneChrome>,
+    );
+
+    expect(markup).toContain('data-phone-chrome-content="true" inert="" aria-hidden="true"');
+    expect(markup).toContain('<div role="dialog">Blocking reveal</div>');
+  });
+
   it('maps the complete top-level tab keyboard contract with predictable arrow wrapping', () => {
     expect(nextExperienceSurfaceForKey('phone', 'ArrowRight')).toBe('investigation');
     expect(nextExperienceSurfaceForKey('investigation', 'ArrowLeft')).toBe('phone');

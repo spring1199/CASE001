@@ -28,6 +28,8 @@ type PhoneChromeProps = Readonly<{
   onHome(): void;
   onSurfaceChange(surface: ExperienceSurface): void;
   onOpenAudioSettings?(): void;
+  contentInert?: boolean;
+  overlay?: ReactNode;
   children: ReactNode;
 }>;
 
@@ -43,6 +45,8 @@ export function PhoneChrome({
   onHome,
   onSurfaceChange,
   onOpenAudioSettings,
+  contentInert = false,
+  overlay,
   children,
 }: PhoneChromeProps) {
   const moveBetweenSurfaceTabs = (event: KeyboardEvent<HTMLButtonElement>): void => {
@@ -60,6 +64,12 @@ export function PhoneChrome({
       data-active-surface={activeSurface}
       className={styles.phoneSurface}
     >
+      <div
+        data-phone-chrome-content
+        inert={contentInert}
+        aria-hidden={contentInert || undefined}
+        className={styles.phoneChromeContent}
+      >
       <header className={styles.phoneHeader}>
         <div className={styles.statusBar}>
           <p aria-label="Төхөөрөмжийн цаг" className={styles.statusTime}>09:41</p>
@@ -136,6 +146,8 @@ export function PhoneChrome({
       <div ref={scrollRegionRef} className={styles.scrollRegion} data-phone-scroll-region>
         {children}
       </div>
+      </div>
+      {overlay}
     </section>
   );
 }

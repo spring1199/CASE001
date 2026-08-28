@@ -40,6 +40,7 @@ import {
 } from '@/phone/polish/presentation-flow';
 import {
   acknowledgePendingPresentation as acknowledgePersistedPresentation,
+  pendingPresentationQueue,
   PresentationCheckpointStorage,
   presentationCheckpointAfterEndingSelection,
   presentationStageForEnding,
@@ -274,8 +275,8 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     const currentSnapshot = createPresentationSnapshot(projection.view);
     const previousSnapshot = presentationSnapshotRef.current;
     if (previousSnapshot === null) {
-      const persistedPending = presentationCheckpointRef.current.pendingPresentation;
-      if (persistedPending !== null && persistedPending !== undefined) {
+      const persistedPending = pendingPresentationQueue(presentationCheckpointRef.current)[0];
+      if (persistedPending !== undefined) {
         const pendingRecordIds = new Set(persistedPending.recordIds);
         setPendingPresentationState({
           beat: persistedPending.beat,
@@ -289,6 +290,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         change !== null
         && !presentationCheckpointRef.current.acknowledgedBeatKeys.includes(change.key)
       ) {
+        const queueBefore = pendingPresentationQueue(presentationCheckpointRef.current);
         const checkpoint = persistPendingPresentation(
           presentationCheckpointRef.current,
           {
@@ -298,11 +300,13 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           },
         );
         commitPresentationCheckpoint(checkpoint);
-        setPendingPresentationState({
-          beat: change.beat,
-          key: change.key,
-          records: change.records,
-        });
+        if (queueBefore.length === 0) {
+          setPendingPresentationState({
+            beat: change.beat,
+            key: change.key,
+            records: change.records,
+          });
+        }
         playCue(change.cue);
       } else if (projection.outcomes.length > 0) {
         playCue('interface');
@@ -342,6 +346,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   }, [caseView?.ending?.endingId, commitPresentationCheckpoint, playCue]);
 
   async function dispatchCaseEvent(event: PlayerCaseEngineEvent): Promise<void> {
+    if (pendingPresentationQueue(presentationCheckpointRef.current).length > 0) {
+      setStatus('Илрүүлэлтийг үргэлжлүүлсний дараа мөрдлөгийн үйлдэл хийнэ үү.');
+      return;
+    }
     setStatus('Мөрдлөгийн үйлдлийг шалгаж байна.');
 
     try {
@@ -377,6 +385,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   }
 
   function recordDiscovery(item: DeepReadonly<PhoneItem>): void {
+    if (pendingPresentationQueue(presentationCheckpointRef.current).length > 0) {
+      setStatus('Илрүүлэлтийг үргэлжлүүлсний дараа шинэ мэдээлэл нээнэ үү.');
+      return;
+    }
     if (!item.discovery || !hasDiscoveries(item)) return;
     const discovery: PhoneDiscoveryEffects = {
       artifactIds: item.discovery.artifactIds ? [...item.discovery.artifactIds] : undefined,
@@ -616,9 +628,9 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     : null;
   const taggedItems = phoneIndex.content.apps.flatMap((app) => app.items);
   const endingAudioItem = taggedItems.find((item) => (
-    item.presentationTags?.includes('ending') && item.audio !== undefined
+    item.presentationRole === 'ending-audio' && item.audio !== undefined
   ));
-  const raspberryItem = taggedItems.find((item) => item.presentationTags?.includes('raspberry'));
+  const raspberryItem = taggedItems.find((item) => item.presentationRole === 'ending-raspberry');
   const raspberryEvidence = caseView?.evidence.find(({ tags }) => tags.includes('raspberry'));
   const aftermath: EndingAftermath | undefined = endingAudioItem?.audio || raspberryItem
     ? {
@@ -635,13 +647,23 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         } : undefined,
       }
     : undefined;
+  const presentationOpen = pendingPresentation !== null || endingStage === 'aftermath';
 
   const acknowledgePendingPresentation = (): void => {
     if (pendingPresentation === null) return;
-    commitPresentationCheckpoint(acknowledgePersistedPresentation(
+    const checkpoint = acknowledgePersistedPresentation(
       presentationCheckpointRef.current,
-    ));
-    setPendingPresentationState(null);
+    );
+    commitPresentationCheckpoint(checkpoint);
+    const next = pendingPresentationQueue(checkpoint)[0];
+    const snapshot = presentationSnapshotRef.current;
+    setPendingPresentationState(next === undefined || snapshot === null
+      ? null
+      : {
+          beat: next.beat,
+          key: next.key,
+          records: presentationRecordsForIds(snapshot, next.recordIds),
+        });
   };
 
   const playbackCallbacks = {
@@ -684,6 +706,28 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           if (activated) playCue('interface');
         });
       }}
+      contentInert={presentationOpen}
+      overlay={pendingPresentation ? (
+        <PresentationLayer
+          key={pendingPresentation.key}
+          beat={pendingPresentation.beat}
+          records={pendingPresentation.records}
+          reducedMotion={reducedMotion}
+          returnFocusRef={headingRef}
+          onAcknowledge={acknowledgePendingPresentation}
+        />
+      ) : endingStage === 'aftermath' ? (
+        <PresentationLayer
+          key={`ending:${caseView?.ending?.endingId ?? 'projected'}`}
+          beat="ending"
+          records={[]}
+          reducedMotion={reducedMotion}
+          endingStage={endingStage}
+          aftermath={aftermath}
+          returnFocusRef={headingRef}
+          onAcknowledge={() => updateEndingStage('closure')}
+        />
+      ) : null}
     >
       {audioSettingsOpen ? (
         <AudioSettings
@@ -798,23 +842,6 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           <p className={styles.emptyState}>Мөрдлөгийн төлөвийг ачаалж байна.</p>
         )}
       </div>
-      {pendingPresentation ? (
-        <PresentationLayer
-          beat={pendingPresentation.beat}
-          records={pendingPresentation.records}
-          reducedMotion={reducedMotion}
-          onAcknowledge={acknowledgePendingPresentation}
-        />
-      ) : endingStage === 'aftermath' ? (
-        <PresentationLayer
-          beat="ending"
-          records={[]}
-          reducedMotion={reducedMotion}
-          endingStage={endingStage}
-          aftermath={aftermath}
-          onAcknowledge={() => updateEndingStage('closure')}
-        />
-      ) : null}
     </PhoneChrome>
     </AudioPlaybackProvider>
   );
