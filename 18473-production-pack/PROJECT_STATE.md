@@ -126,9 +126,10 @@ Fresh post-restack validation performed on 2026-08-28 from implementation commit
 
 ## Open tasks
 
-- Update the already-pushed Phase 05 branch with the verified lease-protected restacked history.
 - Complete the full 2–3 hour human playthrough and record story, pacing, accessibility, and physical-device feedback.
 - Keep Phase 05 unmerged and Phase 06 unstarted until explicit post-playtest authorization.
+
+The lease-protected restacked Phase 05 history is pushed and verified at `origin/codex/phase-05-polish`.
 
 ## Known technical risks
 
