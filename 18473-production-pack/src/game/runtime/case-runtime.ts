@@ -38,7 +38,7 @@ function removedIds(previous: readonly string[], next: readonly string[]): strin
  * store's own actions so persistence, timestamps, and dirty tracking keep
  * their Phase 01/02 semantics.
  */
-function applyEngineTransition(
+export function applyEngineTransition(
   store: StoreApi<PlayerStoreState>,
   previous: PlayerState,
   next: PlayerState,
@@ -58,6 +58,9 @@ function applyEngineTransition(
 
   const content = addedIds(previous.unlockedContentIds, next.unlockedContentIds);
   if (content.length > 0) actions.unlockContent(content);
+
+  const apps = addedIds(previous.unlockedAppIds, next.unlockedAppIds);
+  if (apps.length > 0) actions.unlockApps(apps);
 
   const deductions = addedIds(previous.completedDeductionIds, next.completedDeductionIds);
   if (deductions.length > 0) actions.completeDeductions(deductions);
@@ -90,6 +93,10 @@ function applyEngineTransition(
     || previous.endingId !== next.endingId
   ) {
     actions.setEnding(next.endingBranchId, next.endingId);
+  }
+
+  for (const [flagId, value] of Object.entries(next.flags)) {
+    if (previous.flags[flagId] !== value) actions.setFlag(flagId, value);
   }
 }
 

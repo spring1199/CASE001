@@ -8,14 +8,64 @@
     "secret": false
   },
   {
+    "id": "fact_planned_disappearance",
+    "secret": true,
+    "reveal": "ded_planned_disappearance"
+  },
+  {
+    "id": "fact_orgil_threat_context",
+    "secret": true,
+    "reveal": "ded_orgil_context"
+  },
+  {
+    "id": "fact_munkh_reported",
+    "secret": true,
+    "reveal": "ded_munkh_reported"
+  },
+  {
+    "id": "fact_bilguun_device",
+    "secret": true,
+    "reveal": "ded_bilguun_device"
+  },
+  {
+    "id": "fact_graph_relationships",
+    "secret": true,
+    "reveal": "ded_graph_relationships"
+  },
+  {
+    "id": "fact_access_violation",
+    "secret": true,
+    "reveal": "ded_access_violation"
+  },
+  {
+    "id": "fact_f17_cafe_match",
+    "secret": true,
+    "reveal": "ded_f17_cafe"
+  },
+  {
     "id": "fact_f17_is_maral",
     "secret": true,
     "reveal": "ded_f17_identity"
   },
   {
+    "id": "fact_winter47_saved",
+    "secret": true,
+    "reveal": "ded_winter47_saved"
+  },
+  {
+    "id": "fact_winter47_exposed",
+    "secret": true,
+    "reveal": "ded_winter47_exposed"
+  },
+  {
     "id": "fact_maral_winter47_operator",
     "secret": true,
     "reveal": "ded_maral_winter47"
+  },
+  {
+    "id": "fact_tenuun_obscured",
+    "secret": true,
+    "reveal": "ded_tenuun_obscured"
   },
   {
     "id": "fact_tenuun_decoy",
@@ -26,5 +76,20 @@
     "id": "fact_tenuun_alive",
     "secret": true,
     "reveal": "ded_tenuun_alive"
+  },
+  {
+    "id": "fact_graph_confidence_cost",
+    "secret": true,
+    "reveal": "ded_graph_confidence_cost"
+  },
+  {
+    "id": "fact_autonomy_conflict",
+    "secret": true,
+    "reveal": "ded_autonomy_conflict"
+  },
+  {
+    "id": "fact_inaction_choice",
+    "secret": true,
+    "reveal": "ded_inaction_choice"
   }
 ]

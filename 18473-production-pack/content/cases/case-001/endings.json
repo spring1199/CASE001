@@ -3,18 +3,28 @@
     "id": "ending_trace",
     "title": "TRACE",
     "choiceLabel": "TRACE",
-    "description": "Final relationship edge-ийг баталгаажуулж Тэнүүний байршлыг ил гаргана.",
+    "description": "Final relationship edge-ийг баталгаажуулж Тэнүүний яг байршлыг ил гаргана.",
     "canon": false,
     "gateLockId": "lock_final_choice",
-    "revealsExactLocation": true
+    "revealsExactLocation": true,
+    "onSelect": {
+      "confirmGraphEdgeIds": [
+        "edge_tenuun_location"
+      ]
+    }
   },
   {
     "id": "ending_sever",
     "title": "SEVER",
     "choiceLabel": "SEVER",
-    "description": "Final relationship edge-ийг устгаж Тэнүүний байршлыг UNKNOWN хэвээр үлдээнэ.",
+    "description": "Final relationship edge-ийг устгаж LOCATION: UNKNOWN үлдээнэ.",
     "canon": true,
     "gateLockId": "lock_final_choice",
-    "revealsExactLocation": false
+    "revealsExactLocation": false,
+    "onSelect": {
+      "severGraphEdgeIds": [
+        "edge_tenuun_location"
+      ]
+    }
   }
 ]

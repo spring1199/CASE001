@@ -1,5 +1,14 @@
 [
   {
+    "id": "ev_missing_article",
+    "title": "Алга болсон хүний мэдээ",
+    "sourceArtifactId": "browser_001",
+    "description": "Тэнүүн Батзориг алга болсон тухай нээлттэй мэдээ.",
+    "tags": [
+      "opening"
+    ]
+  },
+  {
     "id": "ev_18473_paper",
     "title": "18473 гэсэн цаас",
     "sourceArtifactId": "art_package_note",
@@ -10,71 +19,273 @@
     ]
   },
   {
+    "id": "ev_family_photo",
+    "title": "Тэнүүний гэр бүлийн зураг",
+    "sourceArtifactId": "photo_family_kitchen",
+    "description": "Утасны эзнийг гэр бүлийн хүрээнд тогтооно.",
+    "tags": [
+      "family"
+    ]
+  },
+  {
+    "id": "ev_childhood_singing",
+    "title": "Бага насны дуулж буй зураг",
+    "sourceArtifactId": "photo_family_kitchen",
+    "description": "Тэнүүний дуулдаг байсан үе.",
+    "tags": [
+      "family",
+      "motif"
+    ]
+  },
+  {
     "id": "ev_ceo_threat",
     "title": "Оргилын сүрдүүлэг мэт мессеж",
     "sourceArtifactId": "msg_orgil_public",
-    "description": "'Энэ нийтэд гарвал компани үлдэхгүй.'",
+    "description": "If this goes public, there is no company left.",
     "tags": [
       "orgil",
       "suspect"
     ]
   },
   {
-    "id": "ev_graph_confidence_tutorial",
-    "title": "GRAPH confidence тайлбар",
-    "sourceArtifactId": "doc_graph_help",
-    "description": "Шинэ баталгаажсан холбоос бүр identity confidence-ийг дахин тооцдог.",
+    "id": "ev_munkh_last_call",
+    "title": "Мөнхийн сүүлчийн дуудлага",
+    "sourceArtifactId": "call_munkh_last",
+    "description": "Тэнүүн өөрийн бүтээсэн системийн хор уршгийг хүлээн зөвшөөрсөн.",
     "tags": [
-      "graph",
-      "finale"
-    ],
-    "grantsFacts": [
-      "fact_graph_recalculates"
+      "munkh"
     ]
   },
   {
-    "id": "ev_f17_edge",
-    "title": "F17 хамгаалагдсан edge",
-    "sourceArtifactId": "graph_f17",
-    "description": "Тэнүүн F17 гэсэн нэргүй хүний холбоосыг зориуд бүдгэрүүлсэн.",
+    "id": "ev_sealed_audit",
+    "title": "Sealed GRAPH audit notice",
+    "sourceArtifactId": "mail_winter47",
+    "description": "WINTER-47 attribution sealed.",
     "tags": [
-      "f17"
+      "graph",
+      "winter47"
+    ]
+  },
+  {
+    "id": "ev_architecture_access",
+    "title": "Architecture access mail",
+    "sourceArtifactId": "mail_orgil_scope",
+    "description": "Formal approval-гүй production mirror access.",
+    "tags": [
+      "orgil",
+      "access"
+    ]
+  },
+  {
+    "id": "ev_graph_matrix",
+    "title": "GRAPH capability matrix",
+    "sourceArtifactId": "file_graph_matrix",
+    "description": "Identity-аас гадна relationship inference хийдэг.",
+    "tags": [
+      "graph"
+    ]
+  },
+  {
+    "id": "ev_saruul_prepaid",
+    "title": "Танихгүй prepaid дуудлага",
+    "sourceArtifactId": "call_saruul",
+    "description": "Саруулын хамгаалалтын logistics.",
+    "tags": [
+      "saruul"
+    ]
+  },
+  {
+    "id": "ev_shelter_map",
+    "title": "Shelter map fragment",
+    "sourceArtifactId": "photo_shelter_fragment",
+    "description": "Хамгаалалтын сүлжээний хэсэг.",
+    "tags": [
+      "winter47",
+      "shelter"
+    ]
+  },
+  {
+    "id": "ev_cabin_plan",
+    "title": "Cabin plan",
+    "sourceArtifactId": "browser_cabin_plan",
+    "description": "Тэнүүн ирээдүйгээ бодитоор төлөвлөсөн.",
+    "tags": [
+      "hope1"
+    ]
+  },
+  {
+    "id": "ev_raspberry_plan",
+    "title": "Raspberry — 6",
+    "sourceArtifactId": "file_cabin_budget",
+    "description": "Cabin budget-ийн жижиг мөр.",
+    "tags": [
+      "hope1",
+      "raspberry"
+    ]
+  },
+  {
+    "id": "ev_vehicle_trace",
+    "title": "Used vehicle trace",
+    "sourceArtifactId": "photo_old_vehicle",
+    "description": "Бүртгэлгүй хуучин тээврийн хэрэгслийн мөр.",
+    "tags": [
+      "hope1",
+      "decoy"
+    ]
+  },
+  {
+    "id": "ev_device_hope2",
+    "title": "Алга болсны дараах device activity",
+    "sourceArtifactId": "device_post_missing",
+    "description": "Амьд мэт харагдах боловч хуурамч байршлын дохио.",
+    "tags": [
+      "hope2"
+    ]
+  },
+  {
+    "id": "ev_tuya_drive",
+    "title": "Туяагийн encrypted drive",
+    "sourceArtifactId": "photo_tuya_drive",
+    "description": "Алга болохоос өмнөх handoff.",
+    "tags": [
+      "family",
+      "hope1"
+    ]
+  },
+  {
+    "id": "ev_inc_archive",
+    "title": "INC-18473 archive header",
+    "sourceArtifactId": "msg_inc_18473",
+    "description": "217 өдрийн сэргээгдсэн яриа.",
+    "tags": [
+      "18473"
+    ],
+    "grantsFacts": [
+      "fact_18473_archive_open"
+    ]
+  },
+  {
+    "id": "ev_f17_laugh",
+    "title": "CALL_18473_01 инээд",
+    "sourceArtifactId": "call_18473_01",
+    "description": "Танил сонсогдох инээд.",
+    "tags": [
+      "f17",
+      "identity"
     ]
   },
   {
     "id": "ev_f17_coriander",
     "title": "F17 кориандерт дургүй",
     "sourceArtifactId": "msg_18473_food",
-    "description": "18473 ярианы жижиг preference.",
+    "description": "18473 preference clue.",
     "tags": [
       "f17",
       "identity"
+    ]
+  },
+  {
+    "id": "ev_cafe_receipt",
+    "title": "Кафены кориандергүй хоол",
+    "sourceArtifactId": "photo_receipt",
+    "description": "Хоёр уух зүйл, кориандергүй нэг хоол.",
+    "tags": [
+      "f17",
+      "cafe"
     ]
   },
   {
     "id": "ev_f17_scar",
-    "title": "Бугуйн сорви",
+    "title": "Кафены бугуйн сорви",
     "sourceArtifactId": "photo_cafe_reflection",
-    "description": "Кафены зурагт үл таних эмэгтэйн бугуйн жижиг сорви харагдана.",
+    "description": "Нүүр танигдахгүй эмэгтэйн бугуйн сорви.",
     "tags": [
       "f17",
       "identity"
     ]
   },
   {
-    "id": "ev_f17_laugh",
-    "title": "18473 дуудлагын инээд",
-    "sourceArtifactId": "call_18473_03",
-    "description": "Тоглогчид хачин танил сонсогдох эмэгтэйн инээд.",
+    "id": "ev_maral_scar",
+    "title": "Маралын ижил сорви",
+    "sourceArtifactId": "photo_cafe_reflection",
+    "description": "Одоогийн Маралын сорвитой таарна.",
     "tags": [
       "f17",
-      "identity",
-      "romance"
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_punctuation",
+    "title": "F17 бичлэгийн хэв маяг",
+    "sourceArtifactId": "msg_18473_style",
+    "description": "Богино өгүүлбэр, цэг таслал.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_maral_writing",
+    "title": "Маралын бичлэгийн хэв маяг",
+    "sourceArtifactId": "msg_inc_18473",
+    "description": "F17 sample-тэй давхцана.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_cafe_route",
+    "title": "Кафены route/date match",
+    "sourceArtifactId": "loc_cafe_day",
+    "description": "Маралын хуучин route ижил өдөр давхцана.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_f17_ministry",
+    "title": "F17 яамны ажлын clue",
+    "sourceArtifactId": "msg_18473_work_hint",
+    "description": "Гадаад зочдын хөтөлбөрийн мөр.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_tenuun_query",
+    "title": "Unauthorized identity-resolution query",
+    "sourceArtifactId": "file_graph_matrix",
+    "description": "Тэнүүн access boundary зөрчсөн.",
+    "tags": [
+      "graph",
+      "access"
+    ]
+  },
+  {
+    "id": "ev_private_identity_note",
+    "title": "USER_6F21 = M.E.",
+    "sourceArtifactId": "note_laugh",
+    "description": "Тэнүүний нуусан private identity note.",
+    "tags": [
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_winter47_incident",
+    "title": "WINTER-47 incident record",
+    "sourceArtifactId": "loc_winter_road",
+    "description": "47 минутын medical-risk timeline.",
+    "tags": [
+      "winter47"
     ]
   },
   {
     "id": "ev_winter47_operator",
-    "title": "Winter 47 operator",
+    "title": "WINTER47_AUDIT_07 operator",
     "sourceArtifactId": "audit_winter47",
     "description": "Unauthorized query operator attribution.",
     "tags": [
@@ -85,97 +296,196 @@
     ]
   },
   {
-    "id": "ev_decoy_topology",
-    "title": "Decoy topology",
-    "sourceArtifactId": "graph_decoy",
-    "description": "Сэжигтэй edge-үүд Тэнүүн дээр зориуд төвлөрсөн pattern.",
+    "id": "ev_relationship_expansion",
+    "title": "Shelter relationship expansion",
+    "sourceArtifactId": "photo_shelter_fragment",
+    "description": "Query shelter-related nodes руу тэлсэн.",
+    "tags": [
+      "winter47",
+      "graph"
+    ]
+  },
+  {
+    "id": "ev_relocation_harm",
+    "title": "Later harm and relocation",
+    "sourceArtifactId": "photo_shelter_fragment",
+    "description": "Амжилттай rescue-ийн дараах бодит хор.",
+    "tags": [
+      "winter47",
+      "consequence"
+    ]
+  },
+  {
+    "id": "ev_audit_obscured",
+    "title": "Tenuun audit modification",
+    "sourceArtifactId": "mail_winter47",
+    "description": "Тэнүүн attribution trail-ийн хэсгийг бүдгэрүүлсэн.",
+    "tags": [
+      "winter47",
+      "tenuun"
+    ]
+  },
+  {
+    "id": "ev_decoy_plan",
+    "title": "Decoy edge plan",
+    "sourceArtifactId": "file_decoy_plan",
+    "description": "If one node must look guilty, use mine.",
     "tags": [
       "decoy"
     ]
   },
   {
+    "id": "ev_decoy_topology",
+    "title": "TB-CORE super-node diagram",
+    "sourceArtifactId": "graph_decoy",
+    "description": "Эмзэг node-уудыг Тэнүүн дээр төвлөрүүлсэн.",
+    "tags": [
+      "decoy"
+    ]
+  },
+  {
+    "id": "ev_saruul_decoy",
+    "title": "Саруулын decoy confirmation",
+    "sourceArtifactId": "msg_saruul",
+    "description": "Noise edge random биш, Тэнүүн рүү чиглэсэн.",
+    "tags": [
+      "decoy",
+      "saruul"
+    ]
+  },
+  {
     "id": "ev_live_signal",
-    "title": "Fresh live signal",
+    "title": "True live signal",
     "sourceArtifactId": "graph_live_signal",
-    "description": "Cache, proxy, Bilguun-аар тайлбарлагдахгүй шинэхэн activity.",
+    "description": "Anti-spoof heartbeat + one-time key behavior.",
     "tags": [
       "hope3",
       "finale"
     ]
   },
   {
+    "id": "ev_graph_confidence",
+    "title": "GRAPH confidence projection",
+    "sourceArtifactId": "doc_graph_help",
+    "description": "41→57→73→88→91 progression.",
+    "tags": [
+      "graph",
+      "finale"
+    ]
+  },
+  {
     "id": "ev_maral_voice",
-    "title": "Маралын хуучин voice message",
+    "title": "Final autonomy note",
     "sourceArtifactId": "voice_maral_autonomy",
-    "description": "'Миний өмнөөс битгий шийд.' гэсэн утгатай ослын өмнөх зурвас.",
+    "description": "Миний өмнөөс битгий сонго.",
     "tags": [
       "autonomy",
       "finale"
     ]
   },
   {
-    "id": "ev_f17_thumb_habit",
-    "title": "F17 стрессдэхдээ эрхий хуруугаа мааждаг",
-    "sourceArtifactId": "msg_18473_habit",
-    "description": "Тэнүүн F17-ийн айх үедээ хийдэг жижиг зуршлыг дурдсан.",
+    "id": "ev_final_call",
+    "title": "CALL_18473_03",
+    "sourceArtifactId": "call_18473_03",
+    "description": "Post-choice recovered audio.",
     "tags": [
-      "f17",
-      "identity"
+      "ending"
     ]
   },
   {
-    "id": "ev_f17_punctuation",
-    "title": "F17-ийн бичлэгийн хэв маяг",
-    "sourceArtifactId": "msg_18473_style",
-    "description": "Цэг таслал, богино өгүүлбэрийн хэв маяг Маралын одоогийн бичлэгтэй давхцана.",
+    "id": "ev_black_ice",
+    "title": "Black ice photo",
+    "sourceArtifactId": "photo_black_ice",
+    "description": "Өвлийн замын аюултай нөхцөл.",
     "tags": [
-      "f17",
-      "identity"
+      "optional",
+      "winter47"
     ]
   },
   {
-    "id": "ev_f17_ministry",
-    "title": "F17 яаманд ажилладаг гэсэн мөр",
-    "sourceArtifactId": "msg_18473_work_hint",
-    "description": "Нэр хэлэлгүйгээр яамны ажил, гадаад зочдын хөтөлбөрийн талаар дурдсан.",
+    "id": "ev_accident_report",
+    "title": "Accident aftermath",
+    "sourceArtifactId": "photo_black_ice",
+    "description": "Ослын physical cause.",
     "tags": [
-      "f17",
-      "identity"
+      "optional",
+      "winter47"
     ]
   },
   {
-    "id": "ev_f17_cafe_route",
-    "title": "Кафены өдрийн route overlap",
-    "sourceArtifactId": "loc_cafe_day",
-    "description": "Кафены зураг авсан өдөр Маралын хуучин calendar/route record ижил замтай давхцана.",
+    "id": "ev_volunteer_death",
+    "title": "Volunteer loss record",
+    "sourceArtifactId": "photo_shelter_fragment",
+    "description": "Rescue aftermath дахь амь насны гарз.",
     "tags": [
-      "f17",
-      "identity"
+      "optional",
+      "winter47"
     ]
   },
   {
-    "id": "ev_bank_hope1",
-    "title": "Алга болсны дараах банкны activity",
-    "sourceArtifactId": "txn_post_missing",
-    "description": "Тэнүүн амьд байж магадгүй мэт харагдах боловч шууд баталгаа биш.",
+    "id": "ev_maral_medical_gap",
+    "title": "Маралын medical gap",
+    "sourceArtifactId": "loc_winter_road",
+    "description": "Trauma-related memory gap.",
     "tags": [
+      "optional",
+      "maral"
+    ]
+  },
+  {
+    "id": "ev_mother_memory",
+    "title": "Ээжийн withheld-memory record",
+    "sourceArtifactId": "msg_oyunaa",
+    "description": "Гэр бүлийн хамгаалалт ба нуусан дурсамж.",
+    "tags": [
+      "optional",
+      "family"
+    ]
+  },
+  {
+    "id": "ev_fuel_purchase",
+    "title": "Old vehicle fuel purchase",
+    "sourceArtifactId": "photo_old_vehicle",
+    "description": "Cash trail-ийн хэсэг.",
+    "tags": [
+      "optional",
       "hope1"
     ]
   },
   {
-    "id": "ev_device_hope2",
-    "title": "Алга болсны дараах device activity",
-    "sourceArtifactId": "device_post_missing",
-    "description": "Дараа нь Билгүүн асаасан болох нь тогтоогдоно.",
+    "id": "ev_safehouse_geometry",
+    "title": "Safehouse geometry",
+    "sourceArtifactId": "photo_safehouse",
+    "description": "Cabin plan-тай хэмжээс давхцана.",
     "tags": [
-      "hope2"
+      "optional",
+      "hope3"
+    ]
+  },
+  {
+    "id": "ev_cash_plan",
+    "title": "Device-free cash plan",
+    "sourceArtifactId": "file_cabin_budget",
+    "description": "Digital trace үлдээхгүй practical prep.",
+    "tags": [
+      "optional",
+      "hope1"
+    ]
+  },
+  {
+    "id": "ev_bank_hope1",
+    "title": "Post-missing bank activity",
+    "sourceArtifactId": "txn_post_missing",
+    "description": "Hope #1; шууд амьд гэдгийг батлахгүй.",
+    "tags": [
+      "hope1"
     ]
   },
   {
     "id": "ev_bilguun_device",
     "title": "Билгүүн device-ийг хөдөлгөсөн",
     "sourceArtifactId": "msg_bilguun_admission",
-    "description": "Hope #2-г тайлбарлах үнэн.",
+    "description": "Hope #2-ийн үнэн.",
     "tags": [
       "hope2",
       "family"
@@ -183,22 +493,42 @@
   },
   {
     "id": "ev_tenuun_laugh_note",
-    "title": "Инээдний тухай private note",
+    "title": "Инээдний private note",
     "sourceArtifactId": "note_laugh",
-    "description": "'Тэр инээхээр хэдхэн секунд бүх юм зүгээр юм шиг.'",
+    "description": "Хэдхэн секунд бүх юм зүгээр мэт.",
     "tags": [
-      "romance",
       "18473"
     ]
   },
   {
-    "id": "ev_raspberry_plan",
-    "title": "Raspberry — 6",
-    "sourceArtifactId": "file_cabin_budget",
-    "description": "Cabin budget-ийн жижиг мөр; төгсгөлд café memory-тэй нийлнэ.",
+    "id": "ev_f17_thumb_habit",
+    "title": "F17 stress habit",
+    "sourceArtifactId": "msg_18473_habit",
+    "description": "Эрхий хуруугаа мааждаг.",
     "tags": [
-      "raspberry",
-      "ending"
+      "f17",
+      "identity"
+    ]
+  },
+  {
+    "id": "ev_graph_confidence_tutorial",
+    "title": "GRAPH confidence тайлбар",
+    "sourceArtifactId": "doc_graph_help",
+    "description": "Шинэ холбоос бүр confidence-ийг дахин тооцно.",
+    "tags": [
+      "graph"
+    ],
+    "grantsFacts": [
+      "fact_graph_recalculates"
+    ]
+  },
+  {
+    "id": "ev_f17_edge",
+    "title": "F17 хамгаалагдсан edge",
+    "sourceArtifactId": "graph_f17",
+    "description": "Нэргүй хүний зориуд бүдгэрүүлсэн edge.",
+    "tags": [
+      "f17"
     ]
   }
 ]

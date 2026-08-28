@@ -6,134 +6,136 @@
 
 ## Current phase
 
-Phase 03 — Case Engine: completed, approved, and merged into `main` via PR #4. Phase 04 has not started, and no Case #001 authored narrative content exists yet.
+Phase 04 — Case #001 Content: implemented and validated on the dedicated branch. The branch is intentionally unmerged and awaits explicit review/merge approval. Phase 05 has not started.
 
 ## Last completed and approved phase
 
-Phase 03 — Case Engine, approved and merged through PR #4 (previously Phase 02 — Fake Phone OS through PR #2).
+Phase 03 — Case Engine, approved and merged through PR #4. The latest approved `main` state is `a7cbd62df2ff06b1ece60144377f620a47042ae1`.
 
 ## Current active branch
 
-`main`
+`codex/phase-04-case001-content`
 
 ## Latest approved commit hash
 
-`e0af251e4e66b49dab8717792510d53d05faa89a` on `main` (Phase 03 merge commit, PR #4).
+`a7cbd62df2ff06b1ece60144377f620a47042ae1` on `main`.
 
 ## Current task implementation commit
 
-`5f8d9cfac82b3056c3694fa1f886198f2b454f67` (final Phase 03 branch commit, merged via PR #4; implementation commit `79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df`). This state-only refresh commit follows the merge because a commit cannot contain its own hash.
+`eb1ce6db8cfc085fde8688485d72d6e95af43e1f` is the final Phase 04 implementation commit before this state-only handoff refresh. The final branch HEAD is the subsequent state-only commit because a commit cannot contain its own hash.
 
 ## Current implementation status
 
-Phases 01, 02, and 03 are implemented and merged; continuity infrastructure is merged via PR #3. Phase 03 added the reusable case engine, now on `main`: a recursive authored condition vocabulary; `graph` and `timeline` as validated core collections; a pure deterministic event processor with monotone derived-state settlement; deduction/contradiction evaluation; conditioned objectives; lock/trigger evaluation; timeline reconstruction; gated graph projection with evidence-weighted confidence; lock-gated ending eligibility with the TRACE/SEVER location boundary; reachability/cycle/final-choice progression analysis (fail-closed when a manifest declares `progressionComplete`); evidence-board pins with save envelope v2 and a chained v0→v1→v2 migration; the spoiler-safe `projectCaseView` engine-to-UI surface; and a store-integrated `createCaseRuntime` bridge. Architecture decisions are recorded in `docs/decisions/0004-phase03-case-engine.md`. A synthetic mini-case (`tests/fixtures/mini-case.ts`) proves the engine end-to-end under strict progression validation.
+Phase 04 converts the corrected `18473-PHASE04-PRODUCTION-PACK-v1.0.1-FINAL` authored source into strict, indexed, data-driven Case #001 content. It adds eight Phase 04 authored collection schemas and referential validation; projects the Case #001 phone through all eight Phase 02 apps; resolves the 21-item Phase 03 progression debt to zero; implements F17, Winter 47, Hope #1/#2/#3, the 41→57→73→88→91 GRAPH confidence path, TRACE/SEVER, and post-ending NODE: 0 gates; and marks `progressionComplete: true`.
+
+Authored Case #001 and engine data remain server-only. The client requests a validated player-visible projection from `/api/case-runtime` only after device unlock. S3/S4 binaries remain outside `public/` and are served by the uniform 404-gated `/api/case-assets/[assetId]` route. ADR 0005 records this boundary.
 
 ## Completed milestones
 
-- Phase 01 foundation: schemas, fail-closed case loading, engine primitives, player state, save envelope, and spoiler-safe public projection.
-- Phase 02 phone OS: lock/home, Messages, Gallery, Calls, Mail, Browser, Notes, Files, Settings, deep links, metadata, zoom, audio transcripts, discovery persistence, accessibility, and responsive QA.
-- Phase 02 PR: [#2](https://github.com/spring1199/CASE001/pull/2), merged as `1c2d8b75b632c855cde06052a517eeaa5a6757ee`.
-- Continuity handoff PR: [#3](https://github.com/spring1199/CASE001/pull/3), merged as `bcee8e101e7950779c408176f33dac9c2e3e2b03`.
-- Phase 03 case engine implemented as `79dbcc48ad23d5a36f47f47e918bdd9d7ffe75df`, including the docs/14 narrative gate tests automated against real Case #001 data.
-- Phase 03 PR: [#4](https://github.com/spring1199/CASE001/pull/4), approved and merged as `e0af251e4e66b49dab8717792510d53d05faa89a`.
+- Verified all 40 corrected production-pack checksums and confirmed `content/authored/CASE001_AUTHORED_CONTENT_v1.0.md` is the sole authoritative authored-content source.
+- Reconciled the corrected pack against repository canon without changing narrative canon.
+- Added strict schemas, duplicate checks, cross-source references, and metadata for all eight authored phone collections.
+- Integrated 118 authored records: 12 artifacts/files, 16 browser records, 9 calls/audio scripts, 4 emails, 3 locations, 36 message threads containing 471 messages, 3 notes, and 35 gallery records.
+- Integrated 54 evidence records, 17 deductions (including 2 contradictions), 12 objectives, 5 locks, 5 triggers, 8 timeline events plus 5 positions, and 10 GRAPH nodes plus 6 edges.
+- Verified multiple discovery orders, repeated events, deterministic replay, persistence, cycle freedom, no soft locks, and zero progression debt.
+- Generated 79 visual masters, derived 2 approved crops, retained 4 UI DATA assets as native UI, and integrated all 85 registry entries. Runtime delivery contains 57 public S0–S2 and 24 gated S3–S4 binaries; every binary has dimensions and SHA-256 in `generation-ledger.json`.
+- Added server-projected authored phone delivery, gated asset route coverage, client-bundle leak scanning, and production Case #001 Playwright flows.
+- Preserved all approved audio scripts/transcripts and playback wiring. No fake voice recording was created; unavailable audio is explicitly `scripted` and makes no broken media request.
 
 ## Current task status
 
-Phase 03 was explicitly approved by the user and merged into `main` via PR #4 on 2026-08-27, with the full local validation matrix re-run green immediately before the merge. This commit records the post-merge state transition. Phase 04 has not started: no Case #001 authored narrative content (chats, messages, emails, photos, audio, timeline events, clues, deductions, or dialogue) has been created, and none may be created until the dedicated Phase 04 Content Production Pack is provided and explicitly authorized.
+Phase 04 implementation is complete on its dedicated branch and is undergoing the final continuity refresh. It is not merged. No Phase 05 implementation has begun.
 
 ## Validation and test results
 
-Re-run in full on 2026-08-27 immediately before the PR #4 merge (branch HEAD `5f8d9cfac82b3056c3694fa1f886198f2b454f67`):
+Final Phase 04 verification on 2026-08-27:
 
-- Pack validation: 51 authored IDs passed, including the new `graph.json`/`timeline.json` scan and the SEVER-never-reveals-location assertion.
-- Continuity validation: 4 files and 21 required state fields passed.
-- Continuity unit tests: 8/8 passed.
-- Lint and strict typecheck: passed with zero warnings.
-- Project unit tests: 273/273 passed (85 new Phase 03 tests: conditions, engine events, progression analysis, spoiler projections, mini-case end-to-end, save migrations, and the docs/14 Case #001 gate tests).
-- Playwright: 12/12 passed, including the browser-delivery spoiler scan.
-- Production build: passed (generated `next-env.d.ts` rewrite restored, no intentional change).
-- Security audit: 0 vulnerabilities (no dependency manifest changes this phase).
+- Corrected production pack: 40/40 SHA-256 entries verified before branch creation.
+- Pack validation: passed, 154 unique authored IDs checked.
+- Continuity validation: passed, 4 files and 21 required state fields checked.
+- Continuity tests: 8/8 passed.
+- Lint: passed with zero warnings.
+- Strict TypeScript: passed.
+- Unit tests: 301/301 passed across 25 files.
+- Playwright: 14/14 passed, including initial-client protected-content scanning, deferred projection, uniform hidden-record rejection, and S3/S4 public-path leakage checks.
+- Production build: passed with no warnings; `/` is static and both case APIs are dynamic server routes.
+- Asset production: 81/81 runtime binaries reproduced from source masters; ledger hashes and dimensions verified.
+- Progression analyzer: 21 debt items before Phase 04, 0 after; no dependency cycles, unreachable progression, or soft locks.
+- Security audit: 0 vulnerabilities; dependency versions were unchanged.
+- Protected-name/spoiler/asset scans: passed; representative secret facts, ending IDs, final call content, S3/S4 filenames, and Phase 05 implementation files are absent from initial browser delivery/public assets.
 
 ## Open tasks
 
-- Wait for the dedicated Phase 04 Content Production Pack and explicit authorization before beginning Phase 04.
-- Do not author any Case #001 narrative content until then.
+- Review the unmerged Phase 04 branch and approve or request changes.
+- Merge only after explicit user approval.
+- Keep Phase 05 unstarted until separately authorized.
 
 ## Known limitations
 
-- Phone content is deliberately neutral placeholder content, not final Case #001 narrative content.
-- Case #001 `graph.json` and `timeline.json` are validated core collections but intentionally empty until Phase 04 authors them; eight phone-content collections remain deferred-empty.
-- Case #001 progression is intentionally incomplete: the 21 pinned progression-debt items (unreachable facts, undiscoverable evidence, uncompletable deductions, unopenable locks, unactivatable objectives, unfirable triggers, ineligible endings) remain deliberately unresolved for Phase 04 authoring. The exact debt is pinned by `tests/content/case-001-gates.test.ts` and must shrink to empty before the manifest may declare `progressionComplete: true`.
-- The phone UI does not yet consume the case engine (`createCaseRuntime`/`projectCaseView`); wiring the investigation surfaces is later-phase work.
-- Time/pacing trigger gates are deferred pending a determinism design decision (ADR 0004).
-- Physical notched-device testing remains useful beyond Chromium safe-area checks.
+- Voice binaries were not supplied and audio generation was outside the available production capability. Nine approved call/audio records are delivered as production-ready scripts/transcripts with `scripted` status; ready-audio UI wiring remains intact and no unrelated placeholder voice is used.
+- Generated imagery received manifest-driven and representative manual visual QA, but human art-direction review before release is still appropriate.
+- Physical notched-device testing remains useful beyond Chromium safe-area coverage.
 
 ## Known technical risks
 
-- Progression reachability treats every visible evidence record as discoverable because artifact delivery lives in deferred collections; once artifacts gain schemas, discovery paths must join the analysis (ADR 0001/0004).
-- The browser-delivery spoiler scan protects the bare word "unknown" (F17's authored role); client-delivered source must avoid emitting it as a standalone token (Phase 03 renamed engine rejection reasons to `unrecognized-*` and avoided `z.unknown()` in client-bundled persistence code for this reason).
-- Engine settlement has a bounded fixed-point guard; pathological authored data throws instead of looping.
-- `PROJECT_STATE.md` can become stale if agents skip the mandatory completion update; `npm run validate:continuity` verifies structure, not factual accuracy.
-- Next.js may rewrite generated `next-env.d.ts` during build; restore it if no intentional source change exists.
+- The local-first single-player client sends its validated save state to the server projection endpoint, and gated asset cookies mirror that state. This prevents accidental/static/network preloading but is not an anti-tamper entitlement system; production account/server-session hardening is deferred.
+- Source masters add approximately 157 MB and optimized runtime derivatives approximately 25 MB to the repository.
+- Server projection is monotone and applies returned changes through the existing Zustand action surface; future non-monotone gameplay state would need an explicit server-authoritative replacement protocol.
+- Next.js generated files should continue to be checked after production builds, although the final Phase 04 build produced no unintended diff.
 
 ## Known narrative risks
 
-- Importing authored case records into client phone code could leak gated facts; `projectCaseView` is the only intended engine-to-UI surface.
-- Neutral fixtures (the Phase 02 phone seed and the Phase 03 mini-case) must never evolve into a second canon source.
-- Future content must preserve fair-play clue reachability and reveal timing; the pinned Case #001 debt list documents exactly what Phase 04 must author.
-- Deduction titles are shown once prerequisites are met, so Phase 04 must author titles that do not pre-confirm their own conclusions before completion.
+- F17 remains intentionally inferable through multiple independent clue families; future polish must not turn any single clue or image into conclusive proof.
+- Generated recurring-character scenes may show modest photographic variation; future visual replacement must preserve the approved anchor identities and clue subtlety.
+- The final recovered call strongly implies intimacy but does not prove romantic love; audio performance must preserve that ambiguity.
+- Winter 47 must retain both the saved life and shelter-network harm without GOOD/BAD labeling.
 
 ## Unresolved decisions
 
-- Time/pacing trigger gates remain an unresolved Phase 04 authoring decision (docs/09 lists them; deferred for determinism, ADR 0004).
-- The mechanical ending gate wiring (`gateLockId`, `revealsExactLocation` on Case #001 endings) was merged with Phase 03 approval but must be validated against the final Phase 04 authored progression before Case #001 declares `progressionComplete`.
-- Whether Phase 04 wires the phone UI to the case runtime or a dedicated UI phase does; resolve from the Phase 04 execution plan and user direction.
+- Final voice casting, recording, mix, and audio-master asset IDs belong to a separately authorized later phase.
+- Production hosting must decide whether local single-player state is sufficient or whether signed server sessions are required for anti-tamper enforcement.
+- No Phase 04 canon or progression decision remains unresolved.
 
 ## Current spoiler/reveal gates
 
-- Canonical alias identity projection remains gated by its authored reveal fact (now enforced in `projectCaseView` for characters and graph nodes).
-- Winter 47 operator projection remains gated until Reveal #1 (hidden evidence is also non-discoverable and rejects like a nonexistent ID).
-- Hope events #1 and #2 must not confirm the live-status truth (the live fact is grantable only by its reveal deduction).
-- Final choice and exact-location projection must obey the ending gates, including the SEVER boundary (endings are eligible only through `lock_final_choice`; SEVER never reveals the location, asserted in pack validation and gate tests).
-- Explicit romantic-love confirmation remains forbidden (asserted by an authored-content scan test).
-- All ten docs/14 narrative gate tests are automated in `tests/content/case-001-gates.test.ts` and the Playwright browser-delivery spoiler scan.
-
-Authoritative details and automated expectations live in `AGENTS.md`, `docs/01-MASTER-STORY-BIBLE.md`, `docs/06-CLUE-EVIDENCE-MATRIX.md`, and `docs/14-TESTING-ACCEPTANCE.md`.
+- F17 = Maral and Maral = unauthorized Winter 47 operator remain separate reveals; four independent clue families plus archive access gate the first.
+- Winter 47 preserves the life-saved and collateral-harm truths without moral scoring.
+- Hope #1 is ambiguous, Hope #2 is Bilguun's false-positive device activity, and Hope #3 genuinely confirms Tenuun is alive.
+- TRACE confirms the final edge and can reveal exact location only at the final authored gate. SEVER severs the edge and never reveals exact location; status remains UNKNOWN.
+- NODE: 0 appears only after a completed ending.
+- Initial HTML/JavaScript contains only the public case summary; authored phone projections arrive after device unlock, while hidden records and locked asset paths remain absent.
 
 ## Deferred work
 
-- Phase 04 final Case #001 content, including `graph.json`/`timeline.json` records, the `fact_18473_archive_open` grant path, objective activation conditions, and eventually `progressionComplete: true`.
-- Wiring the phone UI to `createCaseRuntime`/`projectCaseView`.
-- Time/pacing trigger gates (needs determinism design).
-- Artifact-collection schemas plus referential checks for `artifactViewed` conditions and deduction/trigger unlock targets (ADR 0001/0004).
-- Phase 05 audio/polish and Phase 06 QA.
-- The eight remaining deferred-empty phone content collections until their designated phases.
+- Phase 05 audio and emotional polish, only after explicit authorization.
+- Optional human art-direction pass and physical-device QA.
+- Optional production anti-tamper/session hardening if required by the eventual hosting model.
 
 ## Next expected task
 
-Phase 04 — Case #001 Content is the next expected phase. Begin only after the user provides the dedicated Phase 04 Content Production Pack and explicit authorization, then read `docs/exec-plans/PHASE-04-CASE001-CONTENT.md`, the matching `tasks/` brief if present, that production pack, and every canonical document they reference.
+Review and approve the unmerged Phase 04 branch. Merge only with explicit user approval. Phase 05 is the next possible phase after Phase 04 approval, but it has not been started or authorized.
 
 ## Exact continuation point
 
-From `main` at `e0af251e4e66b49dab8717792510d53d05faa89a` with a clean worktree, wait for the dedicated Phase 04 Content Production Pack and explicit user authorization. When authorized, create a `codex/phase-04-case001-content` branch, read `docs/exec-plans/PHASE-04-CASE001-CONTENT.md`, the matching task brief if present, and the narrative read-order in `AGENTS.md`, then author Case #001 content in small reviewable batches that shrink the pinned 21-item progression debt in `tests/content/case-001-gates.test.ts`, running the spoiler-gate tests after each batch. Do not invent chats, messages, emails, photos, audio, timeline events, clues, deductions, or character dialogue before that pack arrives. Resolve the time/pacing gate decision and validate the ending gate wiring against the final authored progression during Phase 04.
+Continue from the clean `codex/phase-04-case001-content` branch at the state-only commit following implementation commit `eb1ce6db8cfc085fde8688485d72d6e95af43e1f`. Review the Phase 04 diff and validation evidence. Do not merge and do not begin Phase 05 without explicit user approval. The corrected production pack remains an external handoff artifact and was not committed as repository product code.
 
 ## Source-of-truth documents
 
-- Workflow and boundaries: `AGENTS.md`, `PROJECT_STATE.md`, `HANDOFF.md`.
-- Canon/product sources: `docs/`, especially `docs/00-PROJECT-VISION.md` through the relevant domain documents.
-- Phase specifications: `docs/exec-plans/`.
-- Executable task briefs: `tasks/`.
-- Current phase sources: `docs/exec-plans/PHASE-03-CASE-ENGINE.md`, `tasks/03-case-engine.md`, and `docs/decisions/0004-phase03-case-engine.md`.
-- Continuity-infrastructure brief (historical): `docs/superpowers/specs/2026-08-27-continuity-handoff-design.md` and `docs/superpowers/plans/2026-08-27-continuity-handoff.md`.
-- Architecture and schema: `docs/09-CASE-ENGINE.md`, `docs/12-TECH-ARCHITECTURE.md`, `docs/13-DATA-SCHEMA.md`.
-- Acceptance and reveal gates: `docs/14-TESTING-ACCEPTANCE.md`.
-- Architectural decisions: `docs/decisions/`.
+- Workflow and continuity: `AGENTS.md`, `PROJECT_STATE.md`, `HANDOFF.md`.
+- Canonical documentation directory: `docs/`.
+- Phase execution-plan directory: `docs/exec-plans/`.
+- Executable phase-task directory: `tasks/`.
+- Narrative canon: the relevant canonical `docs/` files listed in `AGENTS.md`.
+- Phase 04 scope: `docs/exec-plans/PHASE-04-CASE001-CONTENT.md` and `tasks/04-case001-content.md`.
+- Integrated authored data: `content/cases/case-001/`.
+- Phase 04 implementation design and plan: `docs/superpowers/specs/2026-08-27-phase04-case001-content-design.md` and `docs/superpowers/plans/2026-08-27-phase04-case001-content.md`.
+- Server projection decision: `docs/decisions/0005-phase04-server-projections.md`.
+- Acceptance and reveal gates: `docs/14-TESTING-ACCEPTANCE.md` and the automated test suites.
 
 ## Things that must NOT be changed without explicit approval
 
 - Narrative canon, character truths, true timeline, ending canon, or reveal order.
-- Spoiler/reveal gates or client-delivery protections.
-- Phase 01/02 approved behavior or fail-closed validation.
-- Case #001 data-driven boundaries by hardcoding narrative into reusable engine/UI code.
-- Intentionally deferred collections before their designated phases.
-- The active phase boundary: Phase 04 must not start without the dedicated Phase 04 Content Production Pack and explicit instruction.
+- Spoiler/reveal gates or server-projected delivery protection.
+- Case #001 data-driven boundaries by hardcoding story answers into reusable UI or engine code.
+- The completed Phase 04 branch through merge without explicit approval.
+- Phase 05 scope or implementation before explicit authorization.

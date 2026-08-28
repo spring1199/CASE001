@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "id": "loc_cafe_day",
+    "kind": "location",
+    "title": "Roadside café route",
+    "body": "Кафены зураг авсан өдөр Маралын хуучин calendar/route record ижил замтай давхцана.",
+    "discovery": {
+      "evidenceIds": [
+        "ev_f17_cafe_route"
+      ]
+    }
+  },
+  {
+    "id": "loc_winter_road",
+    "kind": "location",
+    "title": "WINTER-47 road context",
+    "body": "Black ice болон whiteout нөхцөл."
+  },
+  {
+    "id": "loc_safehouse_class",
+    "kind": "location",
+    "title": "Remote wooden structures",
+    "body": "Яг байршил түгжээтэй.",
+    "hiddenUntilFacts": [
+      "fact_tenuun_alive"
+    ]
+  }
+]

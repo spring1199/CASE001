@@ -16,7 +16,8 @@
   {
     "id": "char_orgil",
     "name": "Оргил Содном",
-    "role": "suspect"
+    "role": "suspect",
+    "age": 42
   },
   {
     "id": "char_tselmeg",
@@ -51,5 +52,15 @@
     "role": "unknown",
     "canonicalCharacterId": "char_maral",
     "hiddenUntilFact": "fact_f17_is_maral"
+  },
+  {
+    "id": "char_oyunaa",
+    "name": "Оюунаа",
+    "role": "family"
+  },
+  {
+    "id": "char_batzorig_father",
+    "name": "Батзориг",
+    "role": "family"
   }
 ]

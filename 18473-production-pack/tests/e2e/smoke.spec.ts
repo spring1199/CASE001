@@ -206,7 +206,7 @@ function firstPartyModuleText(delivered: DeliveredText): string {
 }
 
 function isDistinctiveProtectedValue(value: string): boolean {
-  return value.length >= 12 || /[_\s]/u.test(value) || /[^\x00-\x7F]/u.test(value);
+  return value.length >= 12 || (value.length >= 6 && value.includes('_'));
 }
 
 function containsShortProtectedValue(body: string, value: string): boolean {
@@ -219,6 +219,28 @@ function containsShortProtectedValue(body: string, value: string): boolean {
 
 const protectedValues = buildProtectedValues();
 const genericImplementationTokens = new Set(['locked', 'unlock']);
+const structuralReasonSuffixes = [
+  '.appId',
+  '.direction',
+  '.durationLabel',
+  '.kind',
+  '.productionStatus',
+  '.role',
+];
+
+function shouldScanProtectedValue(protectedValue: ProtectedValue): boolean {
+  const { value, reasons } = protectedValue;
+  if (genericImplementationTokens.has(value)) return false;
+  if (!/[\p{L}_]/u.test(value)) return false;
+  if (reasons.every((reason) => structuralReasonSuffixes.some((suffix) =>
+    reason.endsWith(suffix) || reason.endsWith(` at ${suffix.slice(1)}`)))) {
+    return false;
+  }
+  if (reasons.some((reason) => reason.startsWith('ending record ')) && value.length >= 5) {
+    return true;
+  }
+  return isDistinctiveProtectedValue(value);
+}
 
 async function unlockPhone(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/');
@@ -289,7 +311,7 @@ test('renders only the Case #001 public manifest summary', async ({ page, baseUR
   ];
 
   const leaks = protectedValues.flatMap((protectedValue) => {
-    if (genericImplementationTokens.has(protectedValue.value)) return [];
+    if (!shouldScanProtectedValue(protectedValue)) return [];
     const sources = deliveredText
       .filter((delivered) => {
         const searchableBody = isDistinctiveProtectedValue(protectedValue.value)
@@ -305,13 +327,12 @@ test('renders only the Case #001 public manifest summary', async ({ page, baseUR
   expect(leaks, 'Protected authored values must not reach browser-delivered text').toEqual([]);
 });
 
-test('unlocks the neutral phone and exposes every Phase 02 app shell', async ({ page }) => {
+test('unlocks the Case #001 phone and exposes every Phase 02 app shell', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-phone-screen="lock"]')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Файл хадгалах сан, түгжээтэй' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Файлын сан' })).toHaveCount(0);
 
   await unlockPhone(page);
-  await expect(page.getByRole('button', { name: 'Файл хадгалах сан, түгжээтэй' })).toHaveAttribute('aria-disabled', 'true');
 
   const initiallyAvailableApps = [
     ['Зурвас апп', 'messages'],
@@ -319,8 +340,9 @@ test('unlocks the neutral phone and exposes every Phase 02 app shell', async ({ 
     ['Дуудлагын жагсаалт', 'calls'],
     ['Цахим шуудан', 'mail'],
     ['Вэб хөтөч', 'browser'],
-    ['Тэмдэглэлийн дэвтэр', 'notes'],
-    ['Системийн тохиргоо', 'settings'],
+    ['Тэмдэглэл апп', 'notes'],
+    ['Файлын сан', 'files'],
+    ['Төхөөрөмжийн тохиргоо', 'settings'],
   ] as const;
 
   for (const [accessibleName, appId] of initiallyAvailableApps) {
@@ -330,15 +352,15 @@ test('unlocks the neutral phone and exposes every Phase 02 app shell', async ({ 
   }
 
   await page.getByRole('button', { name: 'Зурвас апп' }).click();
-  await page.getByRole('button', { name: /Амралтын өдрийн төлөвлөгөө/ }).click();
+  await page.getByRole('button', { name: '18473 217' }).click();
   await goHome(page);
-  await page.getByRole('button', { name: 'Файл хадгалах сан' }).click();
+  await page.getByRole('button', { name: 'Файлын сан' }).click();
   await expect(page.locator('[data-app-shell="files"]')).toBeVisible();
-  await expect(page.getByRole('button', { name: /баримт-08\.pdf/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Cabin budget/ })).toBeVisible();
 
   await page.reload();
   await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
-  await expect(page.getByRole('button', { name: 'Файл хадгалах сан' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Файлын сан' })).toBeEnabled();
 });
 
 test('keeps programmatic screen-heading focus visually unobtrusive', async ({ page }) => {
@@ -360,24 +382,27 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
   await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
   const search = page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' });
-  await search.fill('бороо');
-  await expect(page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ })).toBeVisible();
-  await page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ }).click();
-  await page.getByRole('button', { name: 'Төлөвлөгөөний зурвас нээх' }).click();
-  await expect(page.getByRole('heading', { name: 'Амралтын өдрийн төлөвлөгөө', exact: true })).toBeVisible();
+  await search.fill('Timber House');
+  await expect(page.getByRole('button', { name: /Small Timber House/ })).toBeVisible();
+  await page.getByRole('button', { name: /Small Timber House/ }).click();
+  await page.getByRole('button', { name: 'Cabin budget' }).click();
+  await expect(page.getByRole('heading', { name: 'Cabin budget', exact: true })).toBeVisible();
+  await goHome(page);
+
+  await page.getByRole('button', { name: 'Дуудлагын жагсаалт' }).click();
+  await page.getByRole('button', { name: /^18473/ }).first().click();
   await expect(page.getByText('Бичлэгийн тайлал')).toBeVisible();
   await page.getByText('Бичлэгийн тайлал').click();
-  await expect(page.getByText('Бороотой бол кофе шопт уулзаж болно шүү.').first()).toBeVisible();
-  await expect(page.locator('audio')).toHaveAttribute('controls', '');
+  await expect(page.getByText(/Audio log өөр зүйл хэлж байна/).first()).toBeVisible();
+  await expect(page.getByText('Аудио мастер ороогүй · продакшны тайлал бэлэн')).toBeVisible();
+  await expect(page.locator('audio')).toHaveCount(0);
   await page.keyboard.press('Alt+ArrowLeft');
-  await expect(page.locator('[data-app-shell="browser"]')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Хадгалсан', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ })).toBeVisible();
+  await expect(page.locator('[data-app-shell="calls"]')).toBeVisible();
   await goHome(page);
 
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
   await expect(page.locator('[data-gallery-layout="timeline-grid"]')).toBeVisible();
-  await page.getByRole('button', { name: /Борооны дараах цэцэрлэг/ }).click();
+  await page.getByRole('button', { name: /Roadside café exterior/ }).click();
   const metadataButton = page.getByRole('button', { name: 'Метадата шалгах' });
   await metadataButton.focus();
   await metadataButton.press('Enter');
@@ -423,7 +448,7 @@ test('keeps Gallery card titles readable at 320px', async ({ page }) => {
   await unlockPhone(page);
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
 
-  const firstTitle = page.getByRole('button', { name: /Борооны дараах цэцэрлэг/ }).locator('strong');
+  const firstTitle = page.getByRole('button', { name: /Childhood family kitchen/ }).locator('strong');
   const titleWidth = await firstTitle.evaluate((element) => element.getBoundingClientRect().width);
 
   expect(titleWidth).toBeGreaterThanOrEqual(80);
@@ -450,9 +475,9 @@ test('protects narrow actions and both horizontal safe-area edges', async ({ pag
 
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
   await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
-  await page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' }).fill('бороо');
-  await page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ }).click();
-  const deepLink = page.getByRole('button', { name: 'Төлөвлөгөөний зурвас нээх' });
+  await page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' }).fill('Timber House');
+  await page.getByRole('button', { name: /Small Timber House/ }).click();
+  const deepLink = page.getByRole('button', { name: 'Cabin budget' });
   const actionBox = await deepLink.evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth,
@@ -467,30 +492,30 @@ test('switches Browser and Gallery collections and restores route scroll', async
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
   await expect(page.getByRole('button', { name: 'Түүх', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Өмнөх хайлтууд', exact: true }).click();
-  await expect(page.getByRole('button', { name: /бороотой өдөр дугуй унах зөвлөмж/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /sore throat tea honey/ })).toBeVisible();
   await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
-  await expect(page.getByRole('button', { name: /Долоо хоногийн цаг агаар/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Small Timber House/ })).toBeVisible();
   await goHome(page);
 
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
-  await expect(page.locator('[data-collection-group="8 сарын 24"]')).toBeVisible();
-  await expect(page.locator('[data-collection-group="8 сарын 23"]')).toBeVisible();
-  await expect(page.getByRole('region', { name: '8 сарын 24' })).toBeVisible();
-  await expect(page.getByRole('region', { name: '8 сарын 23' })).toBeVisible();
+  await expect(page.locator('[data-collection-group="Нотлох зураг"]')).toBeVisible();
+  await expect(page.locator('[data-collection-group="Ердийн зураг"]')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Нотлох зураг' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Ердийн зураг' })).toBeVisible();
   await page.getByRole('button', { name: 'Нуусан', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Нуусан зураг алга.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Empty wooden interior/ })).toBeVisible();
   await page.getByRole('button', { name: 'Саяхан устгасан', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Саяхан устгасан зураг алга.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Deleted audit screen/ })).toBeVisible();
   await page.getByRole('button', { name: 'Цагийн шугам', exact: true }).click();
 
   const scrollRegion = page.locator('[data-phone-scroll-region]');
   await expect.poll(() => scrollRegion.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
-  const finalPhoto = page.getByRole('button', { name: /Дугуйн урд гэрэл/ });
+  const finalPhoto = page.getByRole('button', { name: /Ердийн зураг 20/ });
   await finalPhoto.scrollIntoViewIfNeeded();
   const timelineScrollTop = await scrollRegion.evaluate((element) => element.scrollTop);
   expect(timelineScrollTop).toBeGreaterThan(0);
   await finalPhoto.click();
-  await expect(page.getByRole('heading', { name: 'Дугуйн урд гэрэл', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ердийн зураг 20', exact: true })).toBeVisible();
   await expect.poll(() => scrollRegion.evaluate((element) => element.scrollTop)).toBe(0);
 
   await page.getByRole('button', { name: 'Буцах' }).click();

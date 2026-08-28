@@ -1,1 +1,33 @@
-[]
+[
+  {
+    "id": "mail_accuracy_review",
+    "kind": "mail",
+    "title": "Resolution Accuracy Review — Q3",
+    "subtitle": "Tenuun → Entity Resolution Team",
+    "body": "False-match rate improved after behavioral-pattern weighting, but high-confidence relationship inference should require explicit audit context when used outside emergency workflows."
+  },
+  {
+    "id": "mail_orgil_scope",
+    "kind": "mail",
+    "title": "Re: Access scope",
+    "subtitle": "Orgil → Tenuun",
+    "body": "I approved temporary access for the demo window. Do not turn a process mistake into a moral crisis after the fact. We got the contract because your work functioned under real conditions."
+  },
+  {
+    "id": "mail_winter47",
+    "kind": "mail",
+    "title": "Query Review Request / WINTER-47",
+    "subtitle": "Automated",
+    "body": "An emergency relationship-resolution query associated with incident WINTER-47 has been moved to restricted review. Attribution sealed pending internal assessment.",
+    "hiddenUntilFacts": [
+      "fact_f17_is_maral"
+    ]
+  },
+  {
+    "id": "mail_deleted_draft",
+    "kind": "mail",
+    "title": "(subject байхгүй)",
+    "subtitle": "Устгасан draft",
+    "body": "The system did exactly what we taught it to do. That may be the problem."
+  }
+]

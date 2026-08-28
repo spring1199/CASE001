@@ -5,18 +5,21 @@ import { useStore } from 'zustand';
 
 import type { PublicCaseSummary } from '@/game/content/public-case-summary';
 import { LocalStoragePersistenceAdapter } from '@/game/persistence/adapter';
+import { applyEngineTransition } from '@/game/runtime/case-runtime';
 import { createPlayerStore } from '@/game/state/store';
 import { ArtifactDetail } from '@/phone/apps/ArtifactDetail';
 import { PhoneAppView } from '@/phone/apps/PhoneAppView';
 import { AppIcon } from '@/phone/components/AppIcon';
 import { PhoneChrome } from '@/phone/components/PhoneChrome';
-import { neutralPhoneIndex } from '@/phone/data/neutral-seed';
+import { requestCasePhoneProjection } from '@/phone/case-runtime-client';
 import type {
   DeepReadonly,
   PhoneAppDescriptor,
   PhoneAppId,
   PhoneDeepLinkTarget,
+  PhoneDiscoveryEffects,
   PhoneItem,
+  PhoneContentIndex,
 } from '@/phone/data/schema';
 import {
   createPhoneNavigationState,
@@ -29,11 +32,8 @@ import {
   unlockPhone,
 } from '@/phone/navigation';
 import {
-  commitPhoneDiscovery,
-  initializePhonePlayer,
   phoneInitializationFailureMessage,
   type PhoneInitializationFailure,
-  type PhoneInitializationResult,
 } from '@/phone/runtime';
 import styles from '@/phone/phone.module.css';
 
@@ -42,16 +42,6 @@ type PhoneExperienceProps = Readonly<{
 }>;
 
 type ScrollNavigationMode = 'reset' | 'restore';
-
-const INITIAL_UNLOCKED_APP_IDS: PhoneAppId[] = neutralPhoneIndex.content.apps
-  .filter((app) => !app.lockedInitially)
-  .map((app) => app.id);
-
-const GATED_CONTENT_IDS: ReadonlySet<string> = new Set(
-  neutralPhoneIndex.content.apps.flatMap((app) =>
-    app.items.flatMap((item) => item.discovery?.unlockContentIds ?? []),
-  ),
-);
 
 function hasDiscoveries(item: DeepReadonly<PhoneItem>): boolean {
   const discovery = item.discovery;
@@ -64,6 +54,18 @@ function hasDiscoveries(item: DeepReadonly<PhoneItem>): boolean {
   );
 }
 
+function discoveryChanged(
+  previous: Readonly<{ discoveredArtifactIds: string[]; discoveredEvidenceIds: string[]; unlockedAppIds: string[]; unlockedContentIds: string[] }>,
+  next: Readonly<{ discoveredArtifactIds: string[]; discoveredEvidenceIds: string[]; unlockedAppIds: string[]; unlockedContentIds: string[] }>,
+) {
+  return {
+    information: next.discoveredArtifactIds.length > previous.discoveredArtifactIds.length
+      || next.discoveredEvidenceIds.length > previous.discoveredEvidenceIds.length,
+    unlocks: next.unlockedAppIds.length > previous.unlockedAppIds.length
+      || next.unlockedContentIds.length > previous.unlockedContentIds.length,
+  };
+}
+
 export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const [playerStore] = useState(() =>
     createPlayerStore({
@@ -72,9 +74,12 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     }),
   );
   const playerState = useStore(playerStore, (state) => state.playerState);
+  const [phoneIndex, setPhoneIndex] = useState<PhoneContentIndex | null>(null);
+  const [gatedContentIds, setGatedContentIds] = useState<ReadonlySet<string>>(new Set());
   const hydrationStatus = useStore(playerStore, (state) => state.hydrationStatus);
   const [navigation, setNavigation] = useState(createPhoneNavigationState);
   const [status, setStatus] = useState('Төхөөрөмж түгжээтэй байна.');
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const [initializationFailure, setInitializationFailure] =
     useState<PhoneInitializationFailure | null>(null);
   const [collectionSelections, setCollectionSelections] = useState<
@@ -84,85 +89,97 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const scrollPositionsRef = useRef(new Map<string, number>());
   const scrollNavigationModeRef = useRef<ScrollNavigationMode>('reset');
+  const currentRouteKey = phoneRouteKey(navigation.current);
 
   const prepareNavigation = useCallback(
     (mode: ScrollNavigationMode): void => {
       const scrollRegion = scrollRegionRef.current;
       if (scrollRegion) {
         scrollPositionsRef.current.set(
-          phoneRouteKey(navigation.current),
+          currentRouteKey,
           scrollRegion.scrollTop,
         );
       }
       scrollNavigationModeRef.current = mode;
     },
-    [navigation],
+    [currentRouteKey],
   );
 
-  const unlockedAppIds = useMemo(() => {
-    const unlocked = new Set<PhoneAppId>(INITIAL_UNLOCKED_APP_IDS);
-    for (const app of neutralPhoneIndex.content.apps) {
-      if (playerState.unlockedAppIds.includes(app.id)) unlocked.add(app.id);
-    }
-    return unlocked;
-  }, [playerState.unlockedAppIds]);
+  const unlockedAppIds = useMemo(() => new Set<PhoneAppId>(
+    phoneIndex?.content.apps
+      .filter((app) => playerState.unlockedAppIds.includes(app.id))
+      .map((app) => app.id) ?? [],
+  ), [phoneIndex, playerState.unlockedAppIds]);
 
   const unlockedContentIds = useMemo(
     () => new Set(playerState.unlockedContentIds),
     [playerState.unlockedContentIds],
   );
 
-  const applyInitializationResult = useCallback(
-    (result: PhoneInitializationResult, retry: boolean): void => {
-      if (result.kind === 'ready') {
-        setInitializationFailure(null);
-        if (retry) setStatus('Төлөвийг амжилттай шинэчиллээ.');
-        return;
-      }
-      setInitializationFailure(result.kind);
-      setStatus(phoneInitializationFailureMessage(result.kind));
-    },
-    [],
-  );
+  useEffect(() => {
+    document.cookie = `case-001-facts=${playerState.knownFactIds.join(',')}; Path=/; SameSite=Strict`;
+    document.cookie = `case-001-ending=${playerState.endingId ?? ''}; Path=/; SameSite=Strict`;
+  }, [playerState.endingId, playerState.knownFactIds]);
 
   useEffect(() => {
     let active = true;
-    void initializePhonePlayer(
-      INITIAL_UNLOCKED_APP_IDS,
-      playerStore.getState().actions,
-    ).then((result) => {
-      if (active) applyInitializationResult(result, false);
-    });
+    void playerStore.getState().actions.hydrate().then(
+      () => {
+        if (active) setInitializationFailure(null);
+      },
+      () => {
+        if (!active) return;
+        setInitializationFailure('hydrate-failed');
+        setStatus(phoneInitializationFailureMessage('hydrate-failed'));
+      },
+    );
     return () => {
       active = false;
     };
-  }, [applyInitializationResult, playerStore]);
+  }, [playerStore]);
 
   const retryInitialization = (): void => {
     setInitializationFailure(null);
     setStatus('Төлөвийг дахин ачаалж байна.');
-    void initializePhonePlayer(
-      INITIAL_UNLOCKED_APP_IDS,
-      playerStore.getState().actions,
-    ).then((result) => applyInitializationResult(result, true));
+    void playerStore.getState().actions.hydrate().then(
+      () => setStatus('Төлөвийг амжилттай шинэчиллээ.'),
+      () => {
+        setInitializationFailure('hydrate-failed');
+        setStatus(phoneInitializationFailureMessage('hydrate-failed'));
+      },
+    );
   };
+
+  const refreshProjection = useCallback(async (discovery?: PhoneDiscoveryEffects) => {
+    const previous = playerStore.getState().playerState;
+    const projection = await requestCasePhoneProjection(previous, discovery);
+    applyEngineTransition(playerStore, previous, projection.state);
+    setPhoneIndex(projection.phoneIndex);
+    setGatedContentIds(projection.gatedContentIds);
+    await playerStore.getState().actions.save();
+    return discoveryChanged(previous, projection.state);
+  }, [playerStore]);
 
   const recordDiscovery = (item: DeepReadonly<PhoneItem>): void => {
     if (!item.discovery || !hasDiscoveries(item)) return;
-    const storeState = playerStore.getState();
-    const result = commitPhoneDiscovery(
-      item.discovery,
-      storeState.playerState,
-      storeState.actions,
+    const discovery: PhoneDiscoveryEffects = {
+      artifactIds: item.discovery.artifactIds ? [...item.discovery.artifactIds] : undefined,
+      evidenceIds: item.discovery.evidenceIds ? [...item.discovery.evidenceIds] : undefined,
+      unlockAppIds: item.discovery.unlockAppIds ? [...item.discovery.unlockAppIds] : undefined,
+      unlockContentIds: item.discovery.unlockContentIds
+        ? [...item.discovery.unlockContentIds]
+        : undefined,
+    };
+    void refreshProjection(discovery).then(
+      (changed) => setStatus(
+        changed.unlocks
+          ? 'Шинэ агуулга нээгдлээ.'
+          : changed.information
+            ? 'Шинэ мэдээлэл бүртгэгдлээ.'
+            : 'Энэ мэдээлэл өмнө бүртгэгдсэн байна.',
+      ),
+      () => setStatus('Илрүүлэлтийг хадгалж чадсангүй.'),
     );
-    setStatus(
-      result.kind === 'content-unlocked'
-        ? 'Шинэ агуулга нээгдлээ.'
-        : result.kind === 'information-recorded'
-          ? 'Шинэ мэдээлэл бүртгэгдлээ.'
-          : 'Энэ мэдээлэл өмнө бүртгэгдсэн байна.',
-    );
-    void result.saveOperation?.catch(() => setStatus('Илрүүлэлтийг хадгалж чадсангүй.'));
   };
 
   useLayoutEffect(() => {
@@ -209,50 +226,53 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   }, [navigation, prepareNavigation]);
 
   const openApp = (app: DeepReadonly<PhoneAppDescriptor>): void => {
+    if (phoneIndex === null) return;
     if (!unlockedAppIds.has(app.id)) {
       setStatus(`${app.label} апп түгжээтэй байна.`);
       return;
     }
     prepareNavigation('reset');
     setNavigation((current) =>
-      navigateToApp(current, app.id, neutralPhoneIndex, unlockedAppIds),
+      navigateToApp(current, app.id, phoneIndex, unlockedAppIds),
     );
     setStatus(`${app.label} апп нээгдлээ.`);
   };
 
   const openItem = (item: DeepReadonly<PhoneItem>): void => {
-    const appId = neutralPhoneIndex.itemAppIds[item.id];
+    if (phoneIndex === null) return;
+    const appId = phoneIndex.itemAppIds[item.id];
     if (appId === undefined) return;
-    if (GATED_CONTENT_IDS.has(item.id) && !unlockedContentIds.has(item.id)) {
+    if (gatedContentIds.has(item.id) && !unlockedContentIds.has(item.id)) {
       setStatus('Энэ зүйл одоогоор түгжээтэй байна.');
       return;
     }
     recordDiscovery(item);
     prepareNavigation('reset');
     setNavigation((current) =>
-      navigateToItem(current, appId, item.id, neutralPhoneIndex, unlockedAppIds),
+      navigateToItem(current, appId, item.id, phoneIndex, unlockedAppIds),
     );
     if (!hasDiscoveries(item)) setStatus(`${item.title} нээгдлээ.`);
   };
 
   const openDeepLink = (target: DeepReadonly<PhoneDeepLinkTarget>): void => {
+    if (phoneIndex === null) return;
     if (!unlockedAppIds.has(target.appId)) {
-      setStatus(`${neutralPhoneIndex.appsById[target.appId].label} апп түгжээтэй байна.`);
+      setStatus(`${phoneIndex.appsById[target.appId].label} апп түгжээтэй байна.`);
       return;
     }
     if (
       target.itemId &&
-      GATED_CONTENT_IDS.has(target.itemId) &&
+      gatedContentIds.has(target.itemId) &&
       !unlockedContentIds.has(target.itemId)
     ) {
       setStatus('Холбоотой зүйл одоогоор түгжээтэй байна.');
       return;
     }
-    const targetItem = target.itemId ? neutralPhoneIndex.itemsById[target.itemId] : undefined;
+    const targetItem = target.itemId ? phoneIndex.itemsById[target.itemId] : undefined;
     if (targetItem) recordDiscovery(targetItem);
     prepareNavigation('reset');
     setNavigation((current) =>
-      navigateToDeepLink(current, target, neutralPhoneIndex, unlockedAppIds),
+      navigateToDeepLink(current, target, phoneIndex, unlockedAppIds),
     );
     if (!targetItem || !hasDiscoveries(targetItem)) setStatus('Холбоотой зүйл нээгдлээ.');
   };
@@ -271,16 +291,24 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           </h1>
         </header>
         <div className={styles.lockContent}>
-          <p className={styles.lockOwner}>{neutralPhoneIndex.content.device.ownerLabel}</p>
-          <p className={styles.lockPrompt}>{neutralPhoneIndex.content.device.lockPrompt}</p>
+          <p className={styles.lockOwner}>Мөрдөн шалгах төхөөрөмж</p>
+          <p className={styles.lockPrompt}>Мөрдөн шалгах төхөөрөмжийг нээнэ үү</p>
           <button
             type="button"
             className={styles.primaryButton}
             data-action-label
+            disabled={hydrationStatus !== 'hydrated' || isUnlocking}
             onClick={() => {
-              prepareNavigation('reset');
-              setNavigation((current) => unlockPhone(current));
-              setStatus('Төхөөрөмжийн түгжээ тайлагдлаа.');
+              setIsUnlocking(true);
+              setStatus('Хэргийн өгөгдлийг аюулгүй ачаалж байна.');
+              void refreshProjection().then(
+                () => {
+                  prepareNavigation('reset');
+                  setNavigation((current) => unlockPhone(current));
+                  setStatus('Төхөөрөмжийн түгжээ тайлагдлаа.');
+                },
+                () => setStatus('Хэргийн өгөгдлийг ачаалж чадсангүй.'),
+              ).finally(() => setIsUnlocking(false));
             }}
           >
             Түгжээ тайлах
@@ -303,13 +331,15 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     );
   }
 
+  if (phoneIndex === null) return null;
+
   const route = navigation.current;
   const currentApp =
     route.screen === 'app' || route.screen === 'item'
-      ? neutralPhoneIndex.appsById[route.appId]
+      ? phoneIndex.appsById[route.appId]
       : undefined;
   const currentItem =
-    route.screen === 'item' ? neutralPhoneIndex.itemsById[route.itemId] : undefined;
+    route.screen === 'item' ? phoneIndex.itemsById[route.itemId] : undefined;
   const title =
     route.screen === 'home'
       ? 'Аппын нүүр'
@@ -352,7 +382,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
       {route.screen === 'home' ? (
         <div role="region" aria-label="Аппын нүүр" className={styles.homeGrid}>
-          {neutralPhoneIndex.content.apps.map((app) => (
+          {phoneIndex.content.apps.map((app) => (
             <AppIcon
               key={app.id}
               app={app}
@@ -368,7 +398,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           key={currentApp.id}
           app={currentApp}
           unlockedContentIds={unlockedContentIds}
-          gatedContentIds={GATED_CONTENT_IDS}
+          gatedContentIds={gatedContentIds}
           initialCollectionId={collectionSelections[currentApp.id]}
           onCollectionChange={(collectionId) => {
             setCollectionSelections((current) => ({

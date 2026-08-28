@@ -321,7 +321,14 @@ export function createMiniCaseSources(): CaseBundleSources {
         },
       ],
     },
-    artifacts: { sourcePath: `${base}/artifacts.json`, data: [] },
+    artifacts: {
+      sourcePath: `${base}/artifacts.json`,
+      data: [
+        'art_m_note', 'art_m_anchor', 'art_m_hint1', 'art_m_hint2', 'art_m_hint3',
+        'art_m_hidden', 'art_m_contra_a', 'art_m_contra_b', 'art_m_edge_1',
+        'art_m_edge_2', 'art_m_final',
+      ].map((id) => ({ id, kind: 'file', title: id, body: 'Mini-case fixture' })),
+    },
     browser: { sourcePath: `${base}/browser.json`, data: [] },
     calls: { sourcePath: `${base}/calls.json`, data: [] },
     emails: { sourcePath: `${base}/emails.json`, data: [] },

@@ -1,27 +1,138 @@
 [
   {
     "id": "obj_find_sender",
-    "title": "Яагаад энэ утас надад ирснийг ол",
-    "state": "active"
+    "title": "Утасны эзнийг тогтоо",
+    "state": "active",
+    "completeWhen": {
+      "evidence": "ev_family_photo"
+    }
+  },
+  {
+    "id": "obj_final_72",
+    "title": "Тэнүүний сүүлийн 72 цагийг сэргээ",
+    "state": "locked",
+    "activateWhen": {
+      "evidence": "ev_missing_article"
+    },
+    "completeWhen": {
+      "fact": "fact_planned_disappearance"
+    }
+  },
+  {
+    "id": "obj_orgil_threat",
+    "title": "Оргил яагаад сүрдүүлснийг тогтоо",
+    "state": "locked",
+    "activateWhen": {
+      "evidence": "ev_ceo_threat"
+    },
+    "completeWhen": {
+      "fact": "fact_orgil_threat_context"
+    }
   },
   {
     "id": "obj_understand_graph",
-    "title": "GRAPH гэж юу болохыг ойлго",
-    "state": "locked"
+    "title": "GRAPH юу хийдгийг ойлго",
+    "state": "locked",
+    "activateWhen": {
+      "evidence": "ev_graph_matrix"
+    },
+    "completeWhen": {
+      "fact": "fact_graph_relationships"
+    }
+  },
+  {
+    "id": "obj_protected",
+    "title": "Тэнүүн хэнийг хамгаалсныг ол",
+    "state": "locked",
+    "activateWhen": {
+      "fact": "fact_graph_relationships"
+    },
+    "completeWhen": {
+      "fact": "fact_f17_is_maral"
+    }
+  },
+  {
+    "id": "obj_open_18473",
+    "title": "INC-18473-г нээ",
+    "state": "locked",
+    "activateWhen": {
+      "evidence": "ev_18473_paper"
+    },
+    "completeWhen": {
+      "fact": "fact_18473_archive_open"
+    }
   },
   {
     "id": "obj_identify_f17",
-    "title": "F17 хэн болохыг тогтоо",
-    "state": "locked"
+    "title": "F17-г тогтоо",
+    "state": "locked",
+    "activateWhen": {
+      "fact": "fact_18473_archive_open"
+    },
+    "completeWhen": {
+      "fact": "fact_f17_is_maral"
+    }
   },
   {
     "id": "obj_reconstruct_winter47",
     "title": "Winter 47-г сэргээ",
-    "state": "locked"
+    "state": "locked",
+    "activateWhen": {
+      "fact": "fact_f17_is_maral"
+    },
+    "completeWhen": {
+      "allFacts": [
+        "fact_winter47_saved",
+        "fact_winter47_exposed"
+      ]
+    }
+  },
+  {
+    "id": "obj_operator",
+    "title": "Unauthorized operator-ийг тогтоо",
+    "state": "locked",
+    "activateWhen": {
+      "fact": "fact_f17_is_maral"
+    },
+    "completeWhen": {
+      "fact": "fact_maral_winter47_operator"
+    }
+  },
+  {
+    "id": "obj_graph_change",
+    "title": "Тэнүүн GRAPH-д юу өөрчилснийг тогтоо",
+    "state": "locked",
+    "activateWhen": {
+      "fact": "fact_tenuun_obscured"
+    },
+    "completeWhen": {
+      "fact": "fact_tenuun_decoy"
+    }
   },
   {
     "id": "obj_find_tenuun",
-    "title": "Тэнүүний жинхэнэ мөрийг ол",
-    "state": "locked"
+    "title": "Тэнүүн амьд эсэхийг тогтоо",
+    "state": "locked",
+    "activateWhen": {
+      "fact": "fact_tenuun_decoy"
+    },
+    "completeWhen": {
+      "fact": "fact_tenuun_alive"
+    }
+  },
+  {
+    "id": "obj_final_choice",
+    "title": "Final relationship edge-ийн хувь заяаг шийд",
+    "state": "locked",
+    "activateWhen": {
+      "fact": "fact_tenuun_alive"
+    },
+    "completeWhen": {
+      "allFacts": [
+        "fact_tenuun_alive",
+        "fact_autonomy_conflict",
+        "fact_graph_confidence_cost"
+      ]
+    }
   }
 ]

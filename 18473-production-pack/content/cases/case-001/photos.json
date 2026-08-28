@@ -1,1 +1,357 @@
-[]
+[
+  {
+    "id": "photo_family_kitchen",
+    "kind": "photo",
+    "title": "Childhood family kitchen",
+    "visual": {
+      "assetId": "FAM-002",
+      "alt": "Childhood family kitchen",
+      "description": "Залуу Тэнүүн модон халбагаар дуулж, Туяа инээж байна."
+    }
+  },
+  {
+    "id": "photo_university_lab",
+    "kind": "photo",
+    "title": "University lab",
+    "visual": {
+      "assetId": "WORK-001",
+      "alt": "University lab",
+      "description": "Тэнүүн, Мөнх, ард нь Оргил."
+    }
+  },
+  {
+    "id": "photo_first_badge",
+    "kind": "photo",
+    "title": "First office badge",
+    "visual": {
+      "assetId": "WORK-003",
+      "alt": "First office badge",
+      "description": "Тэнүүн Tenkhleg-д орсон өдрийн гэр бүлийн зураг."
+    }
+  },
+  {
+    "id": "photo_whiteboard",
+    "kind": "photo",
+    "title": "Entity-resolution whiteboard",
+    "visual": {
+      "assetId": "GR-003",
+      "alt": "Entity-resolution whiteboard",
+      "description": "Холбоосын scoring бүдүүвч."
+    }
+  },
+  {
+    "id": "photo_cafe_exterior",
+    "kind": "photo",
+    "title": "Roadside café exterior",
+    "visual": {
+      "assetId": "F17-IMG-004",
+      "alt": "Roadside café exterior",
+      "description": "Маралын route-тэй давхцах timestamp."
+    }
+  },
+  {
+    "id": "photo_cafe_reflection",
+    "kind": "photo",
+    "title": "Café reflection",
+    "visual": {
+      "assetId": "REL-002",
+      "alt": "Café reflection",
+      "description": "Нүүр танигдахгүй; бугуйн жижиг сорви харагдана."
+    },
+    "discovery": {
+      "evidenceIds": [
+        "ev_f17_scar"
+      ]
+    }
+  },
+  {
+    "id": "photo_receipt",
+    "kind": "photo",
+    "title": "Two drinks",
+    "visual": {
+      "assetId": "F17-IMG-002",
+      "alt": "Two drinks",
+      "description": "Хоёр уух зүйл, кориандергүй нэг хоол."
+    }
+  },
+  {
+    "id": "photo_cabin",
+    "kind": "photo",
+    "title": "Cabin screenshot",
+    "visual": {
+      "assetId": "REL-005",
+      "alt": "Cabin screenshot",
+      "description": "Хүлэмжтэй жижиг модон байшингийн sketch."
+    }
+  },
+  {
+    "id": "photo_raspberry",
+    "kind": "photo",
+    "title": "Raspberry seedlings",
+    "visual": {
+      "assetId": "REL-006",
+      "alt": "Raspberry seedlings",
+      "description": "Зургаан бөөрөлзгөний суулгац."
+    }
+  },
+  {
+    "id": "photo_shelter_fragment",
+    "kind": "photo",
+    "title": "Shelter map fragment",
+    "visual": {
+      "assetId": "W47-002",
+      "alt": "Shelter map fragment",
+      "description": "Эхэндээ сэжигтэй, дараа нь хамгаалалтын logistics."
+    }
+  },
+  {
+    "id": "photo_black_ice",
+    "kind": "photo",
+    "title": "Black-ice road",
+    "visual": {
+      "assetId": "W47-001",
+      "alt": "Black-ice road",
+      "description": "Ослын өмнөх өвлийн аюултай зам."
+    }
+  },
+  {
+    "id": "photo_audit_screen",
+    "kind": "photo",
+    "title": "Deleted audit screen",
+    "visual": {
+      "assetId": "GR-005",
+      "alt": "Deleted audit screen",
+      "description": "WINTER-47 болон partial user code."
+    }
+  },
+  {
+    "id": "photo_tuya_drive",
+    "kind": "photo",
+    "title": "Туяа ба drive",
+    "visual": {
+      "assetId": "GR-002",
+      "alt": "Туяа ба drive",
+      "description": "Ширээн дээр encrypted drive харагдана."
+    }
+  },
+  {
+    "id": "photo_old_vehicle",
+    "kind": "photo",
+    "title": "Old vehicle",
+    "visual": {
+      "assetId": "DIS-001",
+      "alt": "Old vehicle",
+      "description": "Хожим escape vehicle гэж танигдана."
+    }
+  },
+  {
+    "id": "photo_safehouse",
+    "kind": "photo",
+    "title": "Empty wooden interior",
+    "visual": {
+      "assetId": "HOPE-001",
+      "alt": "Empty wooden interior",
+      "description": "EXIF арилгасан хэв маяг, байшингийн хэмжээ."
+    }
+  },
+  {
+    "id": "photo_filler_01",
+    "kind": "photo",
+    "title": "Ердийн зураг 1",
+    "visual": {
+      "assetId": "LIFE-001",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_02",
+    "kind": "photo",
+    "title": "Ердийн зураг 2",
+    "visual": {
+      "assetId": "LIFE-002",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_03",
+    "kind": "photo",
+    "title": "Ердийн зураг 3",
+    "visual": {
+      "assetId": "LIFE-003",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_04",
+    "kind": "photo",
+    "title": "Ердийн зураг 4",
+    "visual": {
+      "assetId": "LIFE-004",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_05",
+    "kind": "photo",
+    "title": "Ердийн зураг 5",
+    "visual": {
+      "assetId": "LIFE-005",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_06",
+    "kind": "photo",
+    "title": "Ердийн зураг 6",
+    "visual": {
+      "assetId": "LIFE-006",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_07",
+    "kind": "photo",
+    "title": "Ердийн зураг 7",
+    "visual": {
+      "assetId": "LIFE-007",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_08",
+    "kind": "photo",
+    "title": "Ердийн зураг 8",
+    "visual": {
+      "assetId": "LIFE-008",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_09",
+    "kind": "photo",
+    "title": "Ердийн зураг 9",
+    "visual": {
+      "assetId": "LIFE-009",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_10",
+    "kind": "photo",
+    "title": "Ердийн зураг 10",
+    "visual": {
+      "assetId": "LIFE-010",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_11",
+    "kind": "photo",
+    "title": "Ердийн зураг 11",
+    "visual": {
+      "assetId": "LIFE-011",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_12",
+    "kind": "photo",
+    "title": "Ердийн зураг 12",
+    "visual": {
+      "assetId": "LIFE-012",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_13",
+    "kind": "photo",
+    "title": "Ердийн зураг 13",
+    "visual": {
+      "assetId": "FAM-003",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_14",
+    "kind": "photo",
+    "title": "Ердийн зураг 14",
+    "visual": {
+      "assetId": "FAM-007",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_15",
+    "kind": "photo",
+    "title": "Ердийн зураг 15",
+    "visual": {
+      "assetId": "FAM-008",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_16",
+    "kind": "photo",
+    "title": "Ердийн зураг 16",
+    "visual": {
+      "assetId": "WORK-004",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_17",
+    "kind": "photo",
+    "title": "Ердийн зураг 17",
+    "visual": {
+      "assetId": "WORK-007",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_18",
+    "kind": "photo",
+    "title": "Ердийн зураг 18",
+    "visual": {
+      "assetId": "WORK-008",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_19",
+    "kind": "photo",
+    "title": "Ердийн зураг 19",
+    "visual": {
+      "assetId": "DEC-005",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  },
+  {
+    "id": "photo_filler_20",
+    "kind": "photo",
+    "title": "Ердийн зураг 20",
+    "visual": {
+      "assetId": "TEN-WALL-001",
+      "alt": "Тэнүүний утасны ердийн зураг",
+      "description": "Plot fact нэмэхгүй өдөр тутмын зураг."
+    }
+  }
+]

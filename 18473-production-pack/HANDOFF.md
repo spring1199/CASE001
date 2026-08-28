@@ -46,6 +46,8 @@ Reusable engine and UI code must not contain Case #001 answers. Debug labels, fi
 
 Authored records live under `content/cases/`. Zod schemas and fail-closed loaders validate them. Pure engine modules consume typed records; UI receives player-visible projections. Reusable phone and engine code must not import canon merely to simplify rendering. Later authored collections remain empty until their scheduled phases.
 
+For implemented Case #001 delivery, authored phone data and engine settlement remain server-only behind `/api/case-runtime`; the client requests a validated projection only after device unlock. S3/S4 binaries remain outside `public/` and resolve through the opaque, fact/ending-gated `/api/case-assets/[assetId]` route with uniform locked/missing responses. See `docs/decisions/0005-phase04-server-projections.md`.
+
 ## Safe inspection sequence
 
 Before changing anything:

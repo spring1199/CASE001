@@ -1,4 +1,14 @@
 import { z } from 'zod';
+import {
+  artifactRecordSchema,
+  browserRecordSchema,
+  callRecordSchema,
+  emailRecordSchema,
+  locationRecordSchema,
+  messageThreadRecordSchema,
+  noteRecordSchema,
+  photoRecordSchema,
+} from '@/game/schema/authored-artifact';
 
 const idSchema = z.string().min(1);
 const nonEmptyStringSchema = z.string().min(1);
@@ -247,6 +257,7 @@ export const graphNodeSchema = z.object({
   canonicalCharacterId: idSchema.optional(),
   identityRevealFact: idSchema.optional(),
   hiddenUntilFacts: z.array(idSchema).optional(),
+  hiddenUntilEndings: z.array(idSchema).optional(),
 }).strict().superRefine((node, context) => {
   if ((node.canonicalCharacterId === undefined) !== (node.identityRevealFact === undefined)) {
     context.addIssue({
@@ -300,20 +311,6 @@ export const graphRecordSchema = z.discriminatedUnion('recordType', [
 
 export type GraphRecord = z.infer<typeof graphRecordSchema>;
 
-export const deferredEmptyCollectionSchema = z.array(z.unknown()).superRefine(
-  (records, context) => {
-    if (records.length === 0) return;
-
-    context.addIssue({
-      code: 'custom',
-      path: [0],
-      message: 'source requires its later-phase schema before records can be loaded',
-    });
-  },
-).transform((): never[] => []);
-
-export type DeferredEmptyCollection = z.output<typeof deferredEmptyCollectionSchema>;
-
 export const caseBundleSchema = z.object({
   manifest: caseManifestSchema,
   characters: z.array(characterSchema),
@@ -326,14 +323,14 @@ export const caseBundleSchema = z.object({
   endings: z.array(endingSchema),
   graph: z.array(graphRecordSchema),
   timeline: z.array(timelineRecordSchema),
-  artifacts: deferredEmptyCollectionSchema,
-  browser: deferredEmptyCollectionSchema,
-  calls: deferredEmptyCollectionSchema,
-  emails: deferredEmptyCollectionSchema,
-  locations: deferredEmptyCollectionSchema,
-  messages: deferredEmptyCollectionSchema,
-  notes: deferredEmptyCollectionSchema,
-  photos: deferredEmptyCollectionSchema,
+  artifacts: z.array(artifactRecordSchema),
+  browser: z.array(browserRecordSchema),
+  calls: z.array(callRecordSchema),
+  emails: z.array(emailRecordSchema),
+  locations: z.array(locationRecordSchema),
+  messages: z.array(messageThreadRecordSchema),
+  notes: z.array(noteRecordSchema),
+  photos: z.array(photoRecordSchema),
 }).strict();
 
 export type CaseBundle = z.infer<typeof caseBundleSchema>;

@@ -1,1 +1,215 @@
-[]
+[
+  {
+    "recordType": "node",
+    "id": "node_tenuun",
+    "nodeType": "person",
+    "publicLabel": "TENUUN BATZORIG",
+    "canonicalCharacterId": "char_tenuun",
+    "identityRevealFact": "fact_18473_archive_open"
+  },
+  {
+    "recordType": "node",
+    "id": "node_f17",
+    "nodeType": "person",
+    "publicLabel": "F17",
+    "canonicalCharacterId": "char_maral",
+    "identityRevealFact": "fact_f17_is_maral"
+  },
+  {
+    "recordType": "node",
+    "id": "node_orgil",
+    "nodeType": "person",
+    "publicLabel": "ORGIL",
+    "canonicalCharacterId": "char_orgil",
+    "identityRevealFact": "fact_orgil_threat_context"
+  },
+  {
+    "recordType": "node",
+    "id": "node_munkh",
+    "nodeType": "person",
+    "publicLabel": "MUNKH",
+    "canonicalCharacterId": "char_munkh",
+    "identityRevealFact": "fact_munkh_reported"
+  },
+  {
+    "recordType": "node",
+    "id": "node_saruul",
+    "nodeType": "person",
+    "publicLabel": "SARUUL",
+    "canonicalCharacterId": "char_saruul",
+    "identityRevealFact": "fact_tenuun_decoy"
+  },
+  {
+    "recordType": "node",
+    "id": "node_bilguun",
+    "nodeType": "person",
+    "publicLabel": "BILGUUN",
+    "canonicalCharacterId": "char_bilguun",
+    "identityRevealFact": "fact_bilguun_device"
+  },
+  {
+    "recordType": "node",
+    "id": "node_phone",
+    "nodeType": "device",
+    "publicLabel": "DEVICE / POST-MISSING"
+  },
+  {
+    "recordType": "node",
+    "id": "node_shelter",
+    "nodeType": "location",
+    "publicLabel": "PROTECTED NETWORK"
+  },
+  {
+    "recordType": "node",
+    "id": "node_safehouse",
+    "nodeType": "location",
+    "publicLabel": "LOCATION: UNKNOWN",
+    "hiddenUntilFacts": [
+      "fact_tenuun_alive"
+    ]
+  },
+  {
+    "recordType": "node",
+    "id": "node_zero",
+    "nodeType": "account",
+    "publicLabel": "NODE: 0",
+    "hiddenUntilEndings": [
+      "ending_trace",
+      "ending_sever"
+    ]
+  },
+  {
+    "recordType": "edge",
+    "id": "edge_f17_identity",
+    "fromNodeId": "node_f17",
+    "toNodeId": "node_tenuun",
+    "label": "INC-18473",
+    "kind": "inferred",
+    "confidenceSources": [
+      {
+        "evidenceId": "ev_f17_edge",
+        "weight": 20
+      },
+      {
+        "evidenceId": "ev_f17_laugh",
+        "weight": 20
+      },
+      {
+        "evidenceId": "ev_f17_scar",
+        "weight": 20
+      },
+      {
+        "evidenceId": "ev_f17_punctuation",
+        "weight": 20
+      }
+    ],
+    "hiddenUntilFacts": [
+      "fact_18473_archive_open"
+    ]
+  },
+  {
+    "recordType": "edge",
+    "id": "edge_orgil_tenuun",
+    "fromNodeId": "node_orgil",
+    "toNodeId": "node_tenuun",
+    "label": "MENTOR / EMPLOYEE",
+    "kind": "observed",
+    "confidenceSources": [
+      {
+        "evidenceId": "ev_ceo_threat",
+        "weight": 50
+      },
+      {
+        "evidenceId": "ev_architecture_access",
+        "weight": 50
+      }
+    ]
+  },
+  {
+    "recordType": "edge",
+    "id": "edge_munkh_tenuun",
+    "fromNodeId": "node_munkh",
+    "toNodeId": "node_tenuun",
+    "label": "COLLEAGUE",
+    "kind": "observed",
+    "confidenceSources": [
+      {
+        "evidenceId": "ev_munkh_last_call",
+        "weight": 100
+      }
+    ]
+  },
+  {
+    "recordType": "edge",
+    "id": "edge_shelter",
+    "fromNodeId": "node_f17",
+    "toNodeId": "node_shelter",
+    "label": "WINTER-47",
+    "kind": "inferred",
+    "confidenceSources": [
+      {
+        "evidenceId": "ev_relationship_expansion",
+        "weight": 50
+      },
+      {
+        "evidenceId": "ev_relocation_harm",
+        "weight": 50
+      }
+    ],
+    "hiddenUntilFacts": [
+      "fact_f17_is_maral"
+    ]
+  },
+  {
+    "recordType": "edge",
+    "id": "edge_bilguun_device",
+    "fromNodeId": "node_bilguun",
+    "toNodeId": "node_phone",
+    "label": "DEVICE ACTIVATION",
+    "kind": "observed",
+    "confidenceSources": [
+      {
+        "evidenceId": "ev_bilguun_device",
+        "weight": 100
+      }
+    ],
+    "hiddenUntilFacts": [
+      "fact_bilguun_device"
+    ]
+  },
+  {
+    "recordType": "edge",
+    "id": "edge_tenuun_location",
+    "fromNodeId": "node_tenuun",
+    "toNodeId": "node_safehouse",
+    "label": "FINAL IDENTITY–LOCATION",
+    "kind": "inferred",
+    "confidenceSources": [
+      {
+        "evidenceId": "ev_cabin_plan",
+        "weight": 41
+      },
+      {
+        "evidenceId": "ev_decoy_topology",
+        "weight": 16
+      },
+      {
+        "evidenceId": "ev_live_signal",
+        "weight": 16
+      },
+      {
+        "evidenceId": "ev_safehouse_geometry",
+        "weight": 15
+      },
+      {
+        "evidenceId": "ev_graph_confidence",
+        "weight": 3
+      }
+    ],
+    "hiddenUntilFacts": [
+      "fact_tenuun_alive"
+    ],
+    "playerCanConfirm": true,
+    "playerCanSever": true
+  }
+]

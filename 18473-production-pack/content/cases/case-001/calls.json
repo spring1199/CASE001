@@ -1,1 +1,114 @@
-[]
+[
+  {
+    "id": "call_mother",
+    "kind": "call",
+    "title": "Ээж",
+    "subtitle": "02:11",
+    "body": "Ердийн гэр бүлийн яриа.",
+    "audio": {
+      "durationLabel": "02:11",
+      "transcript": "Ердийн гэр бүлийн яриа.",
+      "productionStatus": "scripted"
+    }
+  },
+  {
+    "id": "call_tuya",
+    "kind": "call",
+    "title": "Туяа",
+    "subtitle": "05:34",
+    "body": "Мөнгө болон ах дүүсийн тоглоом.",
+    "audio": {
+      "durationLabel": "05:34",
+      "transcript": "Мөнгө болон ах дүүсийн тоглоом.",
+      "productionStatus": "scripted"
+    }
+  },
+  {
+    "id": "call_munkh_last",
+    "kind": "call",
+    "title": "Мөнх",
+    "subtitle": "08:17",
+    "body": "MUNKH:\nЧи буцаад ир. Би Оргилтой ярьж чадна.\n\nTENUUN:\nАсуудал Оргил биш.\n\nMUNKH:\nТэгвэл юу юм?\n\nTENUUN:\nБидний хийсэн юм.\n\nMUNKH:\nБид хүнийг олдог систем хийсэн.\n\nTENUUN:\nТийм. Одоо хүнээс нуугдаж байгаа хүнийг ч олдог.\n\nMUNKH:\nТэгээд устгах уу?\n\nTENUUN:\nҮгүй. Тэр бас хүн авардаг.\n\nMUNKH:\nТэгвэл чи яг юу хүсээд байгаа юм?\n\nTENUUN:\nХэн нэгэн “ашиглаж чадна” гэдэг нь “ашиглах ёстой” гэсэн үг биш гэдгийг систем өөрөө сануулдаг болгох.",
+    "audio": {
+      "durationLabel": "08:17",
+      "transcript": "MUNKH:\nЧи буцаад ир. Би Оргилтой ярьж чадна.\n\nTENUUN:\nАсуудал Оргил биш.\n\nMUNKH:\nТэгвэл юу юм?\n\nTENUUN:\nБидний хийсэн юм.\n\nMUNKH:\nБид хүнийг олдог систем хийсэн.\n\nTENUUN:\nТийм. Одоо хүнээс нуугдаж байгаа хүнийг ч олдог.\n\nMUNKH:\nТэгээд устгах уу?\n\nTENUUN:\nҮгүй. Тэр бас хүн авардаг.\n\nMUNKH:\nТэгвэл чи яг юу хүсээд байгаа юм?\n\nTENUUN:\nХэн нэгэн “ашиглаж чадна” гэдэг нь “ашиглах ёстой” гэсэн үг биш гэдгийг систем өөрөө сануулдаг болгох.",
+      "productionStatus": "scripted"
+    }
+  },
+  {
+    "id": "call_orgil",
+    "kind": "call",
+    "title": "Оргил",
+    "subtitle": "03:49",
+    "body": "Халуун маргаан; аллагын нотолгоо биш.",
+    "audio": {
+      "durationLabel": "03:49",
+      "transcript": "Халуун маргаан; аллагын нотолгоо биш.",
+      "productionStatus": "scripted"
+    }
+  },
+  {
+    "id": "call_saruul",
+    "kind": "call",
+    "title": "Танихгүй prepaid",
+    "subtitle": "01:02",
+    "body": "Саруулын logistics.",
+    "audio": {
+      "durationLabel": "01:02",
+      "transcript": "Саруулын logistics.",
+      "productionStatus": "scripted"
+    }
+  },
+  {
+    "id": "call_18473_01",
+    "kind": "call",
+    "title": "18473",
+    "subtitle": "12:44",
+    "body": "CALL_18473_01 — 12m 44s\n\nENG_04:\nЗа, одоо refresh хийгээд хэлээрэй.\n\nUSER_6F21:\nХийлээ.\n\nENG_04:\nЮу харагдаж байна?\n\nUSER_6F21:\nТаны “түр засвар”-ын хамгийн сүүлийн хувилбар.\n\nENG_04:\nБи энэ ажлынхаа нэр хүндийг алдчихлаа.\n\nUSER_6F21:\nБайсан юм уу?\n\n[Maral laughs]\n\nENG_04:\n...Та сая инээсэн үү?\n\nUSER_6F21:\nҮгүй.\n\nENG_04:\nAudio log өөр зүйл хэлж байна.\n\nUSER_6F21:\nТэгвэл audio log-оо хаа.\n\nENG_04:\nEvidence устгаж болохгүй.\n\n[Maral laughs again]\n\nENG_04:\nЗа. Одоо бол бүр нотлох баримттай.",
+    "audio": {
+      "durationLabel": "12:44",
+      "transcript": "CALL_18473_01 — 12m 44s\n\nENG_04:\nЗа, одоо refresh хийгээд хэлээрэй.\n\nUSER_6F21:\nХийлээ.\n\nENG_04:\nЮу харагдаж байна?\n\nUSER_6F21:\nТаны “түр засвар”-ын хамгийн сүүлийн хувилбар.\n\nENG_04:\nБи энэ ажлынхаа нэр хүндийг алдчихлаа.\n\nUSER_6F21:\nБайсан юм уу?\n\n[Maral laughs]\n\nENG_04:\n...Та сая инээсэн үү?\n\nUSER_6F21:\nҮгүй.\n\nENG_04:\nAudio log өөр зүйл хэлж байна.\n\nUSER_6F21:\nТэгвэл audio log-оо хаа.\n\nENG_04:\nEvidence устгаж болохгүй.\n\n[Maral laughs again]\n\nENG_04:\nЗа. Одоо бол бүр нотлох баримттай.",
+      "productionStatus": "scripted"
+    }
+  },
+  {
+    "id": "call_18473_02",
+    "kind": "call",
+    "title": "18473",
+    "subtitle": "18:09",
+    "body": "CALL_18473_02 — 18m 09s\n\n[Technical portion omitted]\n\nUSER_6F21:\nТа ая humming хийгээд байна.\n\nENG_04:\nҮгүй.\n\nUSER_6F21:\nБи сонссон.\n\nENG_04:\nFan-ийн дуу.\n\nUSER_6F21:\nFan чинь дууны ая мэддэг юм байна.\n\nENG_04:\nМанай тоног төхөөрөмж сайн.",
+    "audio": {
+      "durationLabel": "18:09",
+      "transcript": "CALL_18473_02 — 18m 09s\n\n[Technical portion omitted]\n\nUSER_6F21:\nТа ая humming хийгээд байна.\n\nENG_04:\nҮгүй.\n\nUSER_6F21:\nБи сонссон.\n\nENG_04:\nFan-ийн дуу.\n\nUSER_6F21:\nFan чинь дууны ая мэддэг юм байна.\n\nENG_04:\nМанай тоног төхөөрөмж сайн.",
+      "productionStatus": "scripted"
+    }
+  },
+  {
+    "id": "call_18473_03",
+    "kind": "call",
+    "title": "18473",
+    "subtitle": "Сэргээгдсэн",
+    "body": "Purpose: post-final-choice grief/recontextualization. Must never provide explicit love confirmation.\n\nLength target: 2m 10s–3m 00s.\n\n[Old call. Low room noise. Maral laughs near beginning.]\n\nMARAL:\nТа багадаа яг ямар байсан юм?\n\nTENUUN:\nБи хэлсэн шүү дээ. Их ярьдаг.\n\nMARAL:\nҮгүй ээ. Тэр бол одоогийнхоос харьцуулсан хэмжүүр.\n\nTENUUN:\nЗа... гэртээ их дуу чимээтэй хүүхэд байсан байх.\n\nMARAL:\n“Байсан байх” гэж? Өөрийгөө санахгүй байна уу?\n\nTENUUN:\nСанана. Дуулдаг байсан.\n\nMARAL:\nАан. Тэгээд одоо яагаад дуулдаггүй юм?\n\nTENUUN:\nТом болсон.\n\nMARAL:\nТэгвэл жаахан жижгэр.\n\n[Maral laughs. Tenuun laughs quietly.]\n\nTENUUN:\nНэг өдөр хотын гадна гараад амьдарвал дуулж магадгүй.\n\nMARAL:\nТэр модон байшиндаа юу?\n\nTENUUN:\nТийм.\n\nMARAL:\nНохой?\n\nTENUUN:\nТийм.\n\nMARAL:\nХүлэмж?\n\nTENUUN:\nТийм.\n\nMARAL:\nҮхдэг гүзээлзгэнэ?\n\nTENUUN:\nҮгүй. Зассан.\n\nMARAL:\nЮугаар?\n\nTENUUN:\nБөөрөлзгөнө.\n\nMARAL:\nСайн байна.\n\n[Several seconds. Tenuun unconsciously hums.]\n\nMARAL:\nТа дахиад дуулж байна.\n\nTENUUN:\nБи дуулаагүй.\n\nMARAL:\nБи сонссон.\n\nTENUUN:\nFan.\n\nMARAL:\nFan чинь хотоос гарахыг хүсдэг юм байна.\n\n[Both laugh. Audio ends naturally, not dramatically.]\n\n---",
+    "audio": {
+      "durationLabel": "Сэргээгдсэн",
+      "transcript": "Purpose: post-final-choice grief/recontextualization. Must never provide explicit love confirmation.\n\nLength target: 2m 10s–3m 00s.\n\n[Old call. Low room noise. Maral laughs near beginning.]\n\nMARAL:\nТа багадаа яг ямар байсан юм?\n\nTENUUN:\nБи хэлсэн шүү дээ. Их ярьдаг.\n\nMARAL:\nҮгүй ээ. Тэр бол одоогийнхоос харьцуулсан хэмжүүр.\n\nTENUUN:\nЗа... гэртээ их дуу чимээтэй хүүхэд байсан байх.\n\nMARAL:\n“Байсан байх” гэж? Өөрийгөө санахгүй байна уу?\n\nTENUUN:\nСанана. Дуулдаг байсан.\n\nMARAL:\nАан. Тэгээд одоо яагаад дуулдаггүй юм?\n\nTENUUN:\nТом болсон.\n\nMARAL:\nТэгвэл жаахан жижгэр.\n\n[Maral laughs. Tenuun laughs quietly.]\n\nTENUUN:\nНэг өдөр хотын гадна гараад амьдарвал дуулж магадгүй.\n\nMARAL:\nТэр модон байшиндаа юу?\n\nTENUUN:\nТийм.\n\nMARAL:\nНохой?\n\nTENUUN:\nТийм.\n\nMARAL:\nХүлэмж?\n\nTENUUN:\nТийм.\n\nMARAL:\nҮхдэг гүзээлзгэнэ?\n\nTENUUN:\nҮгүй. Зассан.\n\nMARAL:\nЮугаар?\n\nTENUUN:\nБөөрөлзгөнө.\n\nMARAL:\nСайн байна.\n\n[Several seconds. Tenuun unconsciously hums.]\n\nMARAL:\nТа дахиад дуулж байна.\n\nTENUUN:\nБи дуулаагүй.\n\nMARAL:\nБи сонссон.\n\nTENUUN:\nFan.\n\nMARAL:\nFan чинь хотоос гарахыг хүсдэг юм байна.\n\n[Both laugh. Audio ends naturally, not dramatically.]\n\n---",
+      "productionStatus": "scripted"
+    },
+    "hiddenUntilEndings": [
+      "ending_trace",
+      "ending_sever"
+    ]
+  },
+  {
+    "id": "voice_maral_autonomy",
+    "kind": "call",
+    "title": "Марал · хуучин voice",
+    "subtitle": "00:19",
+    "body": "Миний өмнөөс битгий шийд.",
+    "audio": {
+      "durationLabel": "00:19",
+      "transcript": "Миний өмнөөс битгий шийд.",
+      "productionStatus": "scripted"
+    }
+  }
+]

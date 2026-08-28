@@ -1,1 +1,131 @@
-[]
+[
+  {
+    "recordType": "position",
+    "id": "tpos_1",
+    "title": "72 цагийн өмнө",
+    "order": 1
+  },
+  {
+    "recordType": "position",
+    "id": "tpos_2",
+    "title": "24 цагийн өмнө",
+    "order": 2
+  },
+  {
+    "recordType": "position",
+    "id": "tpos_3",
+    "title": "Алга болсон өдөр",
+    "order": 3
+  },
+  {
+    "recordType": "position",
+    "id": "tpos_4",
+    "title": "Алга болсны дараа",
+    "order": 4
+  },
+  {
+    "recordType": "position",
+    "id": "tpos_5",
+    "title": "Одоо",
+    "order": 5
+  },
+  {
+    "recordType": "event",
+    "id": "tev_drive_handoff",
+    "title": "Туяад encrypted drive өгсөн",
+    "acceptablePositionIds": [
+      "tpos_1"
+    ],
+    "requiredEvidenceIds": [
+      "ev_tuya_drive"
+    ]
+  },
+  {
+    "recordType": "event",
+    "id": "tev_vehicle",
+    "title": "Хуучин vehicle бэлдсэн",
+    "acceptablePositionIds": [
+      "tpos_1",
+      "tpos_2"
+    ],
+    "requiredEvidenceIds": [
+      "ev_vehicle_trace"
+    ]
+  },
+  {
+    "recordType": "event",
+    "id": "tev_saruul",
+    "title": "Саруултай decoy logistics тохирсон",
+    "acceptablePositionIds": [
+      "tpos_2"
+    ],
+    "requiredEvidenceIds": [
+      "ev_saruul_decoy"
+    ]
+  },
+  {
+    "recordType": "event",
+    "id": "tev_munkh_call",
+    "title": "Мөнхтэй сүүлчийн удаа ярьсан",
+    "acceptablePositionIds": [
+      "tpos_3"
+    ],
+    "requiredEvidenceIds": [
+      "ev_munkh_last_call"
+    ]
+  },
+  {
+    "recordType": "event",
+    "id": "tev_device",
+    "title": "Билгүүн төхөөрөмж асаасан",
+    "acceptablePositionIds": [
+      "tpos_4"
+    ],
+    "requiredEvidenceIds": [
+      "ev_device_hope2",
+      "ev_bilguun_device"
+    ]
+  },
+  {
+    "recordType": "event",
+    "id": "tev_audit",
+    "title": "Winter 47 attribution сэргэсэн",
+    "acceptablePositionIds": [
+      "tpos_4"
+    ],
+    "requiredEvidenceIds": [
+      "ev_winter47_operator"
+    ],
+    "hiddenUntilFacts": [
+      "fact_f17_is_maral"
+    ]
+  },
+  {
+    "recordType": "event",
+    "id": "tev_heartbeat",
+    "title": "True live signal ирсэн",
+    "acceptablePositionIds": [
+      "tpos_5"
+    ],
+    "requiredEvidenceIds": [
+      "ev_live_signal"
+    ],
+    "hiddenUntilFacts": [
+      "fact_tenuun_decoy"
+    ]
+  },
+  {
+    "recordType": "event",
+    "id": "tev_final_choice",
+    "title": "GRAPH 91% хүрсэн",
+    "acceptablePositionIds": [
+      "tpos_5"
+    ],
+    "requiredEvidenceIds": [
+      "ev_graph_confidence"
+    ],
+    "hiddenUntilFacts": [
+      "fact_tenuun_alive"
+    ]
+  }
+]
