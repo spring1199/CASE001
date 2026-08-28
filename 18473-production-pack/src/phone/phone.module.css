@@ -1983,6 +1983,12 @@
     background: var(--color-fill-strong);
   }
 
+  /* Acknowledging a reveal stays a quiet action, hovered or not. */
+  .presentationCard .primaryButton:hover {
+    background: var(--color-surface-pressed);
+    color: var(--color-text);
+  }
+
   .navButton:hover,
   .statusAction:hover,
   .tabButton:hover {

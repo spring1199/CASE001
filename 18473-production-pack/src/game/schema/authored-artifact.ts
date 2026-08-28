@@ -53,6 +53,7 @@ export const authoredDiscoverySchema = z.object({
 
 export const authoredMessageEntrySchema = z.object({
   id: idSchema,
+  authoringNote: textSchema.optional(),
   senderLabel: textSchema,
   direction: z.enum(['incoming', 'outgoing', 'system']),
   body: textSchema.optional(),
@@ -71,6 +72,12 @@ export const authoredMessageEntrySchema = z.object({
 
 const commonShape = {
   id: idSchema,
+  /**
+   * Writers' room metadata: emotional purpose, target length, the reason a record
+   * exists. It stays server-side and is never copied into a phone projection, so
+   * it must never be used to carry information the player needs.
+   */
+  authoringNote: textSchema.optional(),
   title: textSchema,
   collectionId: idSchema.optional(),
   groupLabel: textSchema.optional(),

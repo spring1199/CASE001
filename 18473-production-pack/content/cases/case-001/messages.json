@@ -3595,65 +3595,69 @@
     "id": "msg_18473_food",
     "kind": "message-thread",
     "title": "18473 · хоол",
-    "subtitle": "INC-18473 clue extract",
+    "subtitle": "Сэргээгдсэн",
     "messages": [
       {
         "id": "msg_18473_food_01",
         "senderLabel": "18473",
         "direction": "incoming",
         "body": "Кориандергүй байвал болно.",
-        "timestampLabel": "INC-18473 clue extract",
+        "timestampLabel": "Архив",
         "read": true
       }
-    ]
+    ],
+    "authoringNote": "INC-18473 clue extract"
   },
   {
     "id": "msg_18473_habit",
     "kind": "message-thread",
     "title": "18473 · зуршил",
-    "subtitle": "INC-18473 clue extract",
+    "subtitle": "Сэргээгдсэн",
     "messages": [
       {
         "id": "msg_18473_habit_01",
         "senderLabel": "18473",
         "direction": "incoming",
         "body": "Стресстэхдээ эрхий хуруугаа маажчихдаг.",
-        "timestampLabel": "INC-18473 clue extract",
+        "timestampLabel": "Архив",
         "read": true
       }
-    ]
+    ],
+    "authoringNote": "INC-18473 clue extract"
   },
   {
     "id": "msg_18473_style",
     "kind": "message-thread",
     "title": "18473 · бичлэг",
-    "subtitle": "INC-18473 clue extract",
+    "subtitle": "Сэргээгдсэн",
     "messages": [
       {
         "id": "msg_18473_style_01",
         "senderLabel": "18473",
         "direction": "incoming",
         "body": "Богино. Тодорхой.",
-        "timestampLabel": "INC-18473 clue extract",
+        "timestampLabel": "Архив",
         "read": true
       }
-    ]
+    ],
+    "authoringNote": "INC-18473 clue extract"
   },
   {
     "id": "msg_18473_work_hint",
     "kind": "message-thread",
     "title": "18473 · ажил",
-    "subtitle": "INC-18473 clue extract",
+    "subtitle": "Сэргээгдсэн",
     "messages": [
       {
         "id": "msg_18473_work_hint_01",
         "senderLabel": "18473",
         "direction": "incoming",
         "body": "Яамны гадаад зочдын хөтөлбөр сунжирлаа.",
-        "timestampLabel": "INC-18473 clue extract",
+        "timestampLabel": "Архив",
         "read": true
       }
-    ]
+    ],
+    "authoringNote": "INC-18473 clue extract"
   },
   {
     "id": "msg_delivery",
