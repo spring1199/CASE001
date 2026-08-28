@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import { AudioNote } from '@/phone/components/AudioNote';
 import { MetadataDialog } from '@/phone/components/MetadataDialog';
@@ -21,6 +21,12 @@ const MESSAGE_DIRECTION_LABELS = {
   outgoing: 'Илгээсэн',
   system: 'Системийн',
 } as const;
+
+const MESSAGE_WINDOW_SIZE = 60;
+
+export function nextMessageWindowSize(total: number, current: number): number {
+  return Math.min(total, current + MESSAGE_WINDOW_SIZE);
+}
 
 type VisualArtifactProps = Readonly<{
   visualId: string;
@@ -73,6 +79,20 @@ function BodyText({ body }: Readonly<{ body: string }>) {
 
 export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [messageWindow, setMessageWindow] = useState({
+    itemId: item.id,
+    size: MESSAGE_WINDOW_SIZE,
+  });
+  const messageWindowSize =
+    messageWindow.itemId === item.id ? messageWindow.size : MESSAGE_WINDOW_SIZE;
+  const messageWindowStart =
+    item.kind === 'message-thread'
+      ? Math.max(0, item.messages.length - messageWindowSize)
+      : 0;
+  const visibleMessages =
+    item.kind === 'message-thread' ? item.messages.slice(messageWindowStart) : [];
+  const earlierMessageCount = messageWindowStart;
+  const nextMessageChunkSize = Math.min(MESSAGE_WINDOW_SIZE, earlierMessageCount);
 
   return (
     <article aria-labelledby={`${item.id}-title`} className={styles.artifactDetail}>
@@ -85,35 +105,63 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
       </header>
 
       {item.kind === 'message-thread' ? (
-        <ol aria-label="Зурвасын түүх" className={styles.messageList}>
-          {item.messages.map((message) => (
-            <li key={message.id} className={styles.messageListItem}>
-              <article
-                data-message-direction={message.direction}
-                aria-label={`${MESSAGE_DIRECTION_LABELS[message.direction]} зурвас · ${message.senderLabel} · ${message.timestampLabel}`}
-                className={styles.messageBubble}
+        <>
+          {earlierMessageCount > 0 ? (
+            <div className={styles.messageWindowControl}>
+              <button
+                type="button"
+                aria-controls={`${item.id}-message-list`}
+                className={styles.secondaryButton}
+                data-action-label
+                onClick={() => {
+                  setMessageWindow({
+                    itemId: item.id,
+                    size: nextMessageWindowSize(item.messages.length, messageWindowSize),
+                  });
+                }}
               >
-                <header className={styles.messageHeader}>
-                  <strong className={styles.messageSender}>{message.senderLabel}</strong>
-                  <span className={styles.directionLabel}>{MESSAGE_DIRECTION_LABELS[message.direction]}</span>
-                  <time className={styles.timestamp}>{message.timestampLabel}</time>
-                  {!message.read ? <span className={styles.unreadMarker}>Уншаагүй</span> : null}
-                </header>
-                {message.body ? <BodyText body={message.body} /> : null}
-                {message.visual ? (
-                  <VisualArtifact
-                    visualId={message.id}
-                    title={`${message.senderLabel} · ${message.timestampLabel}`}
-                    visual={message.visual}
-                  />
-                ) : null}
-                {message.audio ? (
-                  <AudioNote audio={message.audio} label={`${message.senderLabel} · Дуут зурвас`} />
-                ) : null}
-              </article>
-            </li>
-          ))}
-        </ol>
+                Өмнөх {nextMessageChunkSize} зурвасыг харуулах
+              </button>
+              <span className={styles.messageWindowSummary}>
+                {item.messages.length}-аас сүүлийн {visibleMessages.length}
+              </span>
+            </div>
+          ) : null}
+          <ol
+            id={`${item.id}-message-list`}
+            aria-label="Зурвасын түүх"
+            className={styles.messageList}
+            data-message-window-size={visibleMessages.length}
+          >
+            {visibleMessages.map((message) => (
+              <li key={message.id} className={styles.messageListItem}>
+                <article
+                  data-message-direction={message.direction}
+                  aria-label={`${MESSAGE_DIRECTION_LABELS[message.direction]} зурвас · ${message.senderLabel} · ${message.timestampLabel}`}
+                  className={styles.messageBubble}
+                >
+                  <header className={styles.messageHeader}>
+                    <strong className={styles.messageSender}>{message.senderLabel}</strong>
+                    <span className={styles.directionLabel}>{MESSAGE_DIRECTION_LABELS[message.direction]}</span>
+                    <time className={styles.timestamp}>{message.timestampLabel}</time>
+                    {!message.read ? <span className={styles.unreadMarker}>Уншаагүй</span> : null}
+                  </header>
+                  {message.body ? <BodyText body={message.body} /> : null}
+                  {message.visual ? (
+                    <VisualArtifact
+                      visualId={message.id}
+                      title={`${message.senderLabel} · ${message.timestampLabel}`}
+                      visual={message.visual}
+                    />
+                  ) : null}
+                  {message.audio ? (
+                    <AudioNote audio={message.audio} label={`${message.senderLabel} · Дуут зурвас`} />
+                  ) : null}
+                </article>
+              </li>
+            ))}
+          </ol>
+        </>
       ) : (
         <>
           {item.body ? <BodyText body={item.body} /> : null}

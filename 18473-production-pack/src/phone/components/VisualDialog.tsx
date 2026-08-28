@@ -7,11 +7,16 @@ import styles from '@/phone/phone.module.css';
 type VisualMediaProps = Readonly<{
   visual: DeepReadonly<PhoneVisual>;
   className?: string;
+  loading?: 'eager' | 'lazy';
+  sizes?: string;
 }>;
 
-export function VisualMedia({ visual, className }: VisualMediaProps) {
+export function VisualMedia({ visual, className, loading, sizes }: VisualMediaProps) {
   const aspectRatio =
     visual.width && visual.height ? `${visual.width} / ${visual.height}` : undefined;
+  const requiresDirectDelivery =
+    visual.src?.startsWith('data:') === true
+    || visual.src?.startsWith('/api/case-assets/') === true;
 
   return visual.src ? (
     <Image
@@ -19,18 +24,20 @@ export function VisualMedia({ visual, className }: VisualMediaProps) {
       alt={visual.alt}
       width={visual.width ?? 1}
       height={visual.height ?? 1}
-      unoptimized
+      loading={loading}
+      sizes={sizes}
+      unoptimized={requiresDirectDelivery}
       className={[styles.visualMedia, className].filter(Boolean).join(' ')}
     />
   ) : (
-    <div
+    <span
       role="img"
       aria-label={visual.alt}
       style={{ aspectRatio }}
       className={[styles.visualPlaceholder, className].filter(Boolean).join(' ')}
     >
       {visual.alt}
-    </div>
+    </span>
   );
 }
 

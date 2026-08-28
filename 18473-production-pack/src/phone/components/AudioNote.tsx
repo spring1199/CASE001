@@ -1,3 +1,5 @@
+import styles from '@/phone/phone.module.css';
+
 type AudioNoteProps = Readonly<{
   audio: Readonly<{
     src?: string;
@@ -9,12 +11,20 @@ type AudioNoteProps = Readonly<{
 }>;
 
 export function AudioNote({ audio, label = 'Дуут тэмдэглэл' }: AudioNoteProps) {
+  const hasReadyMaster = audio.productionStatus === 'ready' && audio.src !== undefined;
+
   return (
-    <figure className={styles.audioFigure}>
+    <figure
+      className={styles.audioFigure}
+      data-audio-production-status={audio.productionStatus}
+    >
       <figcaption className={styles.audioCaption}>
-        {label} · {audio.durationLabel}
+        <span>{label} · {audio.durationLabel}</span>
+        <span className={styles.productionStatus}>
+          {hasReadyMaster ? 'Тоглуулахад бэлэн' : 'Тайлал бэлэн'}
+        </span>
       </figcaption>
-      {audio.src === undefined ? (
+      {!hasReadyMaster ? (
         <p role="status">Аудио мастер ороогүй · продакшны тайлал бэлэн</p>
       ) : (
         <audio controls preload="metadata" aria-label={label} className={styles.audioControl}>
@@ -29,4 +39,3 @@ export function AudioNote({ audio, label = 'Дуут тэмдэглэл' }: Audi
     </figure>
   );
 }
-import styles from '@/phone/phone.module.css';

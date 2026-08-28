@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { VisualMedia } from '@/phone/components/VisualDialog';
 import type { DeepReadonly, PhoneAppDescriptor, PhoneItem } from '@/phone/data/schema';
 import styles from '@/phone/phone.module.css';
 
@@ -52,13 +53,25 @@ function PhoneItemList({ appId, items, label, galleryLayout, onOpenItem }: Phone
             onClick={() => onOpenItem(item)}
             className={styles.listButton}
           >
+            {galleryLayout && item.visual ? (
+              <span data-gallery-thumbnail className={styles.galleryThumbnail}>
+                <VisualMedia
+                  visual={item.visual}
+                  className={styles.galleryThumbnailMedia}
+                  loading="lazy"
+                  sizes="(min-width: 48rem) 9rem, (min-width: 30rem) 30vw, 44vw"
+                />
+              </span>
+            ) : null}
             <strong className={styles.itemTitle}>{item.title}</strong>
             {item.subtitle ? <span className={styles.itemSubtitle}>{item.subtitle}</span> : null}
             {item.timestampLabel ? <time className={styles.timestamp}>{item.timestampLabel}</time> : null}
             {item.kind === 'message-thread' && item.messages.some((message) => !message.read) ? (
               <span className={styles.unreadMarker}>Уншаагүй</span>
             ) : null}
-            {item.visual ? <span className={styles.visualAlt}>{item.visual.alt}</span> : null}
+            {item.visual && !galleryLayout ? (
+              <span className={styles.visualAlt}>{item.visual.alt}</span>
+            ) : null}
           </button>
         </li>
       ))}
