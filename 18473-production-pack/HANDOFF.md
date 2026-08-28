@@ -48,6 +48,8 @@ Authored records live under `content/cases/`. Zod schemas and fail-closed loader
 
 For implemented Case #001 delivery, authored phone data and engine settlement remain server-only behind `/api/case-runtime`; the client requests a validated projection only after device unlock. S3/S4 binaries remain outside `public/` and resolve through the opaque, fact/ending-gated `/api/case-assets/[assetId]` route with uniform locked/missing responses. See `docs/decisions/0005-phase04-server-projections.md`.
 
+Phase 05 extends that same boundary without moving canon client-side: `/api/case-runtime` accepts only the strict player-action allowlist and returns player-visible phone plus `CaseView` projections. Client presentation derives from already-visible evidence, deductions, GRAPH state, and narrow ending-gated roles. Narrative progression stays in the player save; audio preferences and the strict versioned presentation FIFO are separate local checkpoints. The FIFO stores only immutable already-projected visible records so reload cannot reveal hidden authoring data or collapse historical GRAPH beats.
+
 ## Safe inspection sequence
 
 Before changing anything:

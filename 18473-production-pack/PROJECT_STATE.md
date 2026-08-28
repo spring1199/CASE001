@@ -6,136 +6,196 @@
 
 ## Current phase
 
-Phase 04 — Case #001 Content: completed, approved, and merged into `main` through PR #5. Phase 05 is the current next phase; its implementation exists on `codex/phase-05-polish` and must be restacked onto this merged main state before technical acceptance or review.
+Phase 05 — Audio / Visual / Emotional Polish: implementation has been restacked onto the approved merged Phase 04 `main` state on `codex/phase-05-polish`. Fresh post-restack technical validation is in progress, so Phase 05 acceptance is not yet declared.
 
 ## Last completed and approved phase
 
-Phase 04 — Case #001 Content, approved and merged through PR #5 at merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`.
+Phase 04 — Case #001 Content is complete, validated, approved, and merged through PR #5. Its merge commit is `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`; the post-merge continuity refresh brings approved `main` to `95891eed0214258568b2a919b24912d1c2c1085b`.
 
 ## Current active branch
 
-`main`
+`codex/phase-05-polish`
 
 ## Latest approved commit hash
 
-`caf1acdddea1a2e545256a9ec5fc439cc1b238a6` is the approved Phase 04 merge commit on `main`. A state-only post-merge refresh follows because a commit cannot contain its own hash.
+`95891eed0214258568b2a919b24912d1c2c1085b` on `main`, containing approved Phase 04 merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6` and its state-only refresh.
+
+## Restacked branch boundary
+
+- Approved Phase 05 base: `main` at `95891eed0214258568b2a919b24912d1c2c1085b`.
+- Former stacked boundary: approved Phase 04 branch head `455c79882f61ca06ed14d1d2ffe31688e2aca772`.
+- The 20 Phase 05-specific commits after that former boundary were replayed onto approved `main`; Phase 04 history is present only through the merged main ancestry and is not duplicated.
+- The original Phase 05 head is preserved locally as `codex/phase-05-pre-restack-49f6b3c` until post-restack verification is complete.
+- Phase 05 remains unmerged and must not be merged before the full human playtest and explicit approval.
 
 ## Current task implementation commit
 
-`eb1ce6db8cfc085fde8688485d72d6e95af43e1f` is the final Phase 04 implementation commit, `455c79882f61ca06ed14d1d2ffe31688e2aca772` is the approved Phase 04 branch head, and `caf1acdddea1a2e545256a9ec5fc439cc1b238a6` is the Phase 04 merge commit.
+`1dbab6bba9ffe1b12acd0453567d6d2313097e92` is the restacked Phase 05 implementation/test commit before this state-only continuity refresh. It corresponds to pre-restack commit `0c4085c64c4e32baae6d8da60798b29dce9580ed`. The final branch HEAD is the subsequent state-only commit because a commit cannot contain its own hash.
 
 ## Current implementation status
 
-Phase 04 converts the corrected `18473-PHASE04-PRODUCTION-PACK-v1.0.1-FINAL` authored source into strict, indexed, data-driven Case #001 content. It adds eight Phase 04 authored collection schemas and referential validation; projects the Case #001 phone through all eight Phase 02 apps; resolves the 21-item Phase 03 progression debt to zero; implements F17, Winter 47, Hope #1/#2/#3, the 41→57→73→88→91 GRAPH confidence path, TRACE/SEVER, and post-ending NODE: 0 gates; and marks `progressionComplete: true`.
+Phase 05 technical and presentation implementation is complete. The experience now includes the server-projected investigation workbench, deterministic and durable reveal presentation, persisted audio mixing, restrained non-dialogue sound, transcript-safe authored audio handling, responsive phone/app polish, performance bounds, accessible modal pacing, and a persistable ending sequence.
 
-Authored Case #001 and engine data remain server-only. The client requests a validated player-visible projection from `/api/case-runtime` only after device unlock. S3/S4 binaries remain outside `public/` and are served by the uniform 404-gated `/api/case-assets/[assetId]` route. ADR 0005 records this boundary.
+Acceptance remains pending only because this host cannot execute the required browser and external-font portions of the repository matrix. Do not describe Phase 05 as fully accepted until those commands pass in an environment with Chromium launch permission and Google Fonts access, or after an explicitly approved self-hosted-font change.
 
 ## Completed milestones
 
-- Verified all 40 corrected production-pack checksums and confirmed `content/authored/CASE001_AUTHORED_CONTENT_v1.0.md` is the sole authoritative authored-content source.
-- Reconciled the corrected pack against repository canon without changing narrative canon.
-- Added strict schemas, duplicate checks, cross-source references, and metadata for all eight authored phone collections.
-- Integrated 118 authored records: 12 artifacts/files, 16 browser records, 9 calls/audio scripts, 4 emails, 3 locations, 36 message threads containing 471 messages, 3 notes, and 35 gallery records.
-- Integrated 54 evidence records, 17 deductions (including 2 contradictions), 12 objectives, 5 locks, 5 triggers, 8 timeline events plus 5 positions, and 10 GRAPH nodes plus 6 edges.
-- Verified multiple discovery orders, repeated events, deterministic replay, persistence, cycle freedom, no soft locks, and zero progression debt.
-- Generated 79 visual masters, derived 2 approved crops, retained 4 UI DATA assets as native UI, and integrated all 85 registry entries. Runtime delivery contains 57 public S0–S2 and 24 gated S3–S4 binaries; every binary has dimensions and SHA-256 in `generation-ledger.json`.
-- Added server-projected authored phone delivery, gated asset route coverage, client-bundle leak scanning, and production Case #001 Playwright flows.
-- Preserved all approved audio scripts/transcripts and playback wiring. No fake voice recording was created; unavailable audio is explicitly `scripted` and makes no broken media request.
+- Completed the server-projected investigation workspace and strict runtime action boundary.
+- Completed deterministic reveal selection, versioned durable FIFO pacing, modal focus management, and ending-stage presentation.
+- Completed the lazy audio director, persisted mixer, ambience/ducking lifecycle, and scripted transcript fallback.
+- Completed phone/app/gallery/message/GRAPH/timeline/ending visual polish, responsive performance bounds, and accessibility hardening.
+- Completed all Phase 05 unit, content, continuity, progression, spoiler, and Hallmark source gates.
+- Preserved Phase 04 canon, all required visual assets, `progressionComplete = true`, and progression debt = 0.
 
 ## Current task status
 
-Phase 04 is complete, approved, and merged into `main`. `progressionComplete = true`, progression debt is 0, and all required visual assets are integrated. Phase 05 is implemented on a separate branch but remains unmerged and must be restacked onto this main state. Full human story/pacing playthrough testing is intentionally pending until after Phase 05 technical validation. Phase 06 has not started.
+Phase 05 implementation is restacked on approved `main`. Fresh full validation, including the formerly blocked browser and normal-build gates, is pending. Phase 05 is not merged, human playtesting is pending, and Phase 06 has not started.
+
+## Polish systems implemented
+
+- Added Phone / Investigation top-level surfaces with objectives, discovered evidence, deductions, timeline, accessible DOM GRAPH, final choice, and ending aftermath.
+- Added a strict `/api/case-runtime` action allowlist with fail-closed, player-visible `CaseView` projection; reusable client code still imports no authored Case #001 seed.
+- Added serialized transactional runtime mutations, pre-save durability, operation-scoped retries, focus handoff, and save/load-safe ending presentation checkpoints.
+- Added deterministic semantic reveal selection for Hope #1/#2/#3, F17, Winter 47, Tenuun decoy, GRAPH changes, ending, and post-credit beats without hardcoded Case #001 answer IDs or narrative text in reusable UI.
+- Added a strict version-2 persistent FIFO reveal queue containing only immutable already-projected visible records. Historical GRAPH confidence/status beats survive acknowledgement and reload without collapsing to the latest value.
+- Added focused modal reveal presentation with inert background, tab containment, focus restoration, explicit continuation, reduced-motion crossfade, and mutation blocking while a reveal is active.
+- Added explicit ending stages: decision result → final-call/raspberry aftermath → closure → post-credit NODE: 0.
+
+## Audio status
+
+- Implemented a lazy Web Audio director for restrained interface, discovery, GRAPH, reveal, and ending cues plus opt-in generated ambience.
+- AudioContext is created/resumed only from a user gesture; hidden documents suspend audio and unmount disposes the graph.
+- Added versioned persisted master, ambience, interface, and reveal volume categories; mute and ambience toggles; gain clamping; duck/release rules for real native audio playback.
+- Scripted authored audio never emits or requests a media element, but always exposes its approved transcript and production status.
+- Final CALL_18473_03 and the raspberry aftermath are delivered only from ending-gated server projections using narrow allowlisted presentation roles.
+
+## Voice-master status
+
+Production-quality voice masters remain unavailable and were not fabricated. All nine approved scripts/transcripts remain canon-faithful, including the Maral laugh motif, Tenuun humming/singing motif, raspberry callback, and romantic ambiguity. Ready-audio replacement wiring and ducking are production-ready.
+
+## Visual polish status
+
+- Preserved the established Hallmark Workbench / Halo language, dark amber-anchored palette, typography intent, spacing scale, and restrained utility tone.
+- Polished lock/home, all eight phone apps, gallery, zoom/dialogs, metadata, messages, mail, browser, notes/files, calls/audio, evidence/deductions, timeline, GRAPH, reveal layers, and endings.
+- Added responsive safe-area handling, stable intrinsic gallery sizing, lazy responsive thumbnails, consistent hierarchy, 44 px controls, visible focus, and non-wrapping action labels.
+- All Phase 04 required visual assets remain integrated; no narrative image or canon truth was replaced.
+
+## Emotional pacing status
+
+- Presentation timing is deterministic and state-driven, never a long real-world wait.
+- Major reveals use explicit player acknowledgement and persisted checkpoints.
+- Reduced motion collapses every beat to at most 150 ms while retaining full text and state feedback.
+- F17 remains before the Winter 47 operator reveal; Hope #2 remains a false positive; Hope #3 remains genuine; Tenuun and Winter 47 remain morally ambiguous.
+- TRACE and SEVER remain a value conflict without GOOD/BAD labels; SEVER keeps exact location UNKNOWN; NODE: 0 remains post-credit only.
+
+## Performance status
+
+- Gallery thumbnails use intrinsic dimensions, responsive sizes, and lazy loading while private/data assets keep direct spoiler-safe delivery.
+- Message threads initially render the newest 60 messages, expand earlier content in 60-message chunks, and preserve chronological DOM order.
+- Long records use `content-visibility` where safe; GRAPH remains a small accessible DOM representation; no canvas, WebGL, animation dependency, or production dependency was added.
+- Audio and ambience are lazy, generated only after opt-in, and fully released on stop/dispose.
+
+## Accessibility status
+
+- Keyboard-operable Phone / Investigation tabs, workbench actions, native timeline controls, audio mixer, transcripts, and ending sequence.
+- Visible focus, 44 px minimum targets, modal reveal focus containment/restoration, semantic lists/regions/status, safe areas, contrast tokens, and text equivalents for every audio/visual beat.
+- Audio-disabled and reduced-motion play preserve the complete investigation and emotional information.
 
 ## Validation and test results
 
-Fresh Phase 04 pre-merge verification on 2026-08-28:
+Validation performed on 2026-08-28 from implementation commit `0c4085c64c4e32baae6d8da60798b29dce9580ed`:
 
-- Corrected production pack: 40/40 SHA-256 entries verified before branch creation.
-- Pack validation: passed, 154 unique authored IDs checked.
-- Continuity validation: passed, 4 files and 21 required state fields checked.
+- Asset rebuild: passed; 81 Case #001 runtime assets reproduced.
+- Pack validation: passed; 154 unique authored IDs checked.
+- Continuity validation before this state refresh: passed; 4 files and 21 fields checked.
 - Continuity tests: 8/8 passed.
 - Lint: passed with zero warnings.
 - Strict TypeScript: passed.
-- Unit tests: 301/301 passed across 25 files.
-- Playwright: 14/14 passed, including initial-client protected-content scanning, deferred projection, uniform hidden-record rejection, and S3/S4 public-path leakage checks.
-- Production build: passed with no warnings; `/` is static and both case APIs are dynamic server routes.
-- Asset production: 81/81 runtime binaries reproduced from source masters; ledger hashes and dimensions verified.
-- Progression analyzer: 21 debt items before Phase 04, 0 after; no dependency cycles, unreachable progression, or soft locks.
-- Security audit: 0 vulnerabilities; dependency versions were unchanged.
-- Protected-name/spoiler/asset scans: passed; representative secret facts, ending IDs, final call content, S3/S4 filenames, and Phase 05 implementation files are absent from initial browser delivery/public assets.
-
-## Open tasks
-
-- Restack `codex/phase-05-polish` onto the latest approved `main` state without duplicating Phase 04 history.
-- Rerun the complete Phase 05 validation matrix, including browser-backed Playwright and the normal production build.
-- Keep Phase 05 unmerged pending human playtest and explicit approval.
+- Unit/content/component tests: 381/381 passed across 32 files using Vitest's runner config loader because sandbox parent traversal blocks the default bundled loader.
+- Progression: restored a deep F17 checkpoint, completed all 17 deductions from the restored state, exposed both endings, selected SEVER, retained `exactLocationRevealed = false`, `progressionComplete = true`, and progression debt = 0.
+- Hallmark source contract: passed; P5 H5 E5 S5 R5 V4. Balanced CSS parsing enforces root-only color/font tokens, opacity/transform-only authored motion, complete reduced-motion mappings, 44 px targets, and single-line clickable labels.
+- Playwright discovery: passed; all 22 tests load.
+- Playwright browser execution: blocked before application assertions because this managed host rejects Chromium process launch with `browserType.launch: spawn EPERM`. The in-app browser also denied localhost access. One source-only E2E passed; 21 browser-backed cases did not execute and are not claimed green.
+- Production compilation: webpack production build passed fully (compile, TypeScript, page generation, trace collection) using Next's local mocked Google-font response. Standard `npm run build` reached compilation but failed only because this host cannot fetch Onest and IBM Plex Mono from Google Fonts. Typography was not silently substituted or changed.
+- Security audit: dependency manifests were unchanged, so audit is not required by the repository protocol. An attempted `npm audit --audit-level=high` could not reach the npm advisory endpoint.
+- Spoiler/asset protection: unit/route/source scans passed for initial authored/workbench semantics, ending roles, S3/S4 filenames, public assets, final-call delivery, and strict projected-record storage.
 
 ## Known limitations
 
-- Voice binaries were not supplied and audio generation was outside the available production capability. Nine approved call/audio records are delivered as production-ready scripts/transcripts with `scripted` status; ready-audio UI wiring remains intact and no unrelated placeholder voice is used.
-- Generated imagery received manifest-driven and representative manual visual QA, but human art-direction review before release is still appropriate.
-- Physical notched-device testing remains useful beyond Chromium safe-area coverage.
+- Required Playwright browser execution must be rerun where the installed Chromium executable may launch.
+- Standard Turbopack production build must be rerun with Google Fonts access, or Onest/IBM Plex Mono must be self-hosted only after explicit approval of that visual/asset change. Official font download permission was denied on this host; no workaround or substitute font was committed.
+- Full human 2–3 hour story/pacing playthrough is intentionally pending until after Phase 05 technical acceptance. No human story/pacing approval is claimed.
+- Physical notched-device testing and final production voice casting/mixing remain future release work.
+
+## Open tasks
+
+- Rerun all 22 Playwright tests where Chromium process launch is permitted.
+- Rerun standard `npm run build` with Google Fonts access, or obtain explicit approval to self-host the approved Onest/IBM Plex Mono binaries.
+- Complete the full post-restack validation matrix and update this state with fresh results.
+- Update the already-pushed Phase 05 branch with a lease-protected history rewrite after verification.
+- Complete the full human playthrough before any Phase 06 authorization.
 
 ## Known technical risks
 
-- The local-first single-player client sends its validated save state to the server projection endpoint, and gated asset cookies mirror that state. This prevents accidental/static/network preloading but is not an anti-tamper entitlement system; production account/server-session hardening is deferred.
-- Source masters add approximately 157 MB and optimized runtime derivatives approximately 25 MB to the repository.
-- Server projection is monotone and applies returned changes through the existing Zustand action surface; future non-monotone gameplay state would need an explicit server-authoritative replacement protocol.
-- Next.js generated files should continue to be checked after production builds, although the final Phase 04 build produced no unintended diff.
+- Local-first save state and gated cookies prevent accidental/static/network preloading but are not an anti-tamper account/session entitlement system.
+- Presentation checkpoints are separate from narrative progression and migrate v1 metadata to strict v2. Unreconstructable legacy ID-only pending beats are safely dropped rather than replayed incorrectly.
+- Google-hosted build-time fonts remain an external build dependency until an approved self-hosting change is made.
 
 ## Known narrative risks
 
-- F17 remains intentionally inferable through multiple independent clue families; future polish must not turn any single clue or image into conclusive proof.
-- Generated recurring-character scenes may show modest photographic variation; future visual replacement must preserve the approved anchor identities and clue subtlety.
-- The final recovered call strongly implies intimacy but does not prove romantic love; audio performance must preserve that ambiguity.
-- Winter 47 must retain both the saved life and shelter-network harm without GOOD/BAD labeling.
+- F17 remains inferable from multiple clue families; polish must not make a single clue conclusive.
+- The final recovered call implies intimacy but does not prove romantic love.
+- Winter 47 and Tenuun must retain moral ambiguity, and Hope #2 must remain visibly false rather than becoming another survival confirmation.
 
 ## Unresolved decisions
 
-- Final voice casting, recording, mix, and audio-master asset IDs belong to a separately authorized later phase.
-- Production hosting must decide whether local single-player state is sufficient or whether signed server sessions are required for anti-tamper enforcement.
-- No Phase 04 canon or progression decision remains unresolved.
+- Whether production will keep Google-hosted build-time fonts or explicitly approve self-hosted Onest/IBM Plex Mono assets.
+- Final voice casting, recording, mastering, and replacement asset IDs.
+- Whether production hosting requires signed server sessions beyond the current local-first spoiler-delivery boundary.
+
+No narrative canon, progression, reveal-order, or ending-truth decision is unresolved.
 
 ## Current spoiler/reveal gates
 
-- F17 = Maral and Maral = unauthorized Winter 47 operator remain separate reveals; four independent clue families plus archive access gate the first.
-- Winter 47 preserves the life-saved and collateral-harm truths without moral scoring.
-- Hope #1 is ambiguous, Hope #2 is Bilguun's false-positive device activity, and Hope #3 genuinely confirms Tenuun is alive.
-- TRACE confirms the final edge and can reveal exact location only at the final authored gate. SEVER severs the edge and never reveals exact location; status remains UNKNOWN.
-- NODE: 0 appears only after a completed ending.
-- Initial HTML/JavaScript contains only the public case summary; authored phone projections arrive after device unlock, while hidden records and locked asset paths remain absent.
+- F17 = Maral remains a separate, earlier reveal from Maral = unauthorized Winter 47 operator.
+- Hope #1 remains ambiguous, Hope #2 resolves to Bilguun's false-positive device activity, and only Hope #3 proves Tenuun is alive.
+- Winter 47 and Tenuun retain moral ambiguity; no presentation label assigns GOOD/BAD morality.
+- TRACE may reveal exact location only at the final authored gate; SEVER keeps exact location UNKNOWN.
+- CALL_18473_03 and the raspberry aftermath are ending-gated; NODE: 0 is post-credit only.
+- Initial browser delivery and public assets exclude hidden authored records, ending roles, and S3/S4 filenames.
+
+## Human playtest status
+
+Pending. A full human 2–3 hour playthrough has not occurred and is intentionally deferred until Phase 05's remaining automated browser/build gates pass. Phase 05 implementation does not imply final human playtest approval.
 
 ## Deferred work
 
-- Full 2–3 hour human playthrough after Phase 05 technical validation.
-- Phase 06 human-playtest feedback, regression QA, and release-readiness work only after explicit authorization.
-- Optional human art-direction pass, physical-device QA, and production anti-tamper/session hardening.
+- Complete the full post-restack Phase 05 validation matrix, including the formerly blocked Playwright and standard build gates.
+- Push the verified restacked Phase 05 branch with `--force-with-lease`.
+- FULL HUMAN PLAYTEST.
+- Phase 06 QA / release readiness: full human-playtest feedback, regression QA, and release-readiness work. Phase 06 has not started.
 
 ## Next expected task
 
-Retarget/rebase `codex/phase-05-polish` onto the latest approved `main`, rerun the full Phase 05 validation matrix, and prepare the branch for the pending full human playthrough. Do not merge Phase 05 or start Phase 06.
+Run the full post-restack Phase 05 validation matrix. If all technical gates pass, record `TECHNICALLY COMPLETE — HUMAN PLAYTEST PENDING`, push the verified restacked branch, and prepare the exact local playtest instructions. Do not merge Phase 05 or start Phase 06.
 
 ## Exact continuation point
 
-Continue from `codex/phase-05-polish` at `49f6b3c2916a89eac5d4456d1fa240b50939040f`. Confirm `main` contains Phase 04 merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6` plus this state-only refresh, then restack only the Phase 05 commits after the former Phase 04 head `455c79882f61ca06ed14d1d2ffe31688e2aca772`. Preserve canon, rerun the full validation matrix, and stop before Phase 05 merge or Phase 06.
+Continue from clean branch `codex/phase-05-polish` at the state-only commit following restacked implementation commit `1dbab6bba9ffe1b12acd0453567d6d2313097e92`, based on approved `main` commit `95891eed0214258568b2a919b24912d1c2c1085b`. Rerun the full validation matrix, update this file with fresh results, commit the final state refresh, and update the remote branch with `--force-with-lease`. Do not merge Phase 05 or start Phase 06.
 
 ## Source-of-truth documents
 
 - Workflow and continuity: `AGENTS.md`, `PROJECT_STATE.md`, `HANDOFF.md`.
-- Canonical documentation directory: `docs/`.
-- Phase execution-plan directory: `docs/exec-plans/`.
-- Executable phase-task directory: `tasks/`.
-- Narrative canon: the relevant canonical `docs/` files listed in `AGENTS.md`.
-- Phase 04 scope: `docs/exec-plans/PHASE-04-CASE001-CONTENT.md` and `tasks/04-case001-content.md`.
-- Integrated authored data: `content/cases/case-001/`.
-- Phase 04 implementation design and plan: `docs/superpowers/specs/2026-08-27-phase04-case001-content-design.md` and `docs/superpowers/plans/2026-08-27-phase04-case001-content.md`.
-- Server projection decision: `docs/decisions/0005-phase04-server-projections.md`.
-- Acceptance and reveal gates: `docs/14-TESTING-ACCEPTANCE.md` and the automated test suites.
+- Phase execution plans: `docs/exec-plans/`, including `docs/exec-plans/PHASE-05-AUDIO-POLISH.md`.
+- Executable task briefs: `tasks/`, including `tasks/05-audio-polish.md`.
+- Phase 05 design and plan: `docs/superpowers/specs/2026-08-27-phase05-audio-visual-emotional-polish-design.md` and `docs/superpowers/plans/2026-08-27-phase05-audio-visual-emotional-polish.md`.
+- Narrative and acceptance canon: the relevant canonical `docs/` files listed in `AGENTS.md`, especially `docs/14-TESTING-ACCEPTANCE.md`.
+- Runtime boundary: `docs/decisions/0005-phase04-server-projections.md`, `/api/case-runtime`, and `/api/case-assets/[assetId]`.
 
 ## Things that must NOT be changed without explicit approval
 
-- Narrative canon, character truths, true timeline, ending canon, or reveal order.
-- Spoiler/reveal gates or server-projected delivery protection.
-- Case #001 data-driven boundaries by hardcoding story answers into reusable UI or engine code.
-- Phase 05 merge without explicit approval and the pending full human playtest.
-- Phase 06 scope or implementation before explicit authorization.
+- Narrative canon, reveal truth/order, ending canon, romantic ambiguity, or autonomy theme.
+- Approved Phase 04 history or `main` while validating Phase 05.
+- Spoiler-safe server projection and S3/S4 delivery boundaries.
+- Approved typography by substituting unapproved fonts merely to bypass a network-limited build.
+- Phase 05 merge or Phase 06 work without explicit authorization.
