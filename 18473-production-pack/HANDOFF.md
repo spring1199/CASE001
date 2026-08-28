@@ -27,6 +27,7 @@ Phase plans, task briefs, state files, and handoff files cannot override canonic
 - UI and audiovisual direction: `docs/10-UI-UX.md` and `docs/11-AUDIO-VISUAL-DIRECTION.md`.
 - Engine and technical architecture: `docs/09-CASE-ENGINE.md`, `docs/12-TECH-ARCHITECTURE.md`, and `docs/13-DATA-SCHEMA.md`.
 - Testing and reveal gates: `docs/14-TESTING-ACCEPTANCE.md`.
+- Interface contract: `tokens.css`, `src/app/globals.css`, `src/phone/phone.module.css`, and the executable Hallmark contract in `tests/phone/presentation-quality.test.ts`.
 - Phase scope: `docs/exec-plans/PHASE-XX-*.md`.
 - Current task instructions: `tasks/XX-*.md`.
 
@@ -88,7 +89,11 @@ npm run test:e2e
 npm run build
 ```
 
-Run `npm audit` when dependency manifests change. Fix failures; do not silently skip them. Restore generated-only changes such as `next-env.d.ts` when they are not intentional.
+Run `npm audit` when dependency manifests change. Fix failures; do not silently skip them. Restore generated-only changes such as `next-env.d.ts` when they are not intentional; it flips between its dev and build variants depending on which command ran last.
+
+`npm run test:e2e` is the acceptance suite and must stay fast and deterministic. Screenshot review lives in a separate harness, `npm run qa:visual` (`playwright.visual.config.ts`, `tests/visual/`), which writes to the gitignored `.qa/shots`. It is a human review aid, not a pixel-diff gate, and is excluded from both the acceptance suite and Vitest. Run it after any interface change and inspect the result before declaring UI work complete.
+
+Interface changes must satisfy the executable Hallmark contract: raw colours and font stacks only in the `:root` block of `tokens.css`, every consumer colour property routed through a `--color-*` token, motion limited to opacity and transform with an exact-selector reduced-motion mapping, and tokenized 44px targets. When a test fails, correct the implementation or the test's premise — never relax the contract.
 
 ## Maintaining continuity
 
