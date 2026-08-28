@@ -59,6 +59,20 @@ const beatLabels: Readonly<Record<PresentationBeat, string>> = {
   postcredit: 'Төгсгөлийн дараах бүртгэл',
 };
 
+export type PresentationScale = 'sheet' | 'reveal' | 'ending';
+
+/**
+ * Ordinary discoveries arrive as a compact sheet; authored reveals and the
+ * ending take the whole screen so the writing gets room and silence.
+ */
+export function presentationScale(
+  beat: PresentationBeat,
+  endingStage?: EndingPresentationStage,
+): PresentationScale {
+  if (endingStage === 'aftermath' || beat === 'ending' || beat === 'postcredit') return 'ending';
+  return beat === 'ordinary' ? 'sheet' : 'reveal';
+}
+
 export function presentationBeatKeyForRecords(
   beat: PresentationBeat,
   records: readonly Pick<ProjectedPresentationRecord, 'id'>[],
@@ -86,22 +100,29 @@ export function PresentationLayer({
   const heading = records[0]?.title ?? beatLabels[beat];
 
   useLayoutEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
+    const activeElement = document.activeElement;
+    const layer = dialogRef.current;
+    // `document.body` owns focus when a reveal is restored on load, and this
+    // layer's own controls must never become their own return target.
+    const previouslyFocused = activeElement instanceof HTMLElement
+      && activeElement !== document.body
+      && layer?.contains(activeElement) !== true
+      ? activeElement
       : null;
     const fallbackFocus = returnFocusRef?.current;
     continueRef.current?.focus({ preventScroll: true });
     return () => {
+      // The background is still inert while this cleanup runs, so focus is
+      // restored once the commit that removes `inert` has finished.
       queueMicrotask(() => {
         if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+        const active = document.activeElement;
+        if (active !== null && active !== document.body) return;
         const canRestorePrevious = previouslyFocused !== null
-          && previouslyFocused !== document.body
           && previouslyFocused !== document.documentElement
           && previouslyFocused.isConnected;
-        const returnTarget = canRestorePrevious
-          ? previouslyFocused
-          : fallbackFocus;
-        returnTarget?.focus({ preventScroll: true });
+        const returnTarget = canRestorePrevious ? previouslyFocused : fallbackFocus;
+        if (returnTarget?.isConnected === true) returnTarget.focus({ preventScroll: true });
       });
     };
   }, [returnFocusRef]);
@@ -133,12 +154,15 @@ export function PresentationLayer({
       aria-atomic="true"
       data-presentation-beat={beat}
       data-presentation-duration={duration}
+      data-presentation-scale={presentationScale(beat, endingStage)}
       data-ending-aftermath={isEndingAftermath || undefined}
       className={styles.presentationLayer}
       onKeyDown={keepFocusInside}
     >
       <div className={styles.presentationCard}>
-        <p className={styles.eyebrow}>{beatLabels[beat]}</p>
+        {heading === beatLabels[beat] ? null : (
+          <p className={styles.eyebrow}>{beatLabels[beat]}</p>
+        )}
         <h2 id={titleId}>{heading}</h2>
 
         {records.map((record) => (

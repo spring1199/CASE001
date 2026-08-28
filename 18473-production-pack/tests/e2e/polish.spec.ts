@@ -48,6 +48,19 @@ async function unlock(page: import('@playwright/test').Page): Promise<void> {
   await expect(page.locator('[data-phone-screen="home"]')).toBeVisible();
 }
 
+/** Acknowledge any queued reveal exactly like a player before continuing. */
+async function acknowledgePresentation(
+  page: import('@playwright/test').Page,
+): Promise<void> {
+  const reveal = page.locator('[data-presentation-beat]');
+  for (let acknowledged = 0; acknowledged < 8; acknowledged += 1) {
+    await expect(page.locator('[data-runtime-busy="true"]')).toHaveCount(0);
+    if (await reveal.count() === 0) return;
+    await reveal.getByRole('button', { name: 'Үргэлжлүүлэх' }).click();
+  }
+  await expect(reveal).toHaveCount(0);
+}
+
 async function instrumentAudioContext(page: import('@playwright/test').Page): Promise<void> {
   await page.addInitScript(() => {
     const state = window as unknown as { __audioContextCreations: number };
@@ -132,7 +145,9 @@ test('keeps scripted transcripts available while audio is disabled', async ({ pa
   await page.getByLabel('Бүх дууг хаах').check();
   await page.getByRole('button', { name: 'Дууны тохиргоог хаах' }).click();
   await page.getByRole('button', { name: 'Дуудлагын жагсаалт' }).click();
+  await acknowledgePresentation(page);
   await page.getByRole('button', { name: /^18473/ }).first().click();
+  await acknowledgePresentation(page);
   await page.getByText('Бичлэгийн тайлал').click();
   await expect(page.locator('[data-audio-production-status="scripted"]')).toContainText('Audio log өөр зүйл хэлж байна');
   await expect(page.locator('[data-audio-production-status="scripted"] audio')).toHaveCount(0);

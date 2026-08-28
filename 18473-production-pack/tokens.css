@@ -4,24 +4,62 @@
   --font-body: var(--font-onest-loader), sans-serif;
   --font-mono: var(--font-ibm-plex-mono-loader), monospace;
 
-  --color-canvas: oklch(0.13 0.012 258);
-  --color-shell: oklch(0.17 0.014 258);
-  --color-surface: oklch(0.21 0.015 258);
-  --color-surface-raised: oklch(0.26 0.017 258);
-  --color-surface-pressed: oklch(0.3 0.018 258);
-  --color-border: oklch(0.52 0.019 258);
-  --color-border-strong: oklch(0.58 0.022 258);
-  --color-text: oklch(0.92 0.014 258);
-  --color-text-muted: oklch(0.72 0.019 258);
-  --color-text-dim: oklch(0.62 0.019 258);
-  --color-accent: oklch(0.74 0.13 72);
-  --color-accent-strong: oklch(0.8 0.125 76);
-  --color-accent-ink: oklch(0.18 0.025 72);
-  --color-focus: oklch(0.84 0.13 78);
-  --color-danger: oklch(0.69 0.14 30);
-  --color-success: oklch(0.74 0.1 146);
-  --color-scrim: oklch(0.08 0.01 258 / 0.82);
-  --color-shadow: oklch(0.07 0.01 258 / 0.42);
+  /* Layered dark surfaces: deepest desk → device screen → grouped → raised → pressed. */
+  --color-void: oklch(0.09 0.007 258);
+  --color-canvas: oklch(0.125 0.009 258);
+  --color-shell: oklch(0.155 0.01 258);
+  --color-surface: oklch(0.196 0.011 258);
+  --color-surface-raised: oklch(0.238 0.012 258);
+  --color-surface-pressed: oklch(0.288 0.013 258);
+  --color-fill: oklch(0.32 0.012 258);
+  --color-fill-strong: oklch(0.4 0.013 258);
+
+  /* Separators stay near-invisible; hierarchy comes from surface and spacing. */
+  --color-separator: oklch(0.29 0.01 258);
+  --color-border: oklch(0.32 0.011 258);
+  --color-border-strong: oklch(0.44 0.013 258);
+
+  --color-text: oklch(0.968 0.004 258);
+  --color-text-muted: oklch(0.83 0.008 258);
+  --color-text-dim: oklch(0.735 0.01 258);
+  --color-text-faint: oklch(0.645 0.01 258);
+
+  --color-accent: oklch(0.79 0.122 74);
+  --color-accent-strong: oklch(0.85 0.115 78);
+  --color-accent-ink: oklch(0.18 0.03 74);
+  --color-accent-soft: oklch(0.3 0.048 72);
+  --color-focus: oklch(0.86 0.125 80);
+  --color-danger: oklch(0.7 0.135 30);
+  --color-success: oklch(0.75 0.095 148);
+
+  --color-bubble-in: oklch(0.252 0.011 258);
+  --color-bubble-out: oklch(0.418 0.072 68);
+  --color-bubble-out-ink: oklch(0.975 0.012 76);
+
+  --color-chrome: oklch(0.155 0.01 258 / 0.72);
+  --color-chrome-opaque: oklch(0.155 0.01 258);
+  --color-scrim: oklch(0.06 0.008 258 / 0.66);
+  --color-shadow: oklch(0.03 0.004 258 / 0.44);
+  --color-shadow-strong: oklch(0.02 0.004 258 / 0.72);
+  --color-halo: oklch(0.42 0.035 258 / 0.4);
+
+  --color-icon-tile: oklch(0.255 0.013 258);
+  --color-icon-tile-edge: oklch(0.36 0.014 258);
+  --color-bezel: oklch(0.168 0.006 258);
+  --color-bezel-edge: oklch(0.33 0.008 258);
+  --color-island: oklch(0.035 0.003 258);
+  --color-wallpaper: oklch(0.135 0.013 262);
+  --color-wallpaper-glow: oklch(0.46 0.055 64 / 0.42);
+
+  /* Muted app tints: recognisable at a glance, never neon. */
+  --color-app-messages: oklch(0.6 0.075 148);
+  --color-app-gallery: oklch(0.63 0.082 72);
+  --color-app-calls: oklch(0.6 0.07 168);
+  --color-app-mail: oklch(0.6 0.072 244);
+  --color-app-browser: oklch(0.62 0.062 218);
+  --color-app-notes: oklch(0.66 0.075 92);
+  --color-app-files: oklch(0.62 0.058 268);
+  --color-app-settings: oklch(0.58 0.014 258);
 
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
@@ -34,21 +72,60 @@
   --space-3xl: 3rem;
   --space-4xl: 4rem;
 
-  --text-lock: clamp(2.5rem, 14vw, 4.5rem);
-  --text-screen: clamp(1.25rem, 6vw, 1.75rem);
+  /* Native mobile type ramp. */
+  --text-large-title: 2.125rem;
+  --text-title: 1.6875rem;
+  --text-title-sm: 1.3125rem;
+  --text-headline: 1.0625rem;
+  --text-body: 1.0625rem;
+  --text-callout: 1rem;
+  --text-subhead: 0.9375rem;
+  --text-footnote: 0.8125rem;
+  --text-caption: 0.75rem;
+  --text-caption-sm: 0.6875rem;
+  --text-clock: clamp(3.75rem, 21vw, 5.25rem);
+  --text-lock: clamp(2.25rem, 11vw, 3rem);
+  --text-screen: var(--text-large-title);
 
+  --leading-tight: 1.12;
+  --leading-snug: 1.28;
+  --leading-body: 1.45;
+  --leading-relaxed: 1.6;
+
+  --tracking-tight: -0.022em;
+  --tracking-title: -0.032em;
+  --tracking-mono: 0.03em;
+  --tracking-eyebrow: 0.08em;
+
+  --radius-2xs: 0.25rem;
   --radius-xs: 0.375rem;
   --radius-sm: 0.625rem;
   --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 62.5rem;
+  --radius-bubble: 1.25rem;
+  --radius-bubble-tail: 0.3125rem;
+  --radius-icon: 1.1875rem;
   --radius-shell: 2rem;
+  --radius-device: 3.375rem;
+  --radius-screen: 2.625rem;
 
   --rule-hairline: 0.0625rem;
   --border-hairline: var(--rule-hairline);
   --target-min: 2.75rem;
   --content-measure: 68ch;
-  --phone-max-width: 30rem;
-  --phone-max-height: 52rem;
+
+  /* 393 × 852 logical points: a current 6.1" handset, framed on desktop. */
+  --phone-max-width: 24.5625rem;
+  --phone-max-height: 53.25rem;
+  --device-bezel: 0.6875rem;
+  --frame-safe-top: 3rem;
+  --frame-safe-bottom: 1.5rem;
+  --status-bar-height: 2.75rem;
+  --nav-bar-height: 2.875rem;
+  --tab-bar-height: 3.25rem;
+  --home-indicator-width: 8.375rem;
 
   --dur-instant: 0ms;
   --dur-micro: 100ms;

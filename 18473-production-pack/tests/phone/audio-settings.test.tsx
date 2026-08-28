@@ -199,7 +199,9 @@ describe('spoiler-safe projected presentation semantics', () => {
 
     expect(lockedSerialized).not.toContain('presentationTags');
     expect(lockedSerialized).not.toContain('presentationRole');
+    expect(lockedSerialized).not.toContain('presentationLabel');
     expect(endingAudioItems).toHaveLength(1);
+    expect(endingAudioItems[0]?.presentationLabel).toBe('CALL_18473_03');
     expect(endingAudioItems[0]?.audio?.transcript).toBeTruthy();
     expect(raspberryItems.length).toBeGreaterThan(0);
     expect(raspberryItems.some((item) => item.body || item.visual)).toBe(true);

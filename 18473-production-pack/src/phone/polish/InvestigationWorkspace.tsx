@@ -15,6 +15,11 @@ type InvestigationWorkspaceProps = Readonly<{
   onEvent(event: PlayerCaseEngineEvent): void | Promise<void>;
 }>;
 
+export function deductionProgressPercentage(matched: number, required: number): number {
+  if (required <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round((matched / required) * 100)));
+}
+
 export function InvestigationWorkspace({
   view,
   actionPending,
@@ -33,32 +38,35 @@ export function InvestigationWorkspace({
       aria-busy={actionPending}
       className={styles.appShell}
     >
-      <section aria-labelledby={objectiveHeadingId}>
-        <h2 id={objectiveHeadingId} className={styles.appHeading}>Зорилтууд</h2>
-        <ul className={styles.itemList}>
+      <section aria-labelledby={objectiveHeadingId} className={styles.workbenchSection}>
+        <h2 id={objectiveHeadingId} className={styles.sectionHeading}>Зорилтууд</h2>
+        <ul className={styles.itemList} data-list-style="grouped">
           {view.objectives.map((objective) => (
-            <li key={objective.id}>
-              <span>{objective.title}</span>{' '}
-              <span>{objective.state === 'completed' ? 'Биелсэн' : 'Идэвхтэй'}</span>
+            <li key={objective.id} className={styles.objectiveRow}>
+              <span className={styles.recordTitle}>{objective.title}</span>
+              <span className={styles.stateTag} data-state={objective.state}>
+                {objective.state === 'completed' ? 'Биелсэн' : 'Идэвхтэй'}
+              </span>
             </li>
           ))}
         </ul>
       </section>
 
-      <section aria-labelledby={evidenceHeadingId}>
-        <h2 id={evidenceHeadingId} className={styles.appHeading}>Баримтууд</h2>
+      <section aria-labelledby={evidenceHeadingId} className={styles.workbenchSection}>
+        <h2 id={evidenceHeadingId} className={styles.sectionHeading}>Баримтууд</h2>
         {view.evidence.length === 0 ? (
           <p className={styles.emptyState}>Одоогоор бүртгэсэн баримт алга.</p>
         ) : (
-          <ul className={styles.itemList}>
+          <ul className={styles.itemList} data-list-style="grouped">
             {view.evidence.map((evidence) => (
-              <li key={evidence.id}>
-                <article>
-                  <h3>{evidence.title}</h3>
-                  <p>{evidence.description}</p>
+              <li key={evidence.id} className={styles.recordRow} data-pinned={evidence.pinned}>
+                <h3 className={styles.recordTitle}>{evidence.title}</h3>
+                <p className={styles.recordBody}>{evidence.description}</p>
+                <div className={styles.recordActions}>
                   <button
                     type="button"
                     className={styles.secondaryButton}
+                    data-action-label
                     disabled={actionPending}
                     aria-label={evidence.pinned
                       ? `Самбараас авах: ${evidence.title}`
@@ -69,32 +77,48 @@ export function InvestigationWorkspace({
                   >
                     {evidence.pinned ? 'Самбараас авах' : 'Самбарт тогтоох'}
                   </button>
-                </article>
+                  {evidence.pinned ? (
+                    <span className={styles.stateTag} data-state="pinned">Самбар дээр</span>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <section aria-labelledby={deductionHeadingId}>
-        <h2 id={deductionHeadingId} className={styles.appHeading}>Дүгнэлтүүд</h2>
-        <ul className={styles.itemList}>
+      <section aria-labelledby={deductionHeadingId} className={styles.workbenchSection}>
+        <h2 id={deductionHeadingId} className={styles.sectionHeading}>Дүгнэлтүүд</h2>
+        <ul className={styles.itemList} data-list-style="grouped">
           {view.completedDeductions.map((deduction) => (
-            <li key={deduction.id}>
-              <span>{deduction.title}</span> <span>Биелсэн</span>
+            <li key={deduction.id} className={styles.objectiveRow}>
+              <span className={styles.recordTitle}>{deduction.title}</span>
+              <span className={styles.stateTag} data-state="completed">Биелсэн</span>
             </li>
           ))}
           {view.availableDeductions.map((deduction) => (
-            <li key={deduction.id}>
-              <article>
-                <h3>{deduction.title}</h3>
-                <p>{deduction.thresholdMatched} / {deduction.thresholdRequired} баримт таарсан</p>
-                {deduction.missingRequiredEvidenceCount > 0 ? (
-                  <p>{deduction.missingRequiredEvidenceCount} зайлшгүй баримт дутуу</p>
-                ) : null}
+            <li key={deduction.id} className={styles.recordRow}>
+              <h3 className={styles.recordTitle}>{deduction.title}</h3>
+              <span aria-hidden="true" className={styles.progressMeter}>
+                <span
+                  className={styles.progressMeterFill}
+                  style={{
+                    inlineSize: `${deductionProgressPercentage(
+                      deduction.thresholdMatched,
+                      deduction.thresholdRequired,
+                    )}%`,
+                  }}
+                />
+              </span>
+              <p className={styles.recordBody}>{deduction.thresholdMatched} / {deduction.thresholdRequired} баримт таарсан</p>
+              {deduction.missingRequiredEvidenceCount > 0 ? (
+                <p className={styles.recordBody}>{deduction.missingRequiredEvidenceCount} зайлшгүй баримт дутуу</p>
+              ) : null}
+              <div className={styles.recordActions}>
                 <button
                   type="button"
                   className={styles.secondaryButton}
+                  data-action-label
                   disabled={actionPending}
                   aria-label={`Дүгнэлтийг шалгах: ${deduction.title}`}
                   onClick={() => void onEvent({
@@ -104,7 +128,7 @@ export function InvestigationWorkspace({
                 >
                   Дүгнэлтийг шалгах
                 </button>
-              </article>
+              </div>
             </li>
           ))}
         </ul>
@@ -122,15 +146,22 @@ export function InvestigationWorkspace({
       ) : null}
 
       {view.finalChoice ? (
-        <section aria-labelledby={choiceHeadingId}>
-          <h2 id={choiceHeadingId} className={styles.appHeading}>Эцсийн сонголт</h2>
-          <ul className={styles.itemList}>
+        <section
+          aria-labelledby={choiceHeadingId}
+          className={`${styles.workbenchSection} ${styles.choiceSection}`}
+        >
+          <h2 id={choiceHeadingId} className={styles.sectionHeading}>Эцсийн сонголт</h2>
+          <p className={styles.sectionNote}>
+            Хоёулаа боломжтой. Аль нэгийг сонговол нөгөө нь боломжгүй болно.
+          </p>
+          <ul className={styles.choiceList}>
             {view.finalChoice.map((option) => (
-              <li key={option.id}>
+              <li key={option.id} className={styles.choiceCard}>
                 <p>{option.description}</p>
                 <button
                   type="button"
-                  className={styles.primaryButton}
+                  className={styles.choiceButton}
+                  data-action-label
                   disabled={actionPending}
                   onClick={() => void onEvent({
                     type: 'select-ending',

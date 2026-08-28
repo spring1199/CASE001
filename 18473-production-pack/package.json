@@ -16,7 +16,8 @@
     "validate:pack": "python scripts/validate-pack.py",
     "validate:continuity": "python scripts/validate_continuity.py",
     "validate": "npm run validate:pack && npm run validate:continuity",
-    "assets:case001": "node scripts/build-case001-assets.mjs"
+    "assets:case001": "node scripts/build-case001-assets.mjs",
+    "qa:visual": "playwright test --config playwright.visual.config.ts"
   },
   "dependencies": {
     "next": "16.3.3",

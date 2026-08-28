@@ -38,40 +38,41 @@ function TimelineEventControl({
   };
 
   return (
-    <li>
-      <article>
-        <h3>{event.title}</h3>
-        {event.missingRequiredEvidenceCount > 0 ? (
-          <p>{event.missingRequiredEvidenceCount} зайлшгүй баримт дутуу</p>
-        ) : null}
-        {event.placedPositionId ? (
-          <p>{event.placedCorrectly ? 'Зөв байрлуулсан' : 'Байрлалыг дахин шалгана уу'}</p>
-        ) : null}
-        <form className={styles.timelineForm} onSubmit={placeEvent}>
-          <label htmlFor={selectId}>{event.title} — байрлал</label>
-          <select
-            id={selectId}
-            className={styles.timelineSelect}
-            value={positionId}
-            disabled={!event.placeable || actionPending}
-            onChange={(changeEvent) => setPositionId(changeEvent.currentTarget.value)}
-          >
-            <option value="">Байрлал сонгох</option>
-            {[...positions]
-              .sort((left, right) => left.order - right.order)
-              .map((position) => (
-                <option key={position.id} value={position.id}>{position.title}</option>
-              ))}
-          </select>
-          <button
-            type="submit"
-            className={styles.secondaryButton}
-            disabled={!positionId || !event.placeable || actionPending}
-          >
-            Цагийн шугамд байрлуулах
-          </button>
-        </form>
-      </article>
+    <li className={styles.recordRow}>
+      <h3 className={styles.recordTitle}>{event.title}</h3>
+      {event.missingRequiredEvidenceCount > 0 ? (
+        <p className={styles.recordBody}>{event.missingRequiredEvidenceCount} зайлшгүй баримт дутуу</p>
+      ) : null}
+      {event.placedPositionId ? (
+        <span className={styles.stateTag} data-state={event.placedCorrectly ? 'completed' : undefined}>
+          {event.placedCorrectly ? 'Зөв байрлуулсан' : 'Байрлалыг дахин шалгана уу'}
+        </span>
+      ) : null}
+      <form className={styles.timelineForm} onSubmit={placeEvent}>
+        <label htmlFor={selectId}>{event.title} — байрлал</label>
+        <select
+          id={selectId}
+          className={styles.timelineSelect}
+          value={positionId}
+          disabled={!event.placeable || actionPending}
+          onChange={(changeEvent) => setPositionId(changeEvent.currentTarget.value)}
+        >
+          <option value="">Байрлал сонгох</option>
+          {[...positions]
+            .sort((left, right) => left.order - right.order)
+            .map((position) => (
+              <option key={position.id} value={position.id}>{position.title}</option>
+            ))}
+        </select>
+        <button
+          type="submit"
+          className={styles.secondaryButton}
+          data-action-label
+          disabled={!positionId || !event.placeable || actionPending}
+        >
+          Цагийн шугамд байрлуулах
+        </button>
+      </form>
     </li>
   );
 }
@@ -80,12 +81,12 @@ export function TimelineView({ events, positions, actionPending, onEvent }: Time
   const headingId = useId();
 
   return (
-    <section aria-labelledby={headingId}>
-      <h2 id={headingId} className={styles.appHeading}>Цагийн шугам</h2>
+    <section aria-labelledby={headingId} className={styles.workbenchSection}>
+      <h2 id={headingId} className={styles.sectionHeading}>Цагийн шугам</h2>
       {events.length === 0 ? (
         <p className={styles.emptyState}>Одоогоор байрлуулах үйл явдал алга.</p>
       ) : (
-        <ul className={styles.itemList}>
+        <ul className={styles.itemList} data-list-style="grouped">
           {events.map((event) => (
             <TimelineEventControl
               key={event.id}

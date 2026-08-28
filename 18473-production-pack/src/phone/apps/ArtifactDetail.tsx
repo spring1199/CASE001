@@ -16,6 +16,10 @@ type ArtifactDetailProps = Readonly<{
   onOpenDeepLink(target: DeepReadonly<PhoneDeepLinkTarget>): void;
 }>;
 
+type ThreadMessage = DeepReadonly<
+  Extract<PhoneItem, { kind: 'message-thread' }>['messages'][number]
+>;
+
 const MESSAGE_DIRECTION_LABELS = {
   incoming: 'Ирсэн',
   outgoing: 'Илгээсэн',
@@ -26,6 +30,19 @@ const MESSAGE_WINDOW_SIZE = 60;
 
 export function nextMessageWindowSize(total: number, current: number): number {
   return Math.min(total, current + MESSAGE_WINDOW_SIZE);
+}
+
+/**
+ * A message starts a new visual run when the speaker or the direction changes.
+ * Runs let the thread read like a conversation instead of a record list.
+ */
+export function startsMessageRun(
+  message: ThreadMessage,
+  previous: ThreadMessage | undefined,
+): boolean {
+  if (previous === undefined) return true;
+  return previous.senderLabel !== message.senderLabel
+    || previous.direction !== message.direction;
 }
 
 type VisualArtifactProps = Readonly<{
@@ -133,34 +150,44 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
             className={styles.messageList}
             data-message-window-size={visibleMessages.length}
           >
-            {visibleMessages.map((message) => (
-              <li key={message.id} className={styles.messageListItem}>
-                <article
-                  data-message-id={message.id}
-                  data-message-direction={message.direction}
-                  aria-label={`${MESSAGE_DIRECTION_LABELS[message.direction]} зурвас · ${message.senderLabel} · ${message.timestampLabel}`}
-                  className={styles.messageBubble}
+            {visibleMessages.map((message, index) => {
+              const runStart = startsMessageRun(message, visibleMessages[index - 1]);
+
+              return (
+                <li
+                  key={message.id}
+                  data-run-start={runStart || undefined}
+                  className={styles.messageListItem}
                 >
-                  <header className={styles.messageHeader}>
-                    <strong className={styles.messageSender}>{message.senderLabel}</strong>
+                  <article
+                    data-message-id={message.id}
+                    data-message-direction={message.direction}
+                    aria-label={`${MESSAGE_DIRECTION_LABELS[message.direction]} зурвас · ${message.senderLabel} · ${message.timestampLabel}`}
+                    className={styles.messageBubble}
+                  >
                     <span className={styles.directionLabel}>{MESSAGE_DIRECTION_LABELS[message.direction]}</span>
-                    <time className={styles.timestamp}>{message.timestampLabel}</time>
-                    {!message.read ? <span className={styles.unreadMarker}>Уншаагүй</span> : null}
-                  </header>
-                  {message.body ? <BodyText body={message.body} /> : null}
-                  {message.visual ? (
-                    <VisualArtifact
-                      visualId={message.id}
-                      title={`${message.senderLabel} · ${message.timestampLabel}`}
-                      visual={message.visual}
-                    />
-                  ) : null}
-                  {message.audio ? (
-                    <AudioNote audio={message.audio} label={`${message.senderLabel} · Дуут зурвас`} />
-                  ) : null}
-                </article>
-              </li>
-            ))}
+                    {runStart && message.direction !== 'system' ? (
+                      <strong className={styles.messageSender}>{message.senderLabel}</strong>
+                    ) : null}
+                    {message.body ? <BodyText body={message.body} /> : null}
+                    {message.visual ? (
+                      <VisualArtifact
+                        visualId={message.id}
+                        title={`${message.senderLabel} · ${message.timestampLabel}`}
+                        visual={message.visual}
+                      />
+                    ) : null}
+                    {message.audio ? (
+                      <AudioNote audio={message.audio} label={`${message.senderLabel} · Дуут зурвас`} />
+                    ) : null}
+                    <span className={styles.messageMeta}>
+                      <time className={styles.timestamp}>{message.timestampLabel}</time>
+                      {!message.read ? <span className={styles.unreadMarker}>Уншаагүй</span> : null}
+                    </span>
+                  </article>
+                </li>
+              );
+            })}
           </ol>
         </>
       ) : (
@@ -174,7 +201,7 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
       )}
 
       {item.metadata && item.metadata.length > 0 ? (
-        <>
+        <div className={styles.inspectActions}>
           <button
             type="button"
             aria-haspopup="dialog"
@@ -191,7 +218,7 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
             title={item.title}
             rows={item.metadata}
           />
-        </>
+        </div>
       ) : null}
 
       {item.deepLinks && item.deepLinks.length > 0 ? (

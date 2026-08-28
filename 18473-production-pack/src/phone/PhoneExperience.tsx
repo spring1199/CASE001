@@ -184,6 +184,8 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     return () => media.removeEventListener('change', update);
   }, []);
 
+  // Remounting (React Strict Mode, route churn) must not leave the experience
+  // permanently silent, so a superseded teardown never disposes the live director.
   useEffect(() => {
     const generation = audioLifecycleGenerationRef.current + 1;
     audioLifecycleGenerationRef.current = generation;
@@ -443,7 +445,12 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.defaultPrevented || document.querySelector('dialog[open]')) return;
+      // A native dialog or a blocking reveal owns the keyboard while it is open.
+      if (
+        event.defaultPrevented
+        || document.querySelector('dialog[open]')
+        || document.querySelector('[data-presentation-beat]')
+      ) return;
 
       const eventTarget = event.target;
       const isEditableTarget =
@@ -563,14 +570,17 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         className={`${styles.phoneSurface} ${styles.lockScreen}`}
       >
         <header className={styles.lockHeader}>
-          <p className={styles.eyebrow}>{caseSummary.label}</p>
-          <h1 ref={headingRef} tabIndex={-1} className={styles.lockTitle}>
-            {caseSummary.title}
-          </h1>
+          <p aria-hidden="true" className={styles.lockClock}>09:41</p>
+          <p className={styles.lockOwner}>Мөрдөн шалгах төхөөрөмж</p>
         </header>
         <div className={styles.lockContent}>
-          <p className={styles.lockOwner}>Мөрдөн шалгах төхөөрөмж</p>
-          <p className={styles.lockPrompt}>Мөрдөн шалгах төхөөрөмжийг нээнэ үү</p>
+          <div className={styles.lockNotification}>
+            <p className={styles.eyebrow}>{caseSummary.label}</p>
+            <h1 ref={headingRef} tabIndex={-1} className={styles.lockTitle}>
+              {caseSummary.title}
+            </h1>
+            <p className={styles.lockPrompt}>Мөрдөн шалгах төхөөрөмжийг нээнэ үү</p>
+          </div>
           <button
             type="button"
             className={styles.primaryButton}
@@ -594,7 +604,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
             </button>
           ) : null}
           {runtimeRetries.length > 0 ? (
-            <div role="group" aria-label="Амжилтгүй үйлдлүүд">
+            <div role="group" aria-label="Амжилтгүй үйлдлүүд" className={styles.retryGroup}>
               <p role="alert">{runtimeRetries.length} үйлдлийг дахин оролдох шаардлагатай.</p>
               {runtimeRetries.map((entry, index) => (
                 <button
@@ -642,15 +652,20 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   ));
   const raspberryItem = taggedItems.find((item) => item.presentationRole === 'ending-raspberry');
   const raspberryEvidence = caseView?.evidence.find(({ tags }) => tags.includes('raspberry'));
+  const endingAudioEvidence = caseView?.evidence.find(({ tags }) => tags.includes('ending'));
   const aftermath: EndingAftermath | undefined = endingAudioItem?.audio || raspberryItem
     ? {
         audio: endingAudioItem?.audio ? {
           id: endingAudioItem.id,
-          label: endingAudioItem.title,
+          label: endingAudioItem.presentationLabel
+            ?? endingAudioEvidence?.title
+            ?? endingAudioItem.title,
           ...endingAudioItem.audio,
         } : undefined,
         raspberry: raspberryItem ? {
-          title: raspberryEvidence?.title ?? raspberryItem.title,
+          title: raspberryItem.presentationLabel
+            ?? raspberryEvidence?.title
+            ?? raspberryItem.title,
           description: raspberryItem.body
             ?? raspberryEvidence?.description
             ?? raspberryItem.subtitle
@@ -689,6 +704,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       activeSurface={activeSurface}
       canGoBack={activeSurface === 'phone' && navigation.history.length > 0}
       canGoHome={activeSurface === 'phone' && route.screen !== 'home'}
+      runtimeBusy={runtimeMutationPending}
       headingRef={headingRef}
       scrollRegionRef={scrollRegionRef}
       onBack={() => {
@@ -773,13 +789,14 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         </button>
       ) : null}
       {runtimeRetries.length > 0 ? (
-        <div role="group" aria-label="Амжилтгүй үйлдлүүд">
+        <div role="group" aria-label="Амжилтгүй үйлдлүүд" className={styles.retryGroup}>
           <p role="alert">{runtimeRetries.length} үйлдлийг дахин оролдох шаардлагатай.</p>
           {runtimeRetries.map((entry, index) => (
             <button
               key={entry.id}
               type="button"
               className={styles.secondaryButton}
+              data-action-label
               disabled={runtimeMutationPending}
               onClick={() => runtimeRetryRegistry.invoke(entry.id)}
             >

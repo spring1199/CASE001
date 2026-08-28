@@ -15,6 +15,7 @@ html {
   background: var(--color-canvas);
   color-scheme: dark;
   font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
 }
 
@@ -23,10 +24,13 @@ body {
   min-height: 100dvh;
   background: var(--color-canvas);
   color: var(--color-text);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
 }
 
 button,
 input,
+select,
 audio {
   font: inherit;
 }
@@ -42,6 +46,7 @@ button {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 summary:focus-visible,
 audio:focus-visible {
   outline: 0.125rem solid var(--color-focus);
@@ -53,6 +58,8 @@ audio:focus-visible {
   color: var(--color-accent-ink);
 }
 
+/* The stage is the desk the device rests on; below the framed breakpoint the
+   device simply becomes the whole viewport. */
 .stage {
   min-height: 100svh;
   min-height: 100dvh;
@@ -64,6 +71,7 @@ audio:focus-visible {
 @media (min-width: 48rem) {
   .stage {
     padding: var(--space-xl);
+    background: var(--color-void);
   }
 }
 

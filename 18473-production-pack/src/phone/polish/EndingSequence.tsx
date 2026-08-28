@@ -51,12 +51,13 @@ export function EndingSequence({
       aria-label="Төгсгөлийн дараалал"
       data-ending-stage={stage}
       data-next-ending-stage={followingStage ?? undefined}
+      className={styles.endingStage}
     >
       {stage === 'decision' ? (
         <>
-          <h2>{ending.title}</h2>
-          <p>{ending.description}</p>
-          <p>
+          <h2 className={styles.endingTitle}>{ending.title}</h2>
+          <p className={styles.endingBody}>{ending.description}</p>
+          <p className={styles.endingNote}>
             {ending.exactLocationRevealed
               ? 'Нарийн байршил ил болсон.'
               : 'Байршил UNKNOWN хэвээр үлдсэн.'}
@@ -65,24 +66,24 @@ export function EndingSequence({
       ) : null}
 
       {stage === 'aftermath' ? (
-        <h2>Үр дагавар</h2>
+        <h2 className={styles.endingTitle}>Үр дагавар</h2>
       ) : null}
 
       {stage === 'closure' ? (
-        <h2>Хэргийн хаалт</h2>
+        <h2 className={styles.endingTitle}>Хэргийн хаалт</h2>
       ) : null}
 
       {stage === 'postcredit' ? (
         <>
-          <h2>Төгсгөлийн дараах бүртгэл</h2>
-          <ul className={styles.itemList}>
+          <h2 className={styles.endingTitle}>Төгсгөлийн дараах бүртгэл</h2>
+          <ul className={styles.endingRecordList}>
             {graph.nodes.map((node) => <li key={node.id}>{node.label}</li>)}
           </ul>
         </>
       ) : null}
 
       {followingStage && stage !== 'aftermath' ? (
-        <button type="button" className={styles.primaryButton} onClick={advance}>
+        <button type="button" className={styles.continueButton} data-action-label onClick={advance}>
           Үргэлжлүүлэх
         </button>
       ) : null}

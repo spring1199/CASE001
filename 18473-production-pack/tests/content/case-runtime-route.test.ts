@@ -30,6 +30,7 @@ describe('Case #001 server runtime projection', () => {
     expect(payload.view.evidence).toEqual([]);
     expect(JSON.stringify(payload.content)).not.toContain('presentationTags');
     expect(JSON.stringify(payload.content)).not.toContain('presentationRole');
+    expect(JSON.stringify(payload.content)).not.toContain('presentationLabel');
     expect(JSON.stringify(payload.content)).not.toContain('CALL_18473_03');
     expect(JSON.stringify(payload.content)).not.toContain('fact_tenuun_alive');
     expect(JSON.stringify(payload.view)).not.toContain('fact_tenuun_alive');
@@ -50,6 +51,7 @@ describe('Case #001 server runtime projection', () => {
     expect(response.status).toBe(200);
     expect(serializedContent).not.toContain('presentationTags');
     expect(serializedContent).not.toContain('presentationRole');
+    expect(serializedContent).not.toContain('presentationLabel');
   });
 
   it('runs discovery through the engine before returning a refreshed projection', async () => {

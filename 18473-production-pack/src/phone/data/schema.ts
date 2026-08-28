@@ -104,6 +104,7 @@ const commonItemShape = {
   id: identifierSchema,
   title: nonEmptyTextSchema,
   presentationRole: z.enum(['ending-audio', 'ending-raspberry']).optional(),
+  presentationLabel: nonEmptyTextSchema.optional(),
   collectionId: identifierSchema.optional(),
   groupLabel: nonEmptyTextSchema.optional(),
   subtitle: nonEmptyTextSchema.optional(),

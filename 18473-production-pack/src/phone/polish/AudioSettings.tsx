@@ -81,6 +81,8 @@ export function AudioSettings({
 
       <div className={styles.audioControlList}>
         {gainControls.map(({ key, label }) => (
+          // The row also carries an <output>, which is labelable, so the label is
+          // bound to the slider explicitly instead of wrapping the whole row.
           <div key={key} className={styles.audioRangeLabel}>
             <label htmlFor={`audio-${key}`}>{label}</label>
             <output htmlFor={`audio-${key}`}>{Math.round(preferences[key] * 100)}%</output>
@@ -97,6 +99,7 @@ export function AudioSettings({
         ))}
 
         <label className={styles.audioToggleLabel}>
+          <span>Бүх дууг хаах</span>
           <input
             type="checkbox"
             checked={preferences.mute}
@@ -106,9 +109,9 @@ export function AudioSettings({
               event.currentTarget.checked,
             ))}
           />
-          <span>Бүх дууг хаах</span>
         </label>
         <label className={styles.audioToggleLabel}>
+          <span>Орчны дууг идэвхжүүлэх</span>
           <input
             type="checkbox"
             checked={preferences.ambienceEnabled}
@@ -118,7 +121,6 @@ export function AudioSettings({
               event.currentTarget.checked,
             ))}
           />
-          <span>Орчны дууг идэвхжүүлэх</span>
         </label>
       </div>
     </section>

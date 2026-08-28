@@ -205,14 +205,24 @@ const authoredGatesById = new Map(
 type EndingPresentationRole = 'ending-audio' | 'ending-raspberry';
 
 const endingPresentationRoleEntries: Array<readonly [string, EndingPresentationRole]> = [];
+const endingPresentationLabelEntries: Array<readonly [string, string]> = [];
 for (const record of case001Seed.evidence) {
   if (record.tags.includes('ending')) {
     endingPresentationRoleEntries.push([record.sourceArtifactId, 'ending-audio']);
   } else if (record.tags.includes('raspberry')) {
     endingPresentationRoleEntries.push([record.sourceArtifactId, 'ending-raspberry']);
+  } else {
+    continue;
   }
+  endingPresentationLabelEntries.push([record.sourceArtifactId, record.title]);
 }
 const endingPresentationRolesByItemId = new Map(endingPresentationRoleEntries);
+/**
+ * The ending aftermath names its records the way the case file names them. The
+ * label travels only with the ending-gated projection, never with the phone
+ * content that a pre-ending player receives.
+ */
+const endingPresentationLabelsByItemId = new Map(endingPresentationLabelEntries);
 
 function itemIsVisible(itemId: string, access: CaseAssetAccessState): boolean {
   const gates = authoredGatesById.get(itemId);
@@ -249,6 +259,9 @@ export function createCase001PhoneIndex(access: CaseAssetAccessState) {
           presentationRole: access.endingId === null
             ? undefined
             : endingPresentationRolesByItemId.get(item.id),
+          presentationLabel: access.endingId === null
+            ? undefined
+            : endingPresentationLabelsByItemId.get(item.id),
           visual: revealVisual(item.visual, access),
           ...(item.kind === 'message-thread' ? {
             messages: item.messages.map((message) => ({
