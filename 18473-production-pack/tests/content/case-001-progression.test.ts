@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { case001Seed } from '@/game/content/case-001';
 import { analyzeCaseProgression } from '@/game/engine/progression';
 import { createInitialCaseState, processEngineEvent } from '@/game/engine/engine';
+import { createSaveEnvelope, deserializeSave } from '@/game/persistence/save';
+
+const TEST_NOW = '2026-08-28T00:00:00.000Z';
 
 describe('Case #001 Phase 04 progression', () => {
   it('authors the complete approved investigation surface', () => {
@@ -44,6 +47,39 @@ describe('Case #001 Phase 04 progression', () => {
     expect(hope1?.grantsFacts).not.toContain('fact_tenuun_alive');
     expect(hope2?.grantsFacts).toEqual(['fact_bilguun_device']);
     expect(hope3?.grantsFacts).toEqual(['fact_tenuun_alive']);
+  });
+
+  it('keeps the F17 reveal strictly before the Winter 47 operator reveal', () => {
+    const f17 = case001Seed.deductions.find(({ id }) => id === 'ded_f17_identity');
+    const winter47 = case001Seed.deductions.find(({ id }) => id === 'ded_maral_winter47');
+    expect(f17?.grantsFacts).toEqual(['fact_f17_is_maral']);
+    expect(winter47?.prerequisiteFacts).toContain('fact_f17_is_maral');
+    expect(winter47?.grantsFacts).toEqual(['fact_maral_winter47_operator']);
+  });
+
+  it('keeps TRACE and SEVER as location consequences without morality labels', () => {
+    const trace = case001Seed.endings.find(({ id }) => id === 'ending_trace');
+    const sever = case001Seed.endings.find(({ id }) => id === 'ending_sever');
+    expect(trace).toMatchObject({ revealsExactLocation: true, canon: false });
+    expect(sever).toMatchObject({ revealsExactLocation: false, canon: true });
+    expect(sever?.description).toContain('LOCATION: UNKNOWN');
+    expect(JSON.stringify([trace, sever])).not.toMatch(/GOOD|BAD|САЙН|МУУ/i);
+  });
+
+  it('round-trips partial progress without introducing save or soft-lock debt', () => {
+    const initial = createInitialCaseState(case001Seed, TEST_NOW);
+    const progressed = processEngineEvent(case001Seed, initial, {
+      type: 'discover-evidence',
+      evidenceIds: ['ev_cabin_plan', 'ev_vehicle_trace', 'ev_tuya_drive'],
+    }).state;
+    const restored = deserializeSave(
+      JSON.stringify(createSaveEnvelope(progressed, TEST_NOW)),
+      case001Seed.manifest.id,
+    );
+
+    expect(restored).toEqual(progressed);
+    expect(analyzeCaseProgression(case001Seed).issues).toHaveLength(0);
+    expect(case001Seed.manifest.progressionComplete).toBe(true);
   });
 
   it('is fully reachable and repeat-event safe', () => {

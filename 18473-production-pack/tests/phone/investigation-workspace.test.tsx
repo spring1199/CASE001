@@ -139,6 +139,7 @@ describe('investigation workspace semantics', () => {
     expect(markup).toContain('2 / 3 баримт таарсан');
     expect(markup).toContain('1 зайлшгүй баримт дутуу');
     expect(markup).toContain('<select');
+    expect(markup).toMatch(/<select[^>]+class=/);
     expect(markup).toContain('Дохио бүртгэгдэв — байрлал');
     expect(markup).toContain('data-graph-confidence="73"');
     expect(markup).toContain('73% итгэлцэл');

@@ -47,10 +47,11 @@ function TimelineEventControl({
         {event.placedPositionId ? (
           <p>{event.placedCorrectly ? 'Зөв байрлуулсан' : 'Байрлалыг дахин шалгана уу'}</p>
         ) : null}
-        <form onSubmit={placeEvent}>
+        <form className={styles.timelineForm} onSubmit={placeEvent}>
           <label htmlFor={selectId}>{event.title} — байрлал</label>
           <select
             id={selectId}
+            className={styles.timelineSelect}
             value={positionId}
             disabled={!event.placeable || actionPending}
             onChange={(changeEvent) => setPositionId(changeEvent.currentTarget.value)}

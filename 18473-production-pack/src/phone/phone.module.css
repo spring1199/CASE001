@@ -449,6 +449,46 @@
   border-color: var(--color-success);
 }
 
+.timelineForm {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-xs);
+}
+
+.timelineForm label {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.timelineSelect {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--target-min);
+  padding: var(--space-2xs) var(--space-xs);
+  border: var(--border-hairline) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: 0.125rem solid transparent;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.timelineSelect:hover,
+.timelineSelect:active {
+  border-color: var(--color-border-strong);
+}
+
+.timelineSelect:focus-visible {
+  outline: 0.125rem solid var(--color-focus);
+  outline-offset: 0.125rem;
+}
+
+.timelineSelect:disabled {
+  color: var(--color-text-dim);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .itemList,
 .messageList,
 .galleryList {
@@ -770,7 +810,6 @@
 
 .messageWindowControl .secondaryButton {
   max-width: 100%;
-  white-space: normal;
 }
 
 .messageWindowSummary {

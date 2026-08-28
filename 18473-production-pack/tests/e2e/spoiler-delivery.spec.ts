@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { case001AssetRegistry } from '../../src/game/assets/case-assets';
+
+const gatedAssets = case001AssetRegistry.assets.filter(
+  ({ spoiler, mode }) => (spoiler === 'S3' || spoiler === 'S4') && mode !== 'ui-data',
+);
 
 test('keeps S3/S4 binaries outside public delivery and rejects without an existence oracle', async ({
   page,
@@ -17,6 +22,10 @@ test('keeps S3/S4 binaries outside public delivery and rejects without an existe
     '/assets/case-001/runtime/wooden_safehouse_window_live.jpg',
   );
   expect(publicLeak.status()).toBe(404);
+  for (const asset of gatedAssets) {
+    const response = await page.request.get(`/assets/case-001/runtime/${asset.filename}`);
+    expect(response.status(), asset.id).toBe(404);
+  }
 
   await context.addCookies([{
     name: 'case-001-facts',
@@ -39,6 +48,18 @@ test('projects authored phone data only after device unlock and withholds ending
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   expect(runtimeResponses).toEqual([]);
+  const initialText = await page.locator('body').innerText();
+  for (const protectedSemantic of [
+    'Мөрдлөгийн ажлын талбар',
+    'Төгсгөлийн дараалал',
+    'CALL_18473_03',
+    'NODE: 0',
+    'ending_sever',
+    'fact_tenuun_alive',
+  ]) {
+    expect(initialText).not.toContain(protectedSemantic);
+  }
+  await expect(page.getByRole('tab', { name: 'Мөрдлөг' })).toHaveCount(0);
 
   const projectionPromise = page.waitForResponse((response) =>
     new URL(response.url()).pathname === '/api/case-runtime');
@@ -50,4 +71,7 @@ test('projects authored phone data only after device unlock and withholds ending
   expect(body).not.toContain('CALL_18473_03');
   expect(body).not.toContain('ending_trace');
   expect(body).not.toContain('wooden_safehouse_window_live.jpg');
+  for (const asset of gatedAssets) {
+    expect(body, asset.id).not.toContain(asset.filename);
+  }
 });

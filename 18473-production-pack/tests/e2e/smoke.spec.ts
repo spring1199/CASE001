@@ -1,4 +1,6 @@
 import { expect, test, type Response } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { case001Seed } from '../../src/game/content/case-001';
 import { deferredCaseSourceKeys } from '../../src/game/content/case-loader';
 
@@ -253,6 +255,33 @@ async function goHome(page: import('@playwright/test').Page): Promise<void> {
   await expect(page.locator('[data-phone-screen="home"]')).toBeVisible();
 }
 
+async function expectViewportFit(page: import('@playwright/test').Page): Promise<void> {
+  const layout = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    documentWidth: document.documentElement.scrollWidth,
+    bodyWidth: document.body.scrollWidth,
+  }));
+  expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport);
+  expect(layout.bodyWidth).toBeLessThanOrEqual(layout.viewport);
+}
+
+async function expectMinimumTouchTargets(page: import('@playwright/test').Page): Promise<void> {
+  const targets = page.locator(
+    'button:visible, select:visible, input:visible, summary:visible, [role="tab"]:visible',
+  );
+  const count = await targets.count();
+  expect(count).toBeGreaterThan(0);
+  for (let index = 0; index < count; index += 1) {
+    const target = targets.nth(index);
+    const box = await target.boundingBox();
+    expect(box, `Interactive target ${index} must have a rendered box`).not.toBeNull();
+    expect(box!.width, `Interactive target ${index} must be at least 44px wide`)
+      .toBeGreaterThanOrEqual(44);
+    expect(box!.height, `Interactive target ${index} must be at least 44px high`)
+      .toBeGreaterThanOrEqual(44);
+  }
+}
+
 test('renders only the Case #001 public manifest summary', async ({ page, baseURL }) => {
   if (baseURL === undefined) throw new Error('Playwright baseURL is required for leak detection');
 
@@ -419,17 +448,12 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
 });
 
 for (const width of [320, 375, 414, 768]) {
-  test(`keeps the phone surface usable at ${width}px`, async ({ page }) => {
+  test(`keeps the phone and investigation surfaces usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 720 });
     await unlockPhone(page);
 
-    const layout = await page.evaluate(() => ({
-      viewport: window.innerWidth,
-      documentWidth: document.documentElement.scrollWidth,
-      bodyWidth: document.body.scrollWidth,
-    }));
-    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport);
-    expect(layout.bodyWidth).toBeLessThanOrEqual(layout.viewport);
+    await expectViewportFit(page);
+    await expectMinimumTouchTargets(page);
 
     const actionLabels = page.locator('[data-action-label]');
     const actionCount = await actionLabels.count();
@@ -440,8 +464,86 @@ for (const width of [320, 375, 414, 768]) {
 
     await page.getByRole('button', { name: 'Зурвас апп' }).click();
     await expect(page.locator('[data-phone-scroll-region]')).toHaveCSS('overflow-y', 'auto');
+
+    await page.getByRole('tab', { name: 'Мөрдлөг' }).click();
+    await expect(page.getByRole('region', { name: 'Мөрдлөгийн ажлын талбар' })).toBeVisible();
+    await expectViewportFit(page);
+    await expectMinimumTouchTargets(page);
+
+    const investigationTab = page.getByRole('tab', { name: 'Мөрдлөг' });
+    await investigationTab.focus();
+    await expect(investigationTab).toHaveCSS('outline-style', 'solid');
+    await expect(investigationTab).not.toHaveCSS('outline-color', 'rgba(0, 0, 0, 0)');
   });
 }
+
+test('bounds long message DOM growth in chronological 60-message windows', async ({ page }) => {
+  await unlockPhone(page);
+  await page.getByRole('button', { name: 'Зурвас апп' }).click();
+  await page.getByRole('button', { name: '18473 217' }).click();
+
+  const history = page.getByRole('list', { name: 'Зурвасын түүх' });
+  await expect(history).toHaveAttribute('data-message-window-size', '60');
+  await expect(history.locator('[data-message-direction]')).toHaveCount(60);
+
+  const earlierMessages = page.getByRole('button', { name: 'Өмнөх 60 зурвасыг харуулах' });
+  await expect(earlierMessages).toHaveCSS('white-space', 'nowrap');
+  const earlierMessagesBox = await earlierMessages.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(earlierMessagesBox.scrollWidth).toBeLessThanOrEqual(earlierMessagesBox.clientWidth);
+  await earlierMessages.click();
+  await expect(history).toHaveAttribute('data-message-window-size', '120');
+  await expect(history.locator('[data-message-direction]')).toHaveCount(120);
+
+  const timestamps = await history.locator('time').evaluateAll((elements) =>
+    elements.map((element) => element.getAttribute('datetime') ?? element.textContent ?? ''),
+  );
+  expect(timestamps).toEqual([...timestamps].sort((left, right) => left.localeCompare(right)));
+});
+
+test('lazy-loads responsive Gallery thumbnails with intrinsic dimensions', async ({ page }) => {
+  await unlockPhone(page);
+  await page.getByRole('button', { name: 'Зургийн цомог' }).click();
+
+  const thumbnails = page.locator('[data-gallery-thumbnail] img');
+  const thumbnailCount = await thumbnails.count();
+  expect(thumbnailCount).toBeGreaterThan(0);
+  for (let index = 0; index < thumbnailCount; index += 1) {
+    const thumbnail = thumbnails.nth(index);
+    await expect(thumbnail).toHaveAttribute('loading', 'lazy');
+    await expect(thumbnail).toHaveAttribute('sizes', /44vw/);
+    expect(Number(await thumbnail.getAttribute('width'))).toBeGreaterThan(0);
+    expect(Number(await thumbnail.getAttribute('height'))).toBeGreaterThan(0);
+  }
+});
+
+test('keeps the existing Hallmark Workbench/Halo presentation contract auditable', () => {
+  const cssPath = path.join(process.cwd(), 'src/phone/phone.module.css');
+  const css = readFileSync(cssPath, 'utf8');
+  const firstLines = css.split(/\r?\n/).slice(0, 8).join('\n');
+
+  expect(firstLines).toContain('macrostructure: Workbench');
+  expect(firstLines).toContain('theme: Halo');
+  expect(firstLines).toContain('genre: atmospheric');
+  expect(firstLines).toContain('mobile: pass (36, 59, 61–69)');
+
+  const critique = firstLines.match(/pre-emit critique: P(\d) H(\d) E(\d) S(\d) R(\d) V(\d)/);
+  expect(critique).not.toBeNull();
+  expect(critique!.slice(1).map(Number).every((score) => score >= 3)).toBe(true);
+
+  expect(css).not.toMatch(/transition(?:-property)?:\s*all\b/i);
+  expect(css).not.toMatch(/background-clip:\s*text|linear-gradient|radial-gradient|text-shadow/i);
+  expect(css).not.toMatch(/(?:^|\s)(?:color|background|border-color|outline-color):\s*#[0-9a-f]{3,8}\b/im);
+
+  const keyframeBlocks = [...css.matchAll(/@keyframes\s+[\w-]+\s*{([\s\S]*?)\n}/g)]
+    .map((match) => match[1]);
+  expect(keyframeBlocks.length).toBeGreaterThan(0);
+  for (const keyframes of keyframeBlocks) {
+    expect(keyframes).not.toMatch(/\b(?:width|height|top|left|margin|padding)\s*:/);
+  }
+});
 
 test('keeps Gallery card titles readable at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
