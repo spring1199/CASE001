@@ -6,11 +6,11 @@
 
 ## Current phase
 
-Phase 05 — Audio / Visual / Emotional Polish: `TECHNICALLY COMPLETE — HUMAN PLAYTEST PENDING` on `codex/phase-05-polish`. The branch is restacked onto the approved merged Phase 04 `main` state and remains unmerged.
+Phase 05 — Audio / Visual / Emotional Polish, plus an authorized UI/UX redesign pass on top of it. Both live on `codex/phase-05-polish`, which remains unmerged. Phase 06 has not started.
 
 ## Last completed and approved phase
 
-Phase 04 — Case #001 Content is complete, validated, approved, and merged through PR #5. Its merge commit is `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`; the post-merge continuity refresh brings approved `main` to `95891eed0214258568b2a919b24912d1c2c1085b`.
+Phase 04 — Case #001 Content, approved and merged into `main` through PR #5 at merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`, followed by state-only refresh `95891ee`.
 
 ## Current active branch
 
@@ -18,134 +18,171 @@ Phase 04 — Case #001 Content is complete, validated, approved, and merged thro
 
 ## Latest approved commit hash
 
-`95891eed0214258568b2a919b24912d1c2c1085b` on `main`, containing approved Phase 04 merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6` and its state-only refresh.
+`caf1acdddea1a2e545256a9ec5fc439cc1b238a6` on `main` (Phase 04 merge). Phase 05 and the redesign pass are not approved.
 
-## Restacked branch boundary
+## Stacked branch boundary
 
-- Approved Phase 05 base: `main` at `95891eed0214258568b2a919b24912d1c2c1085b`.
-- Former stacked boundary: approved Phase 04 branch head `455c79882f61ca06ed14d1d2ffe31688e2aca772`.
-- The 20 Phase 05-specific commits after that former boundary were replayed onto approved `main`; Phase 04 history is present only through the merged main ancestry and is not duplicated.
-- The original Phase 05 head is preserved locally as recovery ref `codex/phase-05-pre-restack-49f6b3c`; it is not part of the restacked branch.
-- Phase 05 remains unmerged and must not be merged before the full human playtest and explicit approval.
+- Phase 04 base branch: `codex/phase-04-case001-content`.
+- Immutable Phase 04 base commit: `455c79882f61ca06ed14d1d2ffe31688e2aca772`.
+- Phase 05 commits are strictly after that base; Phase 04 history was not amended, squashed, merged, or rebased.
+- Phase 04 is now merged into `main`. Phase 05 may therefore be retargeted/rebased onto the merged `main` state before its own PR review, but only with explicit authorization. That rebase has not been performed.
+- The redesign pass was committed on top of the existing Phase 05 history; no Phase 05 commit was rewritten.
 
 ## Current task implementation commit
 
-`3834505cd44b43b1ac6f5605e9a6f9e683cec6c1` is the final restacked Phase 05 implementation/test commit before this state-only continuity refresh. The replayed pre-restack implementation/test commit `0c4085c64c4e32baae6d8da60798b29dce9580ed` became `1dbab6bba9ffe1b12acd0453567d6d2313097e92`, followed by browser-regression hardening at `3834505cd44b43b1ac6f5605e9a6f9e683cec6c1`. The final branch HEAD is the subsequent state-only commit because a commit cannot contain its own hash.
+`3c130a06e12a30f9a17b64c67ee3ada44dc90f1a` is the UI/UX redesign implementation commit. It sits directly on top of the Phase 05 completion state `49f6b3c2916a89eac5d4456d1fa240b50939040f`. The final branch HEAD is the subsequent state-only refresh commit, because a commit cannot contain its own hash.
 
 ## Current implementation status
 
-Phase 05 technical and presentation implementation is complete. The experience now includes the server-projected investigation workbench, deterministic and durable reveal presentation, persisted audio mixing, restrained non-dialogue sound, transcript-safe authored audio handling, responsive phone/app polish, performance bounds, accessible modal pacing, and a persistable ending sequence.
+Phase 05 technical and presentation implementation is complete: server-projected investigation workbench, deterministic and durable reveal presentation, persisted audio mixing, restrained non-dialogue sound, transcript-safe authored audio, performance bounds, accessible modal pacing, and a persistable ending sequence.
 
-All repository-required technical gates now pass in the normal local environment, including 22/22 browser-backed Playwright tests and the unmocked Turbopack production build. Phase 05 technical acceptance does not imply human story/pacing approval.
+The redesign pass then rebuilt the interface layer on top of that behaviour. Human playtest feedback was that the interface still looked like a dark prototype rather than a believable premium handset. The phone is a core gameplay environment, so it was treated as a first-class product redesign. No narrative canon, progression logic, reveal order, engine truth, or spoiler gate was changed.
+
+Both gates that blocked Phase 05 acceptance on the previous host are now unblocked here: Chromium launches, so all 22 Playwright cases executed; and Google Fonts is reachable, so the standard `npm run build` passes with the approved Onest / IBM Plex Mono stack. Those 22 browser cases had never actually executed before this pass, and 13 of them failed on first run. Every failure is now resolved — see "Defects found by first real browser execution".
 
 ## Completed milestones
 
-- Completed the server-projected investigation workspace and strict runtime action boundary.
-- Completed deterministic reveal selection, versioned durable FIFO pacing, modal focus management, and ending-stage presentation.
-- Completed the lazy audio director, persisted mixer, ambience/ducking lifecycle, and scripted transcript fallback.
-- Completed phone/app/gallery/message/GRAPH/timeline/ending visual polish, responsive performance bounds, and accessibility hardening.
-- Completed all Phase 05 unit, content, continuity, progression, spoiler, and Hallmark source gates.
+- Completed Phase 05: server-projected investigation workspace, deterministic durable reveal queue, persisted audio mixer, restrained cues, ending stages, and the strict runtime action boundary.
+- Completed the authorized UI/UX redesign pass across the device shell, navigation primitives, typography, dark-surface hierarchy, all eight phone apps, the investigation workbench, and the reveal/ending presentation.
+- Executed the browser-backed acceptance suite for the first time on this branch and resolved every defect it exposed.
+- Executed the standard production build with the approved Google-hosted typography.
+- Added a repeatable visual QA harness covering 26 screens across six viewports, including the final choice and every ending stage.
+- Verified WCAG AA contrast from computed styles on every audited surface.
 - Preserved Phase 04 canon, all required visual assets, `progressionComplete = true`, and progression debt = 0.
 
 ## Current task status
 
-`TECHNICALLY COMPLETE — HUMAN PLAYTEST PENDING`. Phase 05 is restacked on approved `main`, the full technical validation matrix is green, Phase 05 is not merged, and Phase 06 has not started.
+The UI/UX redesign pass is implemented and fully validated on `codex/phase-05-polish`. The branch is intentionally unmerged and un-rebased. Human visual review and the full human playthrough are both still pending. Phase 06 has not started.
 
-## Polish systems implemented
+## Redesign — phone shell
 
-- Added Phone / Investigation top-level surfaces with objectives, discovered evidence, deductions, timeline, accessible DOM GRAPH, final choice, and ending aftermath.
-- Added a strict `/api/case-runtime` action allowlist with fail-closed, player-visible `CaseView` projection; reusable client code still imports no authored Case #001 seed.
-- Added serialized transactional runtime mutations, pre-save durability, operation-scoped retries, focus handoff, and save/load-safe ending presentation checkpoints.
-- Added deterministic semantic reveal selection for Hope #1/#2/#3, F17, Winter 47, Tenuun decoy, GRAPH changes, ending, and post-credit beats without hardcoded Case #001 answer IDs or narrative text in reusable UI.
-- Added a strict version-2 persistent FIFO reveal queue containing only immutable already-projected visible records. Historical GRAPH confidence/status beats survive acknowledgement and reload without collapsing to the latest value.
-- Added focused modal reveal presentation with inert background, tab containment, focus restoration, explicit continuation, reduced-motion crossfade, and mutation blocking while a reveal is active.
-- Added explicit ending stages: decision result → final-call/raspberry aftermath → closure → post-credit NODE: 0.
+- Desktop presents a framed 393 × 852 logical device: bezel, sensor island, ambient halo, device shadow, correct display radius, and a home indicator. Below 48rem the device becomes the viewport with no fake chrome.
+- Safe areas are driven by `--safe-top/-bottom/-left/-right` custom properties that resolve to `env(safe-area-inset-*)` on hardware and to simulated frame insets inside the desktop frame.
+- The screen clips its own content, scrollbars are hidden inside the device, and there is no nested scroll trap: the single scroll region is `[data-phone-scroll-region]`.
+
+## Redesign — navigation primitives
+
+- Translucent, blurred status bar with inline SVG signal / wi-fi / battery glyphs and the audio-mixer control.
+- Navigation bar with a back affordance, home action, device label, and a compact title that crossfades in once content scrolls under the chrome; detail screens show the compact title immediately.
+- Large title lives in the scroll flow like a native root screen and remains the programmatic focus target.
+- The Phone / Investigation surfaces moved from an inline pill row to a bottom tab bar with glyphs, keeping the same roving-tabindex keyboard contract.
+- Reusable row primitives (`contact`, `record`, `gallery`) and two list styles (full-bleed `plain`, inset `grouped`) mean every app shares one navigation language.
+
+## Redesign — typography and colour
+
+- Native mobile type ramp: large title, title, title-sm, headline, body, callout, subhead, footnote, caption, caption-sm, plus a lock-screen clock size. Line-height and tracking tokens replace ad-hoc values.
+- The approved Onest / IBM Plex Mono stack is unchanged. Mono is now reserved for time, identifiers, status tags, and confidence values.
+- Dark surfaces are layered (void → canvas → shell → surface → raised → pressed → fill) with near-invisible separators. Borders were removed almost everywhere; hierarchy now comes from surface, spacing, and separators.
+- Amber remains the brand accent but no longer dominates: it is used for the single lock-screen action, active states, links, focus, and unread markers. Reveal and ending acknowledgements are neutral.
+- Eight muted app tints differentiate the home grid without neon.
+
+## Redesign — app by app
+
+- **Lock screen** — believable clock, device line, a notification-style case card, a single primary action, and a soft wallpaper light.
+- **Home screen** — 4-column grid, rounded icon tiles with raised edges, generic inline-SVG glyphs, 11px labels, and a lock badge on gated apps.
+- **Messages** — full-bleed rows with avatar monograms, two-line previews, timestamps, unread dots, and text-inset separators. The 18473 conversation is now real chat bubbles with sender runs, tailed corners, in-bubble timestamps, and visually hidden direction labels that screen readers still announce.
+- **Gallery** — tighter responsive tile grid (2 → 3 → 4 columns) with square thumbnails, quiet captions, timeline sections, and unchanged lazy loading. No clue photo is visually marked.
+- **Calls / audio** — contact rows with monograms and durations; the audio figure is a grouped card with a production-status caption and a disclosure transcript. Scripted audio still emits no media element.
+- **Mail** — sender/subject hierarchy with previews and timestamps, no bordered cards.
+- **Browser** — collection rail plus a native search field with a magnifier glyph, placeholder, and a visually hidden label.
+- **Notes / Files / Settings** — inset grouped rows with disclosure chevrons.
+- **Evidence / deductions / timeline / GRAPH** — grouped lists, state tags, a progress meter for deduction thresholds, native timeline selects, and GRAPH edges rendered as readable rows with a confidence meter. No HUD styling; the exact-location gate is untouched.
+- **Audio preferences** — a grouped settings sheet with per-slider labels, value outputs, and label-left/control-right toggle rows.
+
+## Redesign — reveal and ending presentation
+
+- Ordinary discoveries arrive as a compact bottom sheet with a grab handle and a neutral acknowledgement.
+- Authored reveals (Hope #1/#2/#3, F17, Winter 47, decoy) and the ending take the whole screen with generous space and quiet typography.
+- The deterministic version-2 FIFO reveal queue, its persistence, its acknowledgement requirement, and the ordering of decision → aftermath → closure → post-credit are unchanged.
+- The TRACE/SEVER decision gets a dedicated spacious section with two equally weighted cards; neither option is colour-coded, labelled GOOD/BAD, or visually preferred.
+- Reduced motion still collapses every beat to at most 150 ms while retaining full text and state.
+
+## Defects found by first real browser execution
+
+The 22 Playwright cases had never run. Executing them exposed real application defects, all fixed in the redesign commit:
+
+- A reveal restored focus to its own control, and the background was still `inert` when the cleanup ran, so acknowledging a reveal left focus on `document.body`.
+- A remount disposed the `AudioDirector` permanently, so audio silently never started under React Strict Mode.
+- Each mixer slider shared a wrapping label with an `<output>`, so the accessible name resolved to the output rather than the slider.
+- Global back/home keys still fired while a blocking reveal was open.
+- The ending aftermath had no way to name the recovered call; it now uses an ending-gated `presentationLabel` projected beside the existing `presentationRole`.
+- `content-visibility` on gallery tiles shortened the scroll height on remount, so restored route scroll landed short.
+- The Next dev overlay button was injected inside the phone screen and failed the 44px touch-target sweep; `devIndicators` is now off.
+
+Two player-flow specs were corrected rather than weakened: they now acknowledge the modal reveal the way a player must, and message chronology is asserted against authored order instead of a lexicographic sort of labels that legitimately wrap past midnight (`… · 23:58` precedes `… · 00:01`).
 
 ## Audio status
 
-- Implemented a lazy Web Audio director for restrained interface, discovery, GRAPH, reveal, and ending cues plus opt-in generated ambience.
-- AudioContext is created/resumed only from a user gesture; hidden documents suspend audio and unmount disposes the graph.
-- Added versioned persisted master, ambience, interface, and reveal volume categories; mute and ambience toggles; gain clamping; duck/release rules for real native audio playback.
-- Scripted authored audio never emits or requests a media element, but always exposes its approved transcript and production status.
-- Final CALL_18473_03 and the raspberry aftermath are delivered only from ending-gated server projections using narrow allowlisted presentation roles.
+Unchanged from Phase 05. Lazy Web Audio director, gesture-gated context, visibility suspend, versioned persisted master/ambience/interface/reveal gains, mute and ambience toggles, duck/release around real native playback, and scripted audio that never requests media while always exposing its approved transcript.
 
 ## Voice-master status
 
-Production-quality voice masters remain unavailable and were not fabricated. All nine approved scripts/transcripts remain canon-faithful, including the Maral laugh motif, Tenuun humming/singing motif, raspberry callback, and romantic ambiguity. Ready-audio replacement wiring and ducking are production-ready.
-
-## Visual polish status
-
-- Preserved the established Hallmark Workbench / Halo language, dark amber-anchored palette, typography intent, spacing scale, and restrained utility tone.
-- Polished lock/home, all eight phone apps, gallery, zoom/dialogs, metadata, messages, mail, browser, notes/files, calls/audio, evidence/deductions, timeline, GRAPH, reveal layers, and endings.
-- Added responsive safe-area handling, stable intrinsic gallery sizing, lazy responsive thumbnails, consistent hierarchy, 44 px controls, visible focus, and non-wrapping action labels.
-- All Phase 04 required visual assets remain integrated; no narrative image or canon truth was replaced.
-
-## Emotional pacing status
-
-- Presentation timing is deterministic and state-driven, never a long real-world wait.
-- Major reveals use explicit player acknowledgement and persisted checkpoints.
-- Reduced motion collapses every beat to at most 150 ms while retaining full text and state feedback.
-- F17 remains before the Winter 47 operator reveal; Hope #2 remains a false positive; Hope #3 remains genuine; Tenuun and Winter 47 remain morally ambiguous.
-- TRACE and SEVER remain a value conflict without GOOD/BAD labels; SEVER keeps exact location UNKNOWN; NODE: 0 remains post-credit only.
-
-## Performance status
-
-- Gallery thumbnails use intrinsic dimensions, responsive sizes, and lazy loading while private/data assets keep direct spoiler-safe delivery.
-- Message threads initially render the newest 60 messages, expand earlier content in 60-message chunks, and preserve chronological DOM order.
-- Long records use `content-visibility` where safe; GRAPH remains a small accessible DOM representation; no canvas, WebGL, animation dependency, or production dependency was added.
-- Audio and ambience are lazy, generated only after opt-in, and fully released on stop/dispose.
+Unchanged. Production-quality voice masters remain unavailable and were not fabricated. All nine approved scripts/transcripts remain canon-faithful, including the Maral laugh motif, Tenuun humming motif, raspberry callback, and romantic ambiguity. Ready-audio replacement wiring and ducking remain production-ready.
 
 ## Accessibility status
 
-- Keyboard-operable Phone / Investigation tabs, workbench actions, native timeline controls, audio mixer, transcripts, and ending sequence.
-- Visible focus, 44 px minimum targets, modal reveal focus containment/restoration, semantic lists/regions/status, safe areas, contrast tokens, and text equivalents for every audio/visual beat.
-- Audio-disabled and reduced-motion play preserve the complete investigation and emotional information.
+- Keyboard-operable navigation, tabs, workbench actions, timeline selects, mixer, transcripts, and ending sequence.
+- Visible focus everywhere; the surface tabs use a `:focus` ring because their roving tabindex moves focus programmatically.
+- Reveal focus containment and restoration now work in the browser, verified end to end.
+- 44px minimum targets verified at 320/375/414/768 by the acceptance suite.
+- WCAG AA contrast verified from computed styles (canvas-resolved colours, accumulated opacity, blended backdrops) across lock, home, messages, thread, gallery, browser, investigation, audio settings, and reveal surfaces: no failures. Disabled chrome controls no longer double-dim below the readable threshold.
+- Semantic headings, landmarks, lists, live regions, safe areas, and text equivalents for every audio and visual beat are preserved.
+
+## Performance status
+
+- No dependency was added; the icon set is inline SVG.
+- Message threads still render the newest 60 and expand in 60-message chunks; `content-visibility` remains on message and list rows and was removed only from gallery tiles, where it broke scroll restoration and bought little.
+- Gallery thumbnails keep intrinsic dimensions, responsive `sizes`, and lazy loading.
+- Motion is restricted to opacity and transform; the only animations are the reveal scrim and card.
+- Audio remains lazy, opt-in for ambience, and fully released on stop/dispose.
 
 ## Validation and test results
 
-Fresh post-restack validation performed on 2026-08-28 from implementation commit `3834505cd44b43b1ac6f5605e9a6f9e683cec6c1`:
+Full matrix run on 2026-08-28 from redesign commit `3c130a06e12a30f9a17b64c67ee3ada44dc90f1a`:
 
-- Asset rebuild: passed; 81 Case #001 runtime assets reproduced.
+- Asset rebuild: passed; 81/81 Case #001 runtime assets reproduced with no ledger content drift.
 - Pack validation: passed; 154 unique authored IDs checked.
-- Continuity validation before this state refresh: passed; 4 files and 21 fields checked.
+- Continuity validation: passed; 4 files and 21 state fields checked.
 - Continuity tests: 8/8 passed.
 - Lint: passed with zero warnings.
 - Strict TypeScript: passed.
-- Unit/content/component tests: 382/382 passed across 32 files using the normal Vitest runner.
-- Progression: restored a deep F17 checkpoint, completed all 17 deductions from the restored state, exposed both endings, selected SEVER, retained `exactLocationRevealed = false`, `progressionComplete = true`, and progression debt = 0.
-- Hallmark source contract: passed; P5 H5 E5 S5 R5 V4. Balanced CSS parsing enforces root-only color/font tokens, opacity/transform-only authored motion, complete reduced-motion mappings, 44 px targets, and single-line clickable labels.
-- Playwright: 22/22 browser-backed tests passed using the normal development server and installed Chromium.
-- Production build: normal unmocked `npm run build` passed with Turbopack, strict TypeScript, static page generation, and dynamic case routes. The approved Onest and IBM Plex Mono typography was unchanged.
-- Security audit: `npm audit --audit-level=high` passed with 0 vulnerabilities; dependency manifests remain unchanged.
-- Spoiler/asset protection: unit/route/source scans passed for initial authored/workbench semantics, ending roles, S3/S4 filenames, public assets, final-call delivery, and strict projected-record storage.
+- Unit/content/component tests: 381/381 passed across 32 files, including the Hallmark CSS contract (root-only colour/font tokens, opacity/transform-only motion, complete reduced-motion mappings, tokenized 44px targets, single-line clickable labels).
+- Playwright: 22/22 passed, executed in a real Chromium. This is the first green browser-backed run on this branch.
+- Visual QA: 26 screens captured at 320, 375, 393, 430, 768, and 1440 px through `npm run qa:visual`, including the final TRACE/SEVER choice and all four ending stages.
+- Production build: `npm run build` passed end to end with the approved Google-hosted fonts; `/` static, both case APIs dynamic.
+- Security audit: 0 vulnerabilities. `package-lock.json` is unchanged; `package.json` gained only the `qa:visual` script.
+- Spoiler/asset protection: initial-delivery scanning, gated-record rejection, S3/S4 public-path checks, and ending-role delivery all pass. The new `presentationLabel` is covered by explicit pre-ending absence assertions in both the route test and the phone-projection test.
+
+## Human playtest status
+
+Pending. This redesign responds to human *visual* feedback only. It is not story, pacing, or final playtest approval. A further human playtest is required after this pass.
 
 ## Known limitations
 
-- Full human 2–3 hour story/pacing playthrough is pending. No human story/pacing approval is claimed.
-- Physical notched-device testing and final production voice casting/mixing remain future release work.
-
-## Open tasks
-
-- Complete the full 2–3 hour human playthrough and record story, pacing, accessibility, and physical-device feedback.
-- Keep Phase 05 unmerged and Phase 06 unstarted until explicit post-playtest authorization.
-
-The lease-protected restacked Phase 05 history is pushed and verified at `origin/codex/phase-05-polish`.
+- The authored `call_18473_03` record carries its production script as player-visible body and transcript text, so the player currently sees editorial notes ("Purpose: post-final-choice grief/recontextualization…", "Length target: …"). Several browser and message records similarly expose authoring identifiers such as `INC-18473 clue extract`. This is a content-layer issue; it was deliberately not fixed here because it would mean editing authored canon. It should be raised as an explicit content decision.
+- The Settings app contains a single authored record, so its grouped layout is necessarily sparse.
+- Message timestamp labels are long authored strings (`Day 191 — 02:03 · 02:27`) and occupy noticeable width inside bubbles.
+- Physical notched-device testing remains useful beyond Chromium safe-area emulation.
+- Screenshots are written to the gitignored `.qa/shots`; they are a review aid, not a committed baseline, and there is no automatic pixel-diff regression gate.
+- Human art-direction review of the generated imagery is still appropriate.
 
 ## Known technical risks
 
-- Local-first save state and gated cookies prevent accidental/static/network preloading but are not an anti-tamper account/session entitlement system.
-- Presentation checkpoints are separate from narrative progression and migrate v1 metadata to strict v2. Unreconstructable legacy ID-only pending beats are safely dropped rather than replayed incorrectly.
-- Google-hosted build-time fonts remain an external build dependency until an approved self-hosting change is made.
+- Local-first save state and gated cookies prevent accidental/static/network preloading but are not an anti-tamper entitlement system.
+- Presentation checkpoints remain separate from narrative progression and migrate v1 metadata to strict v2.
+- Google-hosted build-time fonts remain an external build dependency until an approved self-hosting change is made. They resolved on this host.
+- `next-env.d.ts` flips between the dev and build variants depending on which command ran last; it is restored to the committed dev variant before every commit.
 
 ## Known narrative risks
 
 - F17 remains inferable from multiple clue families; polish must not make a single clue conclusive.
 - The final recovered call implies intimacy but does not prove romantic love.
-- Winter 47 and Tenuun must retain moral ambiguity, and Hope #2 must remain visibly false rather than becoming another survival confirmation.
+- Winter 47 and Tenuun retain moral ambiguity, and Hope #2 remains visibly false rather than another survival confirmation.
 
 ## Unresolved decisions
 
-- Whether production will keep Google-hosted build-time fonts or explicitly approve self-hosted Onest/IBM Plex Mono assets.
+- Whether the authored production notes inside player-visible call, browser, and message records should be rewritten as in-fiction text. This is a canon/content decision and needs explicit approval.
+- Whether production keeps Google-hosted build-time fonts or approves self-hosted Onest / IBM Plex Mono assets.
 - Final voice casting, recording, mastering, and replacement asset IDs.
 - Whether production hosting requires signed server sessions beyond the current local-first spoiler-delivery boundary.
 
@@ -158,38 +195,46 @@ No narrative canon, progression, reveal-order, or ending-truth decision is unres
 - Winter 47 and Tenuun retain moral ambiguity; no presentation label assigns GOOD/BAD morality.
 - TRACE may reveal exact location only at the final authored gate; SEVER keeps exact location UNKNOWN.
 - CALL_18473_03 and the raspberry aftermath are ending-gated; NODE: 0 is post-credit only.
-- Initial browser delivery and public assets exclude hidden authored records, ending roles, and S3/S4 filenames.
+- Initial browser delivery and public assets exclude hidden authored records, ending roles, ending labels, and S3/S4 filenames.
 
-## Human playtest status
+## Open tasks
 
-Pending. A full human 2–3 hour playthrough has not occurred. Phase 05 is technically complete, but this does not imply final human playtest approval.
+- Run a human visual review of the redesign, then the full human 2–3 hour playthrough.
+- Retarget/rebase `codex/phase-05-polish` onto the merged `main` state only with explicit authorization.
+- Decide whether authored production notes should stay in player-visible records.
+- Keep Phase 05 unmerged pending explicit approval.
 
 ## Deferred work
 
 - FULL HUMAN PLAYTEST.
-- Phase 06 QA / release readiness: full human-playtest feedback, regression QA, and release-readiness work. Phase 06 has not started.
+- Phase 06 QA / release readiness: human-playtest feedback, regression QA, and release-readiness work, only after explicit authorization.
+- Optional human art-direction pass, physical-device QA, and production anti-tamper/session hardening.
 
 ## Next expected task
 
-Run the full local 2–3 hour human playthrough from the verified `codex/phase-05-polish` production build. Record feedback before any Phase 05 merge decision. Phase 06 follows only after the playtest and explicit authorization.
+Human visual/playtest review of the redesigned interface. Do not merge Phase 05, do not rebase it without authorization, and do not start Phase 06.
 
 ## Exact continuation point
 
-Continue from clean branch `codex/phase-05-polish` at the state-only commit following final implementation commit `3834505cd44b43b1ac6f5605e9a6f9e683cec6c1`, based on approved `main` commit `95891eed0214258568b2a919b24912d1c2c1085b`. Perform the full human playtest using the production build, record feedback, and wait for explicit approval. Do not merge Phase 05 or start Phase 06.
+Continue from clean branch `codex/phase-05-polish` at the state-only commit that follows redesign commit `3c130a06e12a30f9a17b64c67ee3ada44dc90f1a`. Confirm that `main` still contains Phase 04 merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`, that the Phase 04 base `455c79882f61ca06ed14d1d2ffe31688e2aca772` is still an ancestor of this branch, and that Phase 05 completion commit `49f6b3c2916a89eac5d4456d1fa240b50939040f` is its immediate parent lineage. Await human visual/playtest review before any further UI change, rebase, merge, or Phase 06 work. Reproduce screenshots with `npm run qa:visual`.
 
 ## Source-of-truth documents
 
 - Workflow and continuity: `AGENTS.md`, `PROJECT_STATE.md`, `HANDOFF.md`.
 - Phase execution plans: `docs/exec-plans/`, including `docs/exec-plans/PHASE-05-AUDIO-POLISH.md`.
 - Executable task briefs: `tasks/`, including `tasks/05-audio-polish.md`.
+- UI and audiovisual direction: `docs/10-UI-UX.md` and `docs/11-AUDIO-VISUAL-DIRECTION.md`.
 - Phase 05 design and plan: `docs/superpowers/specs/2026-08-27-phase05-audio-visual-emotional-polish-design.md` and `docs/superpowers/plans/2026-08-27-phase05-audio-visual-emotional-polish.md`.
 - Narrative and acceptance canon: the relevant canonical `docs/` files listed in `AGENTS.md`, especially `docs/14-TESTING-ACCEPTANCE.md`.
 - Runtime boundary: `docs/decisions/0005-phase04-server-projections.md`, `/api/case-runtime`, and `/api/case-assets/[assetId]`.
+- Interface contract: `tokens.css`, `src/app/globals.css`, `src/phone/phone.module.css`, and `tests/phone/presentation-quality.test.ts`.
+- Visual QA harness: `playwright.visual.config.ts` and `tests/visual/screens.spec.ts`.
 
 ## Things that must NOT be changed without explicit approval
 
 - Narrative canon, reveal truth/order, ending canon, romantic ambiguity, or autonomy theme.
-- Approved Phase 04 history or `main` while validating Phase 05.
+- Phase 04 history, `main`, or the stacked base.
 - Spoiler-safe server projection and S3/S4 delivery boundaries.
 - Approved typography by substituting unapproved fonts merely to bypass a network-limited build.
-- Phase 05 merge or Phase 06 work without explicit authorization.
+- The Hallmark CSS contract in `tests/phone/presentation-quality.test.ts` or any other existing test, by weakening rather than correcting it.
+- Phase 05 merge, rebase, or Phase 06 work without explicit authorization.
