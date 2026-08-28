@@ -6,7 +6,7 @@
 
 ## Current phase
 
-Phase 05 — Audio / Visual / Emotional Polish: implementation has been restacked onto the approved merged Phase 04 `main` state on `codex/phase-05-polish`. Fresh post-restack technical validation is in progress, so Phase 05 acceptance is not yet declared.
+Phase 05 — Audio / Visual / Emotional Polish: `TECHNICALLY COMPLETE — HUMAN PLAYTEST PENDING` on `codex/phase-05-polish`. The branch is restacked onto the approved merged Phase 04 `main` state and remains unmerged.
 
 ## Last completed and approved phase
 
@@ -25,18 +25,18 @@ Phase 04 — Case #001 Content is complete, validated, approved, and merged thro
 - Approved Phase 05 base: `main` at `95891eed0214258568b2a919b24912d1c2c1085b`.
 - Former stacked boundary: approved Phase 04 branch head `455c79882f61ca06ed14d1d2ffe31688e2aca772`.
 - The 20 Phase 05-specific commits after that former boundary were replayed onto approved `main`; Phase 04 history is present only through the merged main ancestry and is not duplicated.
-- The original Phase 05 head is preserved locally as `codex/phase-05-pre-restack-49f6b3c` until post-restack verification is complete.
+- The original Phase 05 head is preserved locally as recovery ref `codex/phase-05-pre-restack-49f6b3c`; it is not part of the restacked branch.
 - Phase 05 remains unmerged and must not be merged before the full human playtest and explicit approval.
 
 ## Current task implementation commit
 
-`1dbab6bba9ffe1b12acd0453567d6d2313097e92` is the restacked Phase 05 implementation/test commit before this state-only continuity refresh. It corresponds to pre-restack commit `0c4085c64c4e32baae6d8da60798b29dce9580ed`. The final branch HEAD is the subsequent state-only commit because a commit cannot contain its own hash.
+`3834505cd44b43b1ac6f5605e9a6f9e683cec6c1` is the final restacked Phase 05 implementation/test commit before this state-only continuity refresh. The replayed pre-restack implementation/test commit `0c4085c64c4e32baae6d8da60798b29dce9580ed` became `1dbab6bba9ffe1b12acd0453567d6d2313097e92`, followed by browser-regression hardening at `3834505cd44b43b1ac6f5605e9a6f9e683cec6c1`. The final branch HEAD is the subsequent state-only commit because a commit cannot contain its own hash.
 
 ## Current implementation status
 
 Phase 05 technical and presentation implementation is complete. The experience now includes the server-projected investigation workbench, deterministic and durable reveal presentation, persisted audio mixing, restrained non-dialogue sound, transcript-safe authored audio handling, responsive phone/app polish, performance bounds, accessible modal pacing, and a persistable ending sequence.
 
-Acceptance remains pending only because this host cannot execute the required browser and external-font portions of the repository matrix. Do not describe Phase 05 as fully accepted until those commands pass in an environment with Chromium launch permission and Google Fonts access, or after an explicitly approved self-hosted-font change.
+All repository-required technical gates now pass in the normal local environment, including 22/22 browser-backed Playwright tests and the unmocked Turbopack production build. Phase 05 technical acceptance does not imply human story/pacing approval.
 
 ## Completed milestones
 
@@ -49,7 +49,7 @@ Acceptance remains pending only because this host cannot execute the required br
 
 ## Current task status
 
-Phase 05 implementation is restacked on approved `main`. Fresh full validation, including the formerly blocked browser and normal-build gates, is pending. Phase 05 is not merged, human playtesting is pending, and Phase 06 has not started.
+`TECHNICALLY COMPLETE — HUMAN PLAYTEST PENDING`. Phase 05 is restacked on approved `main`, the full technical validation matrix is green, Phase 05 is not merged, and Phase 06 has not started.
 
 ## Polish systems implemented
 
@@ -103,7 +103,7 @@ Production-quality voice masters remain unavailable and were not fabricated. All
 
 ## Validation and test results
 
-Validation performed on 2026-08-28 from implementation commit `0c4085c64c4e32baae6d8da60798b29dce9580ed`:
+Fresh post-restack validation performed on 2026-08-28 from implementation commit `3834505cd44b43b1ac6f5605e9a6f9e683cec6c1`:
 
 - Asset rebuild: passed; 81 Case #001 runtime assets reproduced.
 - Pack validation: passed; 154 unique authored IDs checked.
@@ -111,29 +111,24 @@ Validation performed on 2026-08-28 from implementation commit `0c4085c64c4e32baa
 - Continuity tests: 8/8 passed.
 - Lint: passed with zero warnings.
 - Strict TypeScript: passed.
-- Unit/content/component tests: 381/381 passed across 32 files using Vitest's runner config loader because sandbox parent traversal blocks the default bundled loader.
+- Unit/content/component tests: 382/382 passed across 32 files using the normal Vitest runner.
 - Progression: restored a deep F17 checkpoint, completed all 17 deductions from the restored state, exposed both endings, selected SEVER, retained `exactLocationRevealed = false`, `progressionComplete = true`, and progression debt = 0.
 - Hallmark source contract: passed; P5 H5 E5 S5 R5 V4. Balanced CSS parsing enforces root-only color/font tokens, opacity/transform-only authored motion, complete reduced-motion mappings, 44 px targets, and single-line clickable labels.
-- Playwright discovery: passed; all 22 tests load.
-- Playwright browser execution: blocked before application assertions because this managed host rejects Chromium process launch with `browserType.launch: spawn EPERM`. The in-app browser also denied localhost access. One source-only E2E passed; 21 browser-backed cases did not execute and are not claimed green.
-- Production compilation: webpack production build passed fully (compile, TypeScript, page generation, trace collection) using Next's local mocked Google-font response. Standard `npm run build` reached compilation but failed only because this host cannot fetch Onest and IBM Plex Mono from Google Fonts. Typography was not silently substituted or changed.
-- Security audit: dependency manifests were unchanged, so audit is not required by the repository protocol. An attempted `npm audit --audit-level=high` could not reach the npm advisory endpoint.
+- Playwright: 22/22 browser-backed tests passed using the normal development server and installed Chromium.
+- Production build: normal unmocked `npm run build` passed with Turbopack, strict TypeScript, static page generation, and dynamic case routes. The approved Onest and IBM Plex Mono typography was unchanged.
+- Security audit: `npm audit --audit-level=high` passed with 0 vulnerabilities; dependency manifests remain unchanged.
 - Spoiler/asset protection: unit/route/source scans passed for initial authored/workbench semantics, ending roles, S3/S4 filenames, public assets, final-call delivery, and strict projected-record storage.
 
 ## Known limitations
 
-- Required Playwright browser execution must be rerun where the installed Chromium executable may launch.
-- Standard Turbopack production build must be rerun with Google Fonts access, or Onest/IBM Plex Mono must be self-hosted only after explicit approval of that visual/asset change. Official font download permission was denied on this host; no workaround or substitute font was committed.
-- Full human 2–3 hour story/pacing playthrough is intentionally pending until after Phase 05 technical acceptance. No human story/pacing approval is claimed.
+- Full human 2–3 hour story/pacing playthrough is pending. No human story/pacing approval is claimed.
 - Physical notched-device testing and final production voice casting/mixing remain future release work.
 
 ## Open tasks
 
-- Rerun all 22 Playwright tests where Chromium process launch is permitted.
-- Rerun standard `npm run build` with Google Fonts access, or obtain explicit approval to self-host the approved Onest/IBM Plex Mono binaries.
-- Complete the full post-restack validation matrix and update this state with fresh results.
-- Update the already-pushed Phase 05 branch with a lease-protected history rewrite after verification.
-- Complete the full human playthrough before any Phase 06 authorization.
+- Update the already-pushed Phase 05 branch with the verified lease-protected restacked history.
+- Complete the full 2–3 hour human playthrough and record story, pacing, accessibility, and physical-device feedback.
+- Keep Phase 05 unmerged and Phase 06 unstarted until explicit post-playtest authorization.
 
 ## Known technical risks
 
@@ -166,22 +161,20 @@ No narrative canon, progression, reveal-order, or ending-truth decision is unres
 
 ## Human playtest status
 
-Pending. A full human 2–3 hour playthrough has not occurred and is intentionally deferred until Phase 05's remaining automated browser/build gates pass. Phase 05 implementation does not imply final human playtest approval.
+Pending. A full human 2–3 hour playthrough has not occurred. Phase 05 is technically complete, but this does not imply final human playtest approval.
 
 ## Deferred work
 
-- Complete the full post-restack Phase 05 validation matrix, including the formerly blocked Playwright and standard build gates.
-- Push the verified restacked Phase 05 branch with `--force-with-lease`.
 - FULL HUMAN PLAYTEST.
 - Phase 06 QA / release readiness: full human-playtest feedback, regression QA, and release-readiness work. Phase 06 has not started.
 
 ## Next expected task
 
-Run the full post-restack Phase 05 validation matrix. If all technical gates pass, record `TECHNICALLY COMPLETE — HUMAN PLAYTEST PENDING`, push the verified restacked branch, and prepare the exact local playtest instructions. Do not merge Phase 05 or start Phase 06.
+Run the full local 2–3 hour human playthrough from the verified `codex/phase-05-polish` production build. Record feedback before any Phase 05 merge decision. Phase 06 follows only after the playtest and explicit authorization.
 
 ## Exact continuation point
 
-Continue from clean branch `codex/phase-05-polish` at the state-only commit following restacked implementation commit `1dbab6bba9ffe1b12acd0453567d6d2313097e92`, based on approved `main` commit `95891eed0214258568b2a919b24912d1c2c1085b`. Rerun the full validation matrix, update this file with fresh results, commit the final state refresh, and update the remote branch with `--force-with-lease`. Do not merge Phase 05 or start Phase 06.
+Continue from clean branch `codex/phase-05-polish` at the state-only commit following final implementation commit `3834505cd44b43b1ac6f5605e9a6f9e683cec6c1`, based on approved `main` commit `95891eed0214258568b2a919b24912d1c2c1085b`. Perform the full human playtest using the production build, record feedback, and wait for explicit approval. Do not merge Phase 05 or start Phase 06.
 
 ## Source-of-truth documents
 
