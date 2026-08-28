@@ -491,6 +491,150 @@
   contain-intrinsic-block-size: auto 8rem;
 }
 
+.headerUtilities {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.audioSettings {
+  display: grid;
+  gap: var(--space-sm);
+  margin-block-end: var(--space-lg);
+  padding: var(--space-sm);
+  border: var(--border-hairline) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
+.panelHeadingRow {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.panelHeadingRow h2 {
+  margin: var(--space-3xs) 0 0;
+  font-size: 1.125rem;
+}
+
+.audioControlList {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.audioRangeLabel {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-sm);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.audioRangeLabel output {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.audioRangeLabel input {
+  width: 100%;
+  min-height: var(--target-min);
+  grid-column: 1 / -1;
+  accent-color: var(--color-accent);
+}
+
+.audioToggleLabel {
+  display: flex;
+  min-height: var(--target-min);
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.audioToggleLabel input {
+  width: var(--space-lg);
+  height: var(--space-lg);
+  flex: 0 0 auto;
+  accent-color: var(--color-accent);
+}
+
+.presentationLayer {
+  position: absolute;
+  z-index: 8;
+  display: grid;
+  inset: 0;
+  place-items: end center;
+  padding-block-start: max(var(--space-xl), env(safe-area-inset-top));
+  padding-block-end: max(var(--space-4xl), env(safe-area-inset-bottom));
+  padding-inline-start: max(var(--space-sm), env(safe-area-inset-left));
+  padding-inline-end: max(var(--space-sm), env(safe-area-inset-right));
+  background: var(--color-scrim);
+}
+
+.presentationCard {
+  display: grid;
+  width: min(100%, var(--content-measure));
+  max-height: min(78dvh, 42rem);
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  overflow-y: auto;
+  border: var(--border-hairline) solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 var(--space-xs) var(--space-2xl) var(--color-shadow);
+  animation: presentation-enter var(--dur-long) var(--ease-out) both;
+}
+
+.presentationCard h2,
+.presentationCard h3,
+.presentationCard p {
+  margin: 0;
+}
+
+.presentationCard h2 {
+  font-size: var(--text-screen);
+  line-height: 1.12;
+}
+
+.presentationRecord {
+  display: grid;
+  gap: var(--space-2xs);
+  padding-block-start: var(--space-xs);
+  border-block-start: var(--border-hairline) solid var(--color-border);
+}
+
+.presentationRecord h3 {
+  font-size: 1rem;
+}
+
+.presentationRecord p {
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+@keyframes presentation-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-sm));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .listButton {
   display: grid;
   width: 100%;
@@ -930,4 +1074,14 @@
   .inspectButton {
     transition-duration: var(--dur-micro);
   }
+
+  .presentationCard {
+    animation-duration: var(--dur-micro);
+    animation-name: presentation-crossfade;
+  }
+}
+
+@keyframes presentation-crossfade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

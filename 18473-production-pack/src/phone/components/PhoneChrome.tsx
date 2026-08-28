@@ -27,6 +27,7 @@ type PhoneChromeProps = Readonly<{
   onBack(): void;
   onHome(): void;
   onSurfaceChange(surface: ExperienceSurface): void;
+  onOpenAudioSettings?(): void;
   children: ReactNode;
 }>;
 
@@ -41,6 +42,7 @@ export function PhoneChrome({
   onBack,
   onHome,
   onSurfaceChange,
+  onOpenAudioSettings,
   children,
 }: PhoneChromeProps) {
   const moveBetweenSurfaceTabs = (event: KeyboardEvent<HTMLButtonElement>): void => {
@@ -84,7 +86,20 @@ export function PhoneChrome({
             Нүүр
           </button>
           </nav>
-          <span className={styles.deviceLabel}>18473</span>
+          <div className={styles.headerUtilities}>
+            <span className={styles.deviceLabel}>18473</span>
+            {onOpenAudioSettings ? (
+              <button
+                type="button"
+                className={styles.navButton}
+                aria-label="Дууны тохиргоо нээх"
+                data-action-label
+                onClick={onOpenAudioSettings}
+              >
+                Дуу
+              </button>
+            ) : null}
+          </div>
         </div>
         <h1 id="phone-screen-heading" ref={headingRef} tabIndex={-1} className={styles.screenTitle}>
           {title}

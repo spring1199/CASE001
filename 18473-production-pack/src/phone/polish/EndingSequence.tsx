@@ -81,7 +81,7 @@ export function EndingSequence({
         </>
       ) : null}
 
-      {followingStage ? (
+      {followingStage && stage !== 'aftermath' ? (
         <button type="button" className={styles.primaryButton} onClick={advance}>
           Үргэлжлүүлэх
         </button>

@@ -19,6 +19,20 @@ import {
   type CasePhoneProjection,
 } from '@/phone/case-runtime-client';
 import { InvestigationWorkspace } from '@/phone/polish/InvestigationWorkspace';
+import { AudioSettings } from '@/phone/polish/AudioSettings';
+import { AudioPlaybackProvider } from '@/phone/polish/audio-playback';
+import { AudioDirector, type AudioCue } from '@/phone/polish/audio-director';
+import {
+  AudioPreferencesStorage,
+  type AudioPreferences,
+} from '@/phone/polish/audio-preferences';
+import {
+  PresentationLayer,
+  presentationBeatKey,
+  type EndingAftermath,
+  type ProjectedPresentationRecord,
+} from '@/phone/polish/PresentationLayer';
+import { selectPresentationBeat, type PresentationBeat } from '@/phone/polish/presentation';
 import {
   PresentationCheckpointStorage,
   presentationCheckpointAfterEndingSelection,
@@ -65,6 +79,12 @@ type PhoneExperienceProps = Readonly<{
 
 type ScrollNavigationMode = 'reset' | 'restore';
 
+type PendingPresentation = Readonly<{
+  beat: PresentationBeat;
+  key: string;
+  records: readonly ProjectedPresentationRecord[];
+}>;
+
 function hasDiscoveries(item: DeepReadonly<PhoneItem>): boolean {
   const discovery = item.discovery;
   return Boolean(
@@ -100,6 +120,15 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const [presentationCheckpoint, setPresentationCheckpoint] = useState(
     () => presentationStorage.load(),
   );
+  const [audioPreferencesStorage] = useState(() => new AudioPreferencesStorage());
+  const [audioPreferences, setAudioPreferences] = useState<AudioPreferences>(
+    () => audioPreferencesStorage.load(),
+  );
+  const [audioDirector] = useState(() => new AudioDirector({ preferences: audioPreferences }));
+  const [audioAvailable, setAudioAvailable] = useState<boolean | null>(null);
+  const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
+  const [pendingPresentation, setPendingPresentation] = useState<PendingPresentation | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const playerState = useStore(playerStore, (state) => state.playerState);
   const [phoneIndex, setPhoneIndex] = useState<PhoneContentIndex | null>(null);
   const [caseView, setCaseView] = useState<CaseView | null>(null);
@@ -122,6 +151,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const actionStatusRef = useRef<HTMLParagraphElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const presentationCheckpointRef = useRef(presentationCheckpoint);
+  const caseViewRef = useRef<CaseView | null>(null);
   const scrollPositionsRef = useRef(new Map<string, number>());
   const scrollNavigationModeRef = useRef<ScrollNavigationMode>('reset');
   const currentRouteKey = phoneRouteKey(navigation.current);
@@ -136,6 +166,34 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     () => new RuntimeRetryRegistry(setRuntimeRetries),
     [],
   );
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = (): void => setReducedMotion(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => () => {
+    void audioDirector.dispose();
+  }, [audioDirector]);
+
+  const activateAudio = useCallback(async (): Promise<boolean> => {
+    const activated = await audioDirector.activateFromUserGesture();
+    setAudioAvailable(activated);
+    return activated;
+  }, [audioDirector]);
+
+  const playCue = useCallback((cue: AudioCue): void => {
+    audioDirector.playCue(cue);
+  }, [audioDirector]);
+
+  const commitAudioPreferences = useCallback((preferences: AudioPreferences): void => {
+    setAudioPreferences(preferences);
+    audioDirector.updatePreferences(preferences);
+    audioPreferencesStorage.save(preferences);
+  }, [audioDirector, audioPreferencesStorage]);
 
   const prepareNavigation = useCallback(
     (mode: ScrollNavigationMode): void => {
@@ -200,14 +258,46 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     previous: PlayerState,
     projection: CasePhoneProjection,
   ): void => {
+    const previousView = caseViewRef.current;
+    const previousEvidenceIds = new Set(
+      previousView?.evidence.map(({ id }) => id) ?? [],
+    );
+    const newlyVisibleEvidence = previousView === null
+      ? []
+      : projection.view.evidence.filter(({ id }) => !previousEvidenceIds.has(id));
+    const beat = previousView === null
+      ? null
+      : selectPresentationBeat(newlyVisibleEvidence, projection.outcomes);
+    if (beat !== null) {
+      const key = presentationBeatKey(
+        beat,
+        newlyVisibleEvidence,
+        projection.outcomes.map(({ type }) => type),
+      );
+      if (!presentationCheckpointRef.current.acknowledgedBeatKeys.includes(key)) {
+        setPendingPresentation({ beat, key, records: newlyVisibleEvidence });
+      }
+      playCue(beat === 'ending' || beat === 'postcredit'
+        ? 'ending'
+        : beat === 'ordinary'
+          ? 'discovery'
+          : 'reveal');
+    } else if (projection.outcomes.some(({ type }) => (
+      type === 'edges-confirmed' || type === 'edges-severed'
+    ))) {
+      playCue('graph');
+    } else if (projection.outcomes.length > 0) {
+      playCue('interface');
+    }
     applyEngineTransition(playerStore, previous, projection.state);
     setPhoneIndex(projection.phoneIndex);
     setGatedContentIds(projection.gatedContentIds);
     setCaseView(projection.view);
+    caseViewRef.current = projection.view;
     void playerStore.getState().actions.save().catch(() => {
       setStatus('Үндсэн ахиц хадгалагдсан ч хугацааны тэмдгийг шинэчилж чадсангүй.');
     });
-  }, [playerStore]);
+  }, [playerStore, playCue]);
 
   const refreshProjection = useCallback(async (discovery?: PhoneDiscoveryEffects) => {
     let change = { information: false, unlocks: false };
@@ -235,7 +325,8 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       endingId,
       stage,
     ));
-  }, [caseView?.ending?.endingId, commitPresentationCheckpoint]);
+    playCue(stage === 'postcredit' ? 'ending' : 'reveal');
+  }, [caseView?.ending?.endingId, commitPresentationCheckpoint, playCue]);
 
   async function dispatchCaseEvent(event: PlayerCaseEngineEvent): Promise<void> {
     setStatus('Мөрдлөгийн үйлдлийг шалгаж байна.');
@@ -284,6 +375,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     };
     void refreshProjection(discovery).then(
       (changed) => {
+        playCue(changed.information || changed.unlocks ? 'discovery' : 'interface');
         setStatus(
           changed.unlocks
             ? 'Шинэ агуулга нээгдлээ.'
@@ -364,6 +456,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     setNavigation((current) =>
       navigateToApp(current, app.id, phoneIndex, unlockedAppIds),
     );
+    playCue('interface');
     setStatus(`${app.label} апп нээгдлээ.`);
   };
 
@@ -380,6 +473,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     setNavigation((current) =>
       navigateToItem(current, appId, item.id, phoneIndex, unlockedAppIds),
     );
+    playCue('interface');
     if (!hasDiscoveries(item)) setStatus(`${item.title} нээгдлээ.`);
   };
 
@@ -403,10 +497,14 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     setNavigation((current) =>
       navigateToDeepLink(current, target, phoneIndex, unlockedAppIds),
     );
+    playCue('interface');
     if (!targetItem || !hasDiscoveries(targetItem)) setStatus('Холбоотой зүйл нээгдлээ.');
   };
 
   function unlockDevice(): void {
+    void activateAudio().then((activated) => {
+      if (activated) playCue('interface');
+    });
     setIsUnlocking(true);
     setStatus('Хэргийн өгөгдлийг аюулгүй ачаалж байна.');
     void refreshProjection().then(
@@ -500,7 +598,52 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         ? (currentApp?.label ?? 'Зүйл')
         : (currentApp?.label ?? 'Апп');
 
+  const endingStage = caseView?.ending
+    ? presentationStageForEnding(presentationCheckpoint, caseView.ending.endingId)
+    : null;
+  const taggedItems = phoneIndex.content.apps.flatMap((app) => app.items);
+  const endingAudioItem = taggedItems.find((item) => (
+    item.presentationTags?.includes('ending') && item.audio !== undefined
+  ));
+  const raspberryItem = taggedItems.find((item) => item.presentationTags?.includes('raspberry'));
+  const raspberryEvidence = caseView?.evidence.find(({ tags }) => tags.includes('raspberry'));
+  const aftermath: EndingAftermath | undefined = endingAudioItem?.audio || raspberryItem
+    ? {
+        audio: endingAudioItem?.audio ? {
+          label: endingAudioItem.title,
+          ...endingAudioItem.audio,
+        } : undefined,
+        raspberry: raspberryItem ? {
+          title: raspberryEvidence?.title ?? raspberryItem.title,
+          description: raspberryItem.body
+            ?? raspberryEvidence?.description
+            ?? raspberryItem.subtitle
+            ?? raspberryItem.title,
+        } : undefined,
+      }
+    : undefined;
+
+  const acknowledgePendingPresentation = (): void => {
+    if (pendingPresentation === null) return;
+    commitPresentationCheckpoint({
+      ...presentationCheckpointRef.current,
+      acknowledgedBeatKeys: [
+        ...new Set([
+          ...presentationCheckpointRef.current.acknowledgedBeatKeys,
+          pendingPresentation.key,
+        ]),
+      ],
+    });
+    setPendingPresentation(null);
+  };
+
+  const playbackCallbacks = {
+    onPlaybackStart: () => audioDirector.setNativeAudioActive(true),
+    onPlaybackStop: () => audioDirector.setNativeAudioActive(false),
+  };
+
   return (
+    <AudioPlaybackProvider callbacks={playbackCallbacks}>
     <PhoneChrome
       title={title}
       screen={route.screen}
@@ -512,20 +655,37 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
       onBack={() => {
         prepareNavigation('restore');
         setNavigation((current) => goBack(current));
+        playCue('interface');
         setStatus('Өмнөх дэлгэц рүү буцлаа.');
       }}
       onHome={() => {
         prepareNavigation('reset');
         setNavigation((current) => goHome(current));
+        playCue('interface');
         setStatus('Аппын нүүр рүү шилжлээ.');
       }}
       onSurfaceChange={(surface) => {
         setActiveSurface(surface);
+        playCue('interface');
         setStatus(surface === 'phone'
           ? 'Утасны ажлын талбар нээгдлээ.'
           : 'Мөрдлөгийн ажлын талбар нээгдлээ.');
       }}
+      onOpenAudioSettings={() => {
+        setAudioSettingsOpen(true);
+        void activateAudio().then((activated) => {
+          if (activated) playCue('interface');
+        });
+      }}
     >
+      {audioSettingsOpen ? (
+        <AudioSettings
+          preferences={audioPreferences}
+          audioAvailable={audioAvailable}
+          onChange={commitAudioPreferences}
+          onClose={() => setAudioSettingsOpen(false)}
+        />
+      ) : null}
       <p
         ref={actionStatusRef}
         role="status"
@@ -622,7 +782,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
             view={caseView}
             actionPending={runtimeMutationPending}
             endingStage={caseView.ending
-              ? presentationStageForEnding(presentationCheckpoint, caseView.ending.endingId)
+              ? endingStage ?? 'decision'
               : 'decision'}
             onEndingStageChange={updateEndingStage}
             onEvent={dispatchCaseEvent}
@@ -631,6 +791,24 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
           <p className={styles.emptyState}>Мөрдлөгийн төлөвийг ачаалж байна.</p>
         )}
       </div>
+      {pendingPresentation ? (
+        <PresentationLayer
+          beat={pendingPresentation.beat}
+          records={pendingPresentation.records}
+          reducedMotion={reducedMotion}
+          onAcknowledge={acknowledgePendingPresentation}
+        />
+      ) : endingStage === 'aftermath' ? (
+        <PresentationLayer
+          beat="ending"
+          records={[]}
+          reducedMotion={reducedMotion}
+          endingStage={endingStage}
+          aftermath={aftermath}
+          onAcknowledge={() => updateEndingStage('closure')}
+        />
+      ) : null}
     </PhoneChrome>
+    </AudioPlaybackProvider>
   );
 }

@@ -42,9 +42,13 @@ type CommonRecord = {
 };
 
 function projectCommon(record: CommonRecord) {
+  const presentationTags = case001Seed.evidence
+    .filter(({ sourceArtifactId }) => sourceArtifactId === record.id)
+    .flatMap(({ tags }) => tags);
   return {
     id: record.id,
     title: record.title,
+    presentationTags: presentationTags.length > 0 ? [...new Set(presentationTags)] : undefined,
     groupLabel: record.groupLabel,
     subtitle: record.subtitle,
     timestampLabel: record.timestampLabel,

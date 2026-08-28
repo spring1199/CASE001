@@ -1,4 +1,5 @@
 import styles from '@/phone/phone.module.css';
+import { useAudioPlayback } from '@/phone/polish/audio-playback';
 
 type AudioNoteProps = Readonly<{
   audio: Readonly<{
@@ -12,6 +13,7 @@ type AudioNoteProps = Readonly<{
 
 export function AudioNote({ audio, label = 'Дуут тэмдэглэл' }: AudioNoteProps) {
   const hasReadyMaster = audio.productionStatus === 'ready' && audio.src !== undefined;
+  const { onPlaybackStart, onPlaybackStop } = useAudioPlayback();
 
   return (
     <figure
@@ -27,7 +29,17 @@ export function AudioNote({ audio, label = 'Дуут тэмдэглэл' }: Audi
       {!hasReadyMaster ? (
         <p role="status">Аудио мастер ороогүй · продакшны тайлал бэлэн</p>
       ) : (
-        <audio controls preload="metadata" aria-label={label} className={styles.audioControl}>
+        <audio
+          controls
+          preload="metadata"
+          aria-label={label}
+          className={styles.audioControl}
+          onPlay={onPlaybackStart}
+          onPause={onPlaybackStop}
+          onEnded={onPlaybackStop}
+          onEmptied={onPlaybackStop}
+          onError={onPlaybackStop}
+        >
           <source src={audio.src} />
           Таны хөтөч аудио тоглуулах боломжгүй байна.
         </audio>
