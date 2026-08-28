@@ -27,6 +27,10 @@ export type PresentationChange = Readonly<{
   cue: AudioCue;
 }>;
 
+export function isBlockingPresentationChange(change: PresentationChange): boolean {
+  return change.beat !== 'ordinary' || change.cue === 'graph';
+}
+
 function graphPresentationRecord(edge: GraphPresentationState): ProjectedPresentationRecord {
   return {
     id: `graph:${edge.id}`,

@@ -81,10 +81,11 @@ export function AudioSettings({
 
       <div className={styles.audioControlList}>
         {gainControls.map(({ key, label }) => (
-          <label key={key} className={styles.audioRangeLabel}>
-            <span>{label}</span>
-            <output>{Math.round(preferences[key] * 100)}%</output>
+          <div key={key} className={styles.audioRangeLabel}>
+            <label htmlFor={`audio-${key}`}>{label}</label>
+            <output htmlFor={`audio-${key}`}>{Math.round(preferences[key] * 100)}%</output>
             <input
+              id={`audio-${key}`}
               type="range"
               min="0"
               max="1"
@@ -92,7 +93,7 @@ export function AudioSettings({
               value={preferences[key]}
               onChange={updateGain(key)}
             />
-          </label>
+          </div>
         ))}
 
         <label className={styles.audioToggleLabel}>

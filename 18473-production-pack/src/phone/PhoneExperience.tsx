@@ -35,6 +35,7 @@ import type { PresentationBeat } from '@/phone/polish/presentation';
 import {
   createPresentationSnapshot,
   derivePresentationChange,
+  isBlockingPresentationChange,
   type PresentationSnapshot,
 } from '@/phone/polish/presentation-flow';
 import {
@@ -159,6 +160,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const presentationCheckpointRef = useRef(presentationCheckpoint);
   const presentationSnapshotRef = useRef<PresentationSnapshot | null>(null);
+  const audioLifecycleGenerationRef = useRef(0);
   const scrollPositionsRef = useRef(new Map<string, number>());
   const scrollNavigationModeRef = useRef<ScrollNavigationMode>('reset');
   const currentRouteKey = phoneRouteKey(navigation.current);
@@ -182,8 +184,16 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     return () => media.removeEventListener('change', update);
   }, []);
 
-  useEffect(() => () => {
-    void audioDirector.dispose();
+  useEffect(() => {
+    const generation = audioLifecycleGenerationRef.current + 1;
+    audioLifecycleGenerationRef.current = generation;
+    return () => {
+      queueMicrotask(() => {
+        if (audioLifecycleGenerationRef.current === generation) {
+          void audioDirector.dispose();
+        }
+      });
+    };
   }, [audioDirector]);
 
   const activateAudio = useCallback(async (): Promise<boolean> => {
@@ -288,22 +298,24 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
         change !== null
         && !presentationCheckpointRef.current.acknowledgedBeatKeys.includes(change.key)
       ) {
-        const queueBefore = pendingPresentationQueue(presentationCheckpointRef.current);
-        const checkpoint = persistPendingPresentation(
-          presentationCheckpointRef.current,
-          {
-            beat: change.beat,
-            key: change.key,
-            records: change.records,
-          },
-        );
-        commitPresentationCheckpoint(checkpoint);
-        if (queueBefore.length === 0) {
-          setPendingPresentationState({
-            beat: change.beat,
-            key: change.key,
-            records: change.records,
-          });
+        if (isBlockingPresentationChange(change)) {
+          const queueBefore = pendingPresentationQueue(presentationCheckpointRef.current);
+          const checkpoint = persistPendingPresentation(
+            presentationCheckpointRef.current,
+            {
+              beat: change.beat,
+              key: change.key,
+              records: change.records,
+            },
+          );
+          commitPresentationCheckpoint(checkpoint);
+          if (queueBefore.length === 0) {
+            setPendingPresentationState({
+              beat: change.beat,
+              key: change.key,
+              records: change.records,
+            });
+          }
         }
         playCue(change.cue);
       } else if (projection.outcomes.length > 0) {
@@ -633,6 +645,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const aftermath: EndingAftermath | undefined = endingAudioItem?.audio || raspberryItem
     ? {
         audio: endingAudioItem?.audio ? {
+          id: endingAudioItem.id,
           label: endingAudioItem.title,
           ...endingAudioItem.audio,
         } : undefined,

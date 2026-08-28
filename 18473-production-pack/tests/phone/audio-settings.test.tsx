@@ -163,6 +163,7 @@ describe('Phase 05 deterministic presentation layer', () => {
         endingStage="aftermath"
         aftermath={{
           audio: {
+            id: 'visible-ending-audio',
             label: 'Сэргээгдсэн дуудлага',
             durationLabel: 'Сэргээгдсэн',
             transcript: 'Энгийн ярианы батлагдсан тайлал.',
@@ -178,6 +179,7 @@ describe('Phase 05 deterministic presentation layer', () => {
     );
 
     expect(markup).toContain('data-ending-aftermath="true"');
+    expect(markup).toContain('data-ending-audio-id="visible-ending-audio"');
     expect(markup).toContain('Энгийн ярианы батлагдсан тайлал.');
     expect(markup).toContain('Raspberry — 6');
     expect(markup).not.toContain('<audio');

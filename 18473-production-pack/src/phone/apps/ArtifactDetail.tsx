@@ -136,6 +136,7 @@ export function ArtifactDetail({ item, onOpenDeepLink }: ArtifactDetailProps) {
             {visibleMessages.map((message) => (
               <li key={message.id} className={styles.messageListItem}>
                 <article
+                  data-message-id={message.id}
                   data-message-direction={message.direction}
                   aria-label={`${MESSAGE_DIRECTION_LABELS[message.direction]} зурвас · ${message.senderLabel} · ${message.timestampLabel}`}
                   className={styles.messageBubble}

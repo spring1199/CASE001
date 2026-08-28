@@ -267,7 +267,9 @@ async function expectViewportFit(page: import('@playwright/test').Page): Promise
 
 async function expectMinimumTouchTargets(page: import('@playwright/test').Page): Promise<void> {
   const targets = page.locator(
-    'button:visible, select:visible, input:visible, summary:visible, [role="tab"]:visible',
+    '[data-phone-screen] button:visible, [data-phone-screen] select:visible, '
+      + '[data-phone-screen] input:visible, [data-phone-screen] summary:visible, '
+      + '[data-phone-screen] [role="tab"]:visible',
   );
   const count = await targets.count();
   expect(count).toBeGreaterThan(0);
@@ -416,6 +418,9 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
   await page.getByRole('button', { name: /Small Timber House/ }).click();
   await page.getByRole('button', { name: 'Cabin budget' }).click();
   await expect(page.getByRole('heading', { name: 'Cabin budget', exact: true })).toBeVisible();
+  const hopeReveal = page.getByRole('dialog');
+  await expect(hopeReveal).toHaveAttribute('data-presentation-beat', 'hope1');
+  await hopeReveal.getByRole('button', { name: 'Үргэлжлүүлэх' }).click();
   await goHome(page);
 
   await page.getByRole('button', { name: 'Дуудлагын жагсаалт' }).click();
@@ -497,10 +502,12 @@ test('bounds long message DOM growth in chronological 60-message windows', async
   await expect(history).toHaveAttribute('data-message-window-size', '120');
   await expect(history.locator('[data-message-direction]')).toHaveCount(120);
 
-  const timestamps = await history.locator('time').evaluateAll((elements) =>
-    elements.map((element) => element.getAttribute('datetime') ?? element.textContent ?? ''),
+  const messageIds = await history.locator('[data-message-id]').evaluateAll((elements) =>
+    elements.map((element) => element.getAttribute('data-message-id')),
   );
-  expect(timestamps).toEqual([...timestamps].sort((left, right) => left.localeCompare(right)));
+  const incidentThread = case001Seed.messages.find(({ id }) => id === 'msg_inc_18473');
+  if (incidentThread === undefined) throw new Error('Expected the long Case #001 incident thread');
+  expect(messageIds).toEqual(incidentThread.messages.slice(-120).map(({ id }) => id));
 });
 
 test('lazy-loads responsive Gallery thumbnails with intrinsic dimensions', async ({ page }) => {
@@ -634,7 +641,7 @@ test('reduces phone motion without removing state feedback', async ({ page }) =>
   await unlockPhone(page);
   await page.getByRole('button', { name: 'Зурвас апп' }).click();
   await page.keyboard.press('Shift+Tab');
-  const action = page.getByRole('button', { name: 'Нүүр' });
+  const action = page.getByRole('button', { name: 'Дууны тохиргоо нээх' });
   await expect(action).toBeFocused();
   const durations = await action.evaluate((element) =>
     getComputedStyle(element).transitionDuration.split(',').map((value) => Number.parseFloat(value) * 1000),

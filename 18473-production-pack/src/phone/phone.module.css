@@ -303,6 +303,7 @@
 .primaryButton:focus-visible,
 .secondaryButton:focus-visible,
 .navButton:focus-visible,
+.collectionButton:focus,
 .collectionButton:focus-visible,
 .appIcon:focus-visible,
 .listButton:focus-visible,
@@ -535,6 +536,10 @@
 .galleryListItem,
 .messageListItem {
   min-width: 0;
+}
+
+.itemListItem,
+.messageListItem {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 8rem;
 }

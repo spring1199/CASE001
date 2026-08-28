@@ -141,8 +141,11 @@ test('keeps scripted transcripts available while audio is disabled', async ({ pa
 test('uses a short crossfade for an actual reveal and persists acknowledgement across reload', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await unlock(page);
-  await page.getByRole('button', { name: 'Зурвас апп' }).click();
-  await page.getByRole('button', { name: '18473 217' }).click();
+  await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
+  await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' }).fill('Timber House');
+  await page.getByRole('button', { name: /Small Timber House/ }).click();
+  await page.getByRole('button', { name: 'Cabin budget' }).click();
   const layer = page.getByRole('dialog');
   await expect(layer).toBeVisible();
   await expect(layer).toHaveAttribute('data-presentation-duration', /^(?:[0-9]|[1-9][0-9]|1[0-4][0-9]|150)$/);
@@ -175,7 +178,8 @@ test('persists decision → call/raspberry → closure → postcredit ordering a
 
   const aftermath = page.locator('[data-ending-aftermath="true"]');
   await expect(aftermath).toBeVisible();
-  await expect(aftermath).toContainText('CALL_18473_03');
+  await expect(aftermath.locator('[data-ending-audio-id]'))
+    .toHaveAttribute('data-ending-audio-id', 'call_18473_03');
   await expect(aftermath).toContainText('Raspberry — 6');
   await expect(aftermath.locator('[data-audio-production-status="scripted"] audio')).toHaveCount(0);
   await expect(page.getByText('NODE: 0')).toHaveCount(0);

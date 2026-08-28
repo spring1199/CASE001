@@ -4,6 +4,7 @@ import type { CaseView } from '@/game/engine/view';
 import {
   createPresentationSnapshot,
   derivePresentationChange,
+  isBlockingPresentationChange,
   presentationRecordsForIds,
 } from '@/phone/polish/presentation-flow';
 
@@ -146,5 +147,27 @@ describe('state-derived presentation flow', () => {
     );
 
     expect(change).toMatchObject({ beat: 'ordinary', cue: 'discovery' });
+    expect(isBlockingPresentationChange(change!)).toBe(false);
+  });
+
+  it('blocks significant and GRAPH changes while ordinary discoveries remain non-modal', () => {
+    expect(isBlockingPresentationChange({
+      beat: 'hope1',
+      cue: 'reveal',
+      key: 'hope1:key',
+      records: [],
+    })).toBe(true);
+    expect(isBlockingPresentationChange({
+      beat: 'ordinary',
+      cue: 'graph',
+      key: 'graph:key',
+      records: [],
+    })).toBe(true);
+    expect(isBlockingPresentationChange({
+      beat: 'ordinary',
+      cue: 'discovery',
+      key: 'ordinary:key',
+      records: [],
+    })).toBe(false);
   });
 });

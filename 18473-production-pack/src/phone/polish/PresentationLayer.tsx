@@ -24,6 +24,7 @@ export type ProjectedPresentationRecord = Readonly<{
 
 export type EndingAftermath = Readonly<{
   audio?: Readonly<{
+    id: string;
     label: string;
     src?: string;
     durationLabel: string;
@@ -91,10 +92,17 @@ export function PresentationLayer({
     const fallbackFocus = returnFocusRef?.current;
     continueRef.current?.focus({ preventScroll: true });
     return () => {
-      const returnTarget = previouslyFocused?.isConnected
-        ? previouslyFocused
-        : fallbackFocus;
-      returnTarget?.focus({ preventScroll: true });
+      queueMicrotask(() => {
+        if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+        const canRestorePrevious = previouslyFocused !== null
+          && previouslyFocused !== document.body
+          && previouslyFocused !== document.documentElement
+          && previouslyFocused.isConnected;
+        const returnTarget = canRestorePrevious
+          ? previouslyFocused
+          : fallbackFocus;
+        returnTarget?.focus({ preventScroll: true });
+      });
     };
   }, [returnFocusRef]);
 
@@ -141,7 +149,9 @@ export function PresentationLayer({
         ))}
 
         {isEndingAftermath && aftermath?.audio ? (
-          <AudioNote audio={aftermath.audio} label={aftermath.audio.label} />
+          <div data-ending-audio-id={aftermath.audio.id}>
+            <AudioNote audio={aftermath.audio} label={aftermath.audio.label} />
+          </div>
         ) : null}
         {isEndingAftermath && aftermath?.raspberry ? (
           <section aria-label={aftermath.raspberry.title} className={styles.presentationRecord}>
