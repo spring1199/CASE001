@@ -244,23 +244,6 @@ function shouldScanProtectedValue(protectedValue: ProtectedValue): boolean {
   return isDistinctiveProtectedValue(value);
 }
 
-/**
- * Discovering authored records opens the deterministic reveal presentation, which
- * is modal by design. A player-flow test has to acknowledge it exactly like a
- * player before it can keep navigating.
- */
-async function acknowledgePresentation(
-  page: import('@playwright/test').Page,
-): Promise<void> {
-  const reveal = page.locator('[data-presentation-beat]');
-  for (let acknowledged = 0; acknowledged < 8; acknowledged += 1) {
-    await expect(page.locator('[data-runtime-busy="true"]')).toHaveCount(0);
-    if (await reveal.count() === 0) return;
-    await reveal.getByRole('button', { name: 'Үргэлжлүүлэх' }).click();
-  }
-  await expect(reveal).toHaveCount(0);
-}
-
 async function unlockPhone(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/');
   await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
@@ -268,7 +251,6 @@ async function unlockPhone(page: import('@playwright/test').Page): Promise<void>
 }
 
 async function goHome(page: import('@playwright/test').Page): Promise<void> {
-  await acknowledgePresentation(page);
   await page.keyboard.press('Home');
   await expect(page.locator('[data-phone-screen="home"]')).toBeVisible();
 }
@@ -401,9 +383,7 @@ test('unlocks the Case #001 phone and exposes every Phase 02 app shell', async (
   }
 
   await page.getByRole('button', { name: 'Зурвас апп' }).click();
-  await acknowledgePresentation(page);
   await page.getByRole('button', { name: '18473 217' }).click();
-  await acknowledgePresentation(page);
   await goHome(page);
   await page.getByRole('button', { name: 'Файлын сан' }).click();
   await expect(page.locator('[data-app-shell="files"]')).toBeVisible();
@@ -431,15 +411,12 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
   await unlockPhone(page);
 
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
-  await acknowledgePresentation(page);
   await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
   const search = page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' });
   await search.fill('Timber House');
   await expect(page.getByRole('button', { name: /Small Timber House/ })).toBeVisible();
   await page.getByRole('button', { name: /Small Timber House/ }).click();
-  await acknowledgePresentation(page);
   await page.getByRole('button', { name: 'Cabin budget' }).click();
-  await acknowledgePresentation(page);
   await expect(page.getByRole('heading', { name: 'Cabin budget', exact: true })).toBeVisible();
   const hopeReveal = page.getByRole('dialog');
   await expect(hopeReveal).toHaveAttribute('data-presentation-beat', 'hope1');
@@ -447,9 +424,7 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
   await goHome(page);
 
   await page.getByRole('button', { name: 'Дуудлагын жагсаалт' }).click();
-  await acknowledgePresentation(page);
   await page.getByRole('button', { name: /^18473/ }).first().click();
-  await acknowledgePresentation(page);
   await expect(page.getByText('Бичлэгийн тайлал')).toBeVisible();
   await page.getByText('Бичлэгийн тайлал').click();
   await expect(page.getByText(/Audio log өөр зүйл хэлж байна/).first()).toBeVisible();
@@ -460,10 +435,8 @@ test('supports search, deep links, dialogs, zoom, transcripts, and keyboard hist
   await goHome(page);
 
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
-  await acknowledgePresentation(page);
   await expect(page.locator('[data-gallery-layout="timeline-grid"]')).toBeVisible();
   await page.getByRole('button', { name: /Roadside café exterior/ }).click();
-  await acknowledgePresentation(page);
   const metadataButton = page.getByRole('button', { name: 'Метадата шалгах' });
   await metadataButton.focus();
   await metadataButton.press('Enter');
@@ -495,7 +468,6 @@ for (const width of [320, 375, 414, 768]) {
     }
 
     await page.getByRole('button', { name: 'Зурвас апп' }).click();
-    await acknowledgePresentation(page);
     await expect(page.locator('[data-phone-scroll-region]')).toHaveCSS('overflow-y', 'auto');
 
     await page.getByRole('tab', { name: 'Мөрдлөг' }).click();
@@ -513,9 +485,7 @@ for (const width of [320, 375, 414, 768]) {
 test('bounds long message DOM growth in chronological 60-message windows', async ({ page }) => {
   await unlockPhone(page);
   await page.getByRole('button', { name: 'Зурвас апп' }).click();
-  await acknowledgePresentation(page);
   await page.getByRole('button', { name: '18473 217' }).click();
-  await acknowledgePresentation(page);
 
   const history = page.getByRole('list', { name: 'Зурвасын түүх' });
   await expect(history).toHaveAttribute('data-message-window-size', '60');
@@ -535,8 +505,8 @@ test('bounds long message DOM growth in chronological 60-message windows', async
   const messageIds = await history.locator('[data-message-id]').evaluateAll((elements) =>
     elements.map((element) => element.getAttribute('data-message-id')),
   );
-  // Authored labels wrap past midnight ("… · 23:58" is followed by "… · 00:01"),
-  // so chronology is verified against the authored record order by identity.
+  // Authored labels wrap past midnight ("… · 23:58" precedes "… · 00:01"), so
+  // chronology is verified against the authored record order by identity.
   const incidentThread = case001Seed.messages.find(({ id }) => id === 'msg_inc_18473');
   if (incidentThread === undefined) throw new Error('Expected the long Case #001 incident thread');
   expect(messageIds).toEqual(incidentThread.messages.slice(-120).map(({ id }) => id));
@@ -545,7 +515,6 @@ test('bounds long message DOM growth in chronological 60-message windows', async
 test('lazy-loads responsive Gallery thumbnails with intrinsic dimensions', async ({ page }) => {
   await unlockPhone(page);
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
-  await acknowledgePresentation(page);
 
   const thumbnails = page.locator('[data-gallery-thumbnail] img');
   const thumbnailCount = await thumbnails.count();
@@ -589,7 +558,6 @@ test('keeps Gallery card titles readable at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await unlockPhone(page);
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
-  await acknowledgePresentation(page);
 
   const firstTitle = page.getByRole('button', { name: /Childhood family kitchen/ }).locator('strong');
   const titleWidth = await firstTitle.evaluate((element) => element.getBoundingClientRect().width);
@@ -617,11 +585,9 @@ test('protects narrow actions and both horizontal safe-area edges', async ({ pag
   expect(phoneCss).toContain('env(safe-area-inset-right)');
 
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
-  await acknowledgePresentation(page);
   await page.getByRole('button', { name: 'Хадгалсан', exact: true }).click();
   await page.getByRole('searchbox', { name: 'Хөтчийн бүртгэлээс хайх' }).fill('Timber House');
   await page.getByRole('button', { name: /Small Timber House/ }).click();
-  await acknowledgePresentation(page);
   const deepLink = page.getByRole('button', { name: 'Cabin budget' });
   const actionBox = await deepLink.evaluate((element) => ({
     clientWidth: element.clientWidth,
@@ -635,7 +601,6 @@ test('switches Browser and Gallery collections and restores route scroll', async
   await unlockPhone(page);
 
   await page.getByRole('button', { name: 'Вэб хөтөч' }).click();
-  await acknowledgePresentation(page);
   await expect(page.getByRole('button', { name: 'Түүх', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Өмнөх хайлтууд', exact: true }).click();
   await expect(page.getByRole('button', { name: /sore throat tea honey/ })).toBeVisible();
@@ -644,7 +609,6 @@ test('switches Browser and Gallery collections and restores route scroll', async
   await goHome(page);
 
   await page.getByRole('button', { name: 'Зургийн цомог' }).click();
-  await acknowledgePresentation(page);
   await expect(page.locator('[data-collection-group="Нотлох зураг"]')).toBeVisible();
   await expect(page.locator('[data-collection-group="Ердийн зураг"]')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Нотлох зураг' })).toBeVisible();
@@ -662,7 +626,6 @@ test('switches Browser and Gallery collections and restores route scroll', async
   const timelineScrollTop = await scrollRegion.evaluate((element) => element.scrollTop);
   expect(timelineScrollTop).toBeGreaterThan(0);
   await finalPhoto.click();
-  await acknowledgePresentation(page);
   await expect(page.getByRole('heading', { name: 'Ердийн зураг 20', exact: true })).toBeVisible();
   await expect.poll(() => scrollRegion.evaluate((element) => element.scrollTop)).toBe(0);
 
@@ -679,9 +642,8 @@ test('reduces phone motion without removing state feedback', async ({ page }) =>
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await unlockPhone(page);
   await page.getByRole('button', { name: 'Зурвас апп' }).click();
-  await acknowledgePresentation(page);
   await page.keyboard.press('Shift+Tab');
-  const action = page.getByRole('button', { name: 'Дууны тохиргоо нээх' });
+  const action = page.getByRole('button', { name: 'Нүүр' });
   await expect(action).toBeFocused();
   const durations = await action.evaluate((element) =>
     getComputedStyle(element).transitionDuration.split(',').map((value) => Number.parseFloat(value) * 1000),
