@@ -30,7 +30,7 @@ Phase 04 — Case #001 Content, approved and merged into `main` through PR #5 at
 
 ## Current task implementation commit
 
-`3c130a06e12a30f9a17b64c67ee3ada44dc90f1a` is the UI/UX redesign implementation commit. It sits directly on top of the Phase 05 completion state `49f6b3c2916a89eac5d4456d1fa240b50939040f`. The final branch HEAD is the subsequent state-only refresh commit, because a commit cannot contain its own hash.
+`3c130a06e12a30f9a17b64c67ee3ada44dc90f1a` is the UI/UX redesign implementation commit. It sits directly on top of the Phase 05 completion state `49f6b3c2916a89eac5d4456d1fa240b50939040f`. It is followed by state-only commits `d921ff3` (this file) and `e2b6f54` (`HANDOFF.md`). The final branch HEAD is the state-only commit after `e2b6f54`, because a commit cannot contain its own hash.
 
 ## Current implementation status
 
@@ -165,6 +165,7 @@ Pending. This redesign responds to human *visual* feedback only. It is not story
 - Physical notched-device testing remains useful beyond Chromium safe-area emulation.
 - Screenshots are written to the gitignored `.qa/shots`; they are a review aid, not a committed baseline, and there is no automatic pixel-diff regression gate.
 - Human art-direction review of the generated imagery is still appropriate.
+- A detached worktree at `C:/Users/cloc1/.config/superpowers/worktrees/CASE001/phase-04-case001-content` holds a superseded pre-redesign intermediate in `git stash@{0}` ("stale phase05 intermediate polish"). It is safe to drop; nothing on this branch depends on it.
 
 ## Known technical risks
 
@@ -216,7 +217,7 @@ Human visual/playtest review of the redesigned interface. Do not merge Phase 05,
 
 ## Exact continuation point
 
-Continue from clean branch `codex/phase-05-polish` at the state-only commit that follows redesign commit `3c130a06e12a30f9a17b64c67ee3ada44dc90f1a`. Confirm that `main` still contains Phase 04 merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`, that the Phase 04 base `455c79882f61ca06ed14d1d2ffe31688e2aca772` is still an ancestor of this branch, and that Phase 05 completion commit `49f6b3c2916a89eac5d4456d1fa240b50939040f` is its immediate parent lineage. Await human visual/playtest review before any further UI change, rebase, merge, or Phase 06 work. Reproduce screenshots with `npm run qa:visual`.
+Continue from clean branch `codex/phase-05-polish` at the final state-only commit, which follows redesign commit `3c130a06e12a30f9a17b64c67ee3ada44dc90f1a` and the state-only commits `d921ff3` and `e2b6f54`. Confirm that `main` still contains Phase 04 merge commit `caf1acdddea1a2e545256a9ec5fc439cc1b238a6`, that the Phase 04 base `455c79882f61ca06ed14d1d2ffe31688e2aca772` is still an ancestor of this branch, and that Phase 05 completion commit `49f6b3c2916a89eac5d4456d1fa240b50939040f` is its immediate parent lineage. Await human visual/playtest review before any further UI change, rebase, merge, or Phase 06 work. Reproduce screenshots with `npm run qa:visual`.
 
 ## Source-of-truth documents
 
