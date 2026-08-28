@@ -11,6 +11,8 @@ import {
   presentationCheckpointAfterEndingSelection,
   presentationStageForEnding,
   resetEndingPresentation,
+  acknowledgePendingPresentation,
+  setPendingPresentation,
   setEndingPresentationStage,
 } from '@/phone/polish/presentation-storage';
 
@@ -73,6 +75,43 @@ describe('presentation director', () => {
 });
 
 describe('presentation checkpoint storage', () => {
+  test('persists an unacknowledged reveal across reload and suppresses it after acknowledgement', () => {
+    const storage = new MemoryStorage();
+    const checkpoints = new PresentationCheckpointStorage(() => storage);
+    const pending = setPendingPresentation(DEFAULT_PRESENTATION_CHECKPOINT, {
+      beat: 'f17',
+      key: 'f17:deduction-completed:visible-a:deduction:visible-a',
+      recordIds: ['deduction:visible-a'],
+    });
+
+    expect(checkpoints.save(pending)).toBe(true);
+    expect(new PresentationCheckpointStorage(() => storage).load().pendingPresentation)
+      .toEqual(pending.pendingPresentation);
+
+    const acknowledged = acknowledgePendingPresentation(pending);
+    expect(acknowledged.pendingPresentation).toBeNull();
+    expect(acknowledged.acknowledgedBeatKeys).toContain(pending.pendingPresentation?.key);
+    expect(checkpoints.save(acknowledged)).toBe(true);
+    expect(new PresentationCheckpointStorage(() => storage).load().pendingPresentation).toBeNull();
+  });
+
+  test('loads existing version-one checkpoints that predate pending-presentation persistence', () => {
+    const storage = new MemoryStorage();
+    storage.value = JSON.stringify({
+      version: 1,
+      acknowledgedBeatKeys: ['older-key'],
+      endingId: null,
+      endingStage: null,
+    });
+
+    expect(new PresentationCheckpointStorage(() => storage).load()).toEqual({
+      version: 1,
+      acknowledgedBeatKeys: ['older-key'],
+      endingId: null,
+      endingStage: null,
+      pendingPresentation: null,
+    });
+  });
   test('round trips acknowledged beats and ending stage', () => {
     const storage = new MemoryStorage();
     const checkpoints = new PresentationCheckpointStorage(() => storage);
@@ -81,6 +120,7 @@ describe('presentation checkpoint storage', () => {
       acknowledgedBeatKeys: ['hope3:signal'],
       endingId: 'ending_alpha',
       endingStage: 'aftermath' as const,
+      pendingPresentation: null,
     };
 
     expect(checkpoints.save(checkpoint)).toBe(true);

@@ -41,7 +41,12 @@ const syntheticView: CaseView = {
     },
   ],
   completedDeductions: [
-    { id: 'deduction_complete', title: 'Эхний холбоос', kind: 'deduction' },
+    {
+      id: 'deduction_complete',
+      title: 'Эхний холбоос',
+      kind: 'deduction',
+      presentationTags: ['ordinary'],
+    },
   ],
   availableDeductions: [
     {

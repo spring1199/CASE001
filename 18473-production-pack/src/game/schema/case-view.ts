@@ -33,13 +33,17 @@ const completedDeductionViewSchema = z.strictObject({
   id: idSchema,
   title: textSchema,
   kind: z.enum(['deduction', 'contradiction']),
+  presentationTags: z.array(textSchema),
 });
 
-const availableDeductionViewSchema = completedDeductionViewSchema.extend({
+const availableDeductionViewSchema = z.strictObject({
+  id: idSchema,
+  title: textSchema,
+  kind: z.enum(['deduction', 'contradiction']),
   missingRequiredEvidenceCount: countSchema,
   thresholdMatched: countSchema,
   thresholdRequired: countSchema,
-}).strict();
+});
 
 const timelinePositionViewSchema = z.strictObject({
   id: idSchema,

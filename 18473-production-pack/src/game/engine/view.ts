@@ -33,9 +33,13 @@ export type CompletedDeductionView = Readonly<{
   id: string;
   title: string;
   kind: DeductionKind;
+  presentationTags: readonly string[];
 }>;
 
-export type AvailableDeductionView = CompletedDeductionView & Readonly<{
+export type AvailableDeductionView = Readonly<{
+  id: string;
+  title: string;
+  kind: DeductionKind;
   missingRequiredEvidenceCount: number;
   thresholdMatched: number;
   thresholdRequired: number;
@@ -141,7 +145,21 @@ export function projectCaseView(bundle: CaseBundle, state: PlayerState): CaseVie
   for (const deduction of bundle.deductions) {
     const kind: DeductionKind = deduction.kind ?? 'deduction';
     if (completedDeductionIds.has(deduction.id)) {
-      completedDeductions.push(Object.freeze({ id: deduction.id, title: deduction.title, kind }));
+      const supportingEvidenceIds = new Set([
+        ...(deduction.requiredAll ?? []),
+        ...(deduction.requiredAnyGroups ?? []).flat(),
+      ]);
+      const presentationTags = [...new Set(bundle.evidence.flatMap((record) => (
+        supportingEvidenceIds.has(record.id) && discoveredEvidenceIds.has(record.id)
+          ? record.tags
+          : []
+      )))];
+      completedDeductions.push(Object.freeze({
+        id: deduction.id,
+        title: deduction.title,
+        kind,
+        presentationTags: Object.freeze(presentationTags),
+      }));
       continue;
     }
     const evaluation = evaluateDeduction(deduction, {

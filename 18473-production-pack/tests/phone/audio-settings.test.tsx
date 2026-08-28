@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AUDIO_PREFERENCES } from '@/phone/polish/audio-preferences';
 import { createCase001PhoneIndex } from '@/phone/data/case-001';
 import { PhoneChrome } from '@/phone/components/PhoneChrome';
+import { nativeAudioPlaybackHandlers } from '@/phone/components/AudioNote';
 import {
   AudioSettings,
   updateAudioPreference,
@@ -15,6 +16,21 @@ import {
 } from '@/phone/polish/PresentationLayer';
 
 describe('Phase 05 audio settings', () => {
+  it('bridges every ready native-audio lifecycle exit to director duck/release callbacks', () => {
+    const onPlaybackStart = vi.fn();
+    const onPlaybackStop = vi.fn();
+    const handlers = nativeAudioPlaybackHandlers({ onPlaybackStart, onPlaybackStop });
+
+    handlers.onPlay();
+    handlers.onPause();
+    handlers.onEnded();
+    handlers.onEmptied();
+    handlers.onError();
+
+    expect(onPlaybackStart).toHaveBeenCalledOnce();
+    expect(onPlaybackStop).toHaveBeenCalledTimes(4);
+  });
+
   it('exposes a labeled header mixer control without changing the top-level tab contract', () => {
     const markup = renderToStaticMarkup(
       <PhoneChrome

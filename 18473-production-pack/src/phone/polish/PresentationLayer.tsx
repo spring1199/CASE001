@@ -1,5 +1,9 @@
 import { AudioNote } from '@/phone/components/AudioNote';
-import { presentationDuration, type PresentationBeat } from '@/phone/polish/presentation';
+import {
+  presentationBeatKey,
+  presentationDuration,
+  type PresentationBeat,
+} from '@/phone/polish/presentation';
 import type { EndingPresentationStage } from '@/phone/polish/presentation-storage';
 import styles from '@/phone/phone.module.css';
 
@@ -45,17 +49,15 @@ const beatLabels: Readonly<Record<PresentationBeat, string>> = {
   postcredit: 'Төгсгөлийн дараах бүртгэл',
 };
 
-export function presentationBeatKey(
+export function presentationBeatKeyForRecords(
   beat: PresentationBeat,
   records: readonly Pick<ProjectedPresentationRecord, 'id'>[],
   outcomeTypes: readonly string[],
 ): string {
-  return [
-    beat,
-    [...new Set(outcomeTypes)].sort().join(','),
-    [...new Set(records.map(({ id }) => id))].sort().join(','),
-  ].join(':');
+  return presentationBeatKey(beat, records.map(({ id }) => id), outcomeTypes);
 }
+
+export { presentationBeatKeyForRecords as presentationBeatKey };
 
 export function PresentationLayer({
   beat,

@@ -78,7 +78,12 @@ describe('spoiler-safe projection', () => {
       .toEqual(['edge_m_fixed', 'edge_m_link']);
     expect(view.availableDeductions.map(({ id }) => id)).toEqual(['ded_m_motive']);
     expect(view.completedDeductions).toEqual([
-      { id: 'ded_m_identity', title: 'X7 бол оршин суугч', kind: 'deduction' },
+      {
+        id: 'ded_m_identity',
+        title: 'X7 бол оршин суугч',
+        kind: 'deduction',
+        presentationTags: ['identity'],
+      },
     ]);
   });
 

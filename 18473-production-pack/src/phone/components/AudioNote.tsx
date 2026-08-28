@@ -1,5 +1,18 @@
 import styles from '@/phone/phone.module.css';
-import { useAudioPlayback } from '@/phone/polish/audio-playback';
+import {
+  useAudioPlayback,
+  type AudioPlaybackCallbacks,
+} from '@/phone/polish/audio-playback';
+
+export function nativeAudioPlaybackHandlers(callbacks: AudioPlaybackCallbacks) {
+  return {
+    onPlay: callbacks.onPlaybackStart,
+    onPause: callbacks.onPlaybackStop,
+    onEnded: callbacks.onPlaybackStop,
+    onEmptied: callbacks.onPlaybackStop,
+    onError: callbacks.onPlaybackStop,
+  };
+}
 
 type AudioNoteProps = Readonly<{
   audio: Readonly<{
@@ -13,7 +26,7 @@ type AudioNoteProps = Readonly<{
 
 export function AudioNote({ audio, label = 'Дуут тэмдэглэл' }: AudioNoteProps) {
   const hasReadyMaster = audio.productionStatus === 'ready' && audio.src !== undefined;
-  const { onPlaybackStart, onPlaybackStop } = useAudioPlayback();
+  const playbackHandlers = nativeAudioPlaybackHandlers(useAudioPlayback());
 
   return (
     <figure
@@ -34,11 +47,7 @@ export function AudioNote({ audio, label = 'Дуут тэмдэглэл' }: Audi
           preload="metadata"
           aria-label={label}
           className={styles.audioControl}
-          onPlay={onPlaybackStart}
-          onPause={onPlaybackStop}
-          onEnded={onPlaybackStop}
-          onEmptied={onPlaybackStop}
-          onError={onPlaybackStop}
+          {...playbackHandlers}
         >
           <source src={audio.src} />
           Таны хөтөч аудио тоглуулах боломжгүй байна.

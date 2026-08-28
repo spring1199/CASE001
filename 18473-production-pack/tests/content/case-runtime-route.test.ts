@@ -73,6 +73,7 @@ describe('Case #001 server runtime projection', () => {
       id: 'ded_planned_disappearance',
       title: 'Тэнүүн амиа хорлохоор бус, алга болохоор төлөвлөсөн',
       kind: 'deduction',
+      presentationTags: ['hope1', 'decoy', 'family'],
     });
   });
 

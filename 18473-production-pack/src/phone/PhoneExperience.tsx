@@ -28,15 +28,22 @@ import {
 } from '@/phone/polish/audio-preferences';
 import {
   PresentationLayer,
-  presentationBeatKey,
   type EndingAftermath,
   type ProjectedPresentationRecord,
 } from '@/phone/polish/PresentationLayer';
-import { selectPresentationBeat, type PresentationBeat } from '@/phone/polish/presentation';
+import type { PresentationBeat } from '@/phone/polish/presentation';
 import {
+  createPresentationSnapshot,
+  derivePresentationChange,
+  presentationRecordsForIds,
+  type PresentationSnapshot,
+} from '@/phone/polish/presentation-flow';
+import {
+  acknowledgePendingPresentation as acknowledgePersistedPresentation,
   PresentationCheckpointStorage,
   presentationCheckpointAfterEndingSelection,
   presentationStageForEnding,
+  setPendingPresentation as persistPendingPresentation,
   setEndingPresentationStage,
   type EndingPresentationStage,
   type PresentationCheckpoint,
@@ -127,7 +134,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const [audioDirector] = useState(() => new AudioDirector({ preferences: audioPreferences }));
   const [audioAvailable, setAudioAvailable] = useState<boolean | null>(null);
   const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
-  const [pendingPresentation, setPendingPresentation] = useState<PendingPresentation | null>(null);
+  const [pendingPresentation, setPendingPresentationState] = useState<PendingPresentation | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const playerState = useStore(playerStore, (state) => state.playerState);
   const [phoneIndex, setPhoneIndex] = useState<PhoneContentIndex | null>(null);
@@ -151,7 +158,7 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
   const actionStatusRef = useRef<HTMLParagraphElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const presentationCheckpointRef = useRef(presentationCheckpoint);
-  const caseViewRef = useRef<CaseView | null>(null);
+  const presentationSnapshotRef = useRef<PresentationSnapshot | null>(null);
   const scrollPositionsRef = useRef(new Map<string, number>());
   const scrollNavigationModeRef = useRef<ScrollNavigationMode>('reset');
   const currentRouteKey = phoneRouteKey(navigation.current);
@@ -194,6 +201,12 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     audioDirector.updatePreferences(preferences);
     audioPreferencesStorage.save(preferences);
   }, [audioDirector, audioPreferencesStorage]);
+
+  const commitPresentationCheckpoint = useCallback((checkpoint: PresentationCheckpoint): void => {
+    presentationCheckpointRef.current = checkpoint;
+    setPresentationCheckpoint(checkpoint);
+    if (!presentationStorage.save(checkpoint)) setPresentationPersistenceLimited(true);
+  }, [presentationStorage]);
 
   const prepareNavigation = useCallback(
     (mode: ScrollNavigationMode): void => {
@@ -258,46 +271,52 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     previous: PlayerState,
     projection: CasePhoneProjection,
   ): void => {
-    const previousView = caseViewRef.current;
-    const previousEvidenceIds = new Set(
-      previousView?.evidence.map(({ id }) => id) ?? [],
-    );
-    const newlyVisibleEvidence = previousView === null
-      ? []
-      : projection.view.evidence.filter(({ id }) => !previousEvidenceIds.has(id));
-    const beat = previousView === null
-      ? null
-      : selectPresentationBeat(newlyVisibleEvidence, projection.outcomes);
-    if (beat !== null) {
-      const key = presentationBeatKey(
-        beat,
-        newlyVisibleEvidence,
-        projection.outcomes.map(({ type }) => type),
-      );
-      if (!presentationCheckpointRef.current.acknowledgedBeatKeys.includes(key)) {
-        setPendingPresentation({ beat, key, records: newlyVisibleEvidence });
+    const currentSnapshot = createPresentationSnapshot(projection.view);
+    const previousSnapshot = presentationSnapshotRef.current;
+    if (previousSnapshot === null) {
+      const persistedPending = presentationCheckpointRef.current.pendingPresentation;
+      if (persistedPending !== null && persistedPending !== undefined) {
+        const pendingRecordIds = new Set(persistedPending.recordIds);
+        setPendingPresentationState({
+          beat: persistedPending.beat,
+          key: persistedPending.key,
+          records: presentationRecordsForIds(currentSnapshot, [...pendingRecordIds]),
+        });
       }
-      playCue(beat === 'ending' || beat === 'postcredit'
-        ? 'ending'
-        : beat === 'ordinary'
-          ? 'discovery'
-          : 'reveal');
-    } else if (projection.outcomes.some(({ type }) => (
-      type === 'edges-confirmed' || type === 'edges-severed'
-    ))) {
-      playCue('graph');
-    } else if (projection.outcomes.length > 0) {
-      playCue('interface');
+    } else {
+      const change = derivePresentationChange(previousSnapshot, currentSnapshot, projection.outcomes);
+      if (
+        change !== null
+        && !presentationCheckpointRef.current.acknowledgedBeatKeys.includes(change.key)
+      ) {
+        const checkpoint = persistPendingPresentation(
+          presentationCheckpointRef.current,
+          {
+            beat: change.beat,
+            key: change.key,
+            recordIds: change.records.map(({ id }) => id),
+          },
+        );
+        commitPresentationCheckpoint(checkpoint);
+        setPendingPresentationState({
+          beat: change.beat,
+          key: change.key,
+          records: change.records,
+        });
+        playCue(change.cue);
+      } else if (projection.outcomes.length > 0) {
+        playCue('interface');
+      }
     }
     applyEngineTransition(playerStore, previous, projection.state);
     setPhoneIndex(projection.phoneIndex);
     setGatedContentIds(projection.gatedContentIds);
     setCaseView(projection.view);
-    caseViewRef.current = projection.view;
+    presentationSnapshotRef.current = currentSnapshot;
     void playerStore.getState().actions.save().catch(() => {
       setStatus('Үндсэн ахиц хадгалагдсан ч хугацааны тэмдгийг шинэчилж чадсангүй.');
     });
-  }, [playerStore, playCue]);
+  }, [commitPresentationCheckpoint, playerStore, playCue]);
 
   const refreshProjection = useCallback(async (discovery?: PhoneDiscoveryEffects) => {
     let change = { information: false, unlocks: false };
@@ -310,12 +329,6 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
     );
     return change;
   }, [applyProjection, runtimeMutationQueue]);
-
-  const commitPresentationCheckpoint = useCallback((checkpoint: PresentationCheckpoint): void => {
-    presentationCheckpointRef.current = checkpoint;
-    setPresentationCheckpoint(checkpoint);
-    if (!presentationStorage.save(checkpoint)) setPresentationPersistenceLimited(true);
-  }, [presentationStorage]);
 
   const updateEndingStage = useCallback((stage: EndingPresentationStage): void => {
     const endingId = caseView?.ending?.endingId;
@@ -625,16 +638,10 @@ export function PhoneExperience({ caseSummary }: PhoneExperienceProps) {
 
   const acknowledgePendingPresentation = (): void => {
     if (pendingPresentation === null) return;
-    commitPresentationCheckpoint({
-      ...presentationCheckpointRef.current,
-      acknowledgedBeatKeys: [
-        ...new Set([
-          ...presentationCheckpointRef.current.acknowledgedBeatKeys,
-          pendingPresentation.key,
-        ]),
-      ],
-    });
-    setPendingPresentation(null);
+    commitPresentationCheckpoint(acknowledgePersistedPresentation(
+      presentationCheckpointRef.current,
+    ));
+    setPendingPresentationState(null);
   };
 
   const playbackCallbacks = {

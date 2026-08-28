@@ -48,8 +48,62 @@ async function unlock(page: import('@playwright/test').Page): Promise<void> {
   await expect(page.locator('[data-phone-screen="home"]')).toBeVisible();
 }
 
+async function instrumentAudioContext(page: import('@playwright/test').Page): Promise<void> {
+  await page.addInitScript(() => {
+    const state = window as unknown as { __audioContextCreations: number };
+    state.__audioContextCreations = 0;
+    const parameter = () => ({
+      value: 1,
+      cancelScheduledValues: () => undefined,
+      setValueAtTime: () => undefined,
+      linearRampToValueAtTime: () => undefined,
+      exponentialRampToValueAtTime: () => undefined,
+    });
+    const node = (extra: Record<string, unknown> = {}) => ({
+      connect(this: unknown) { return this; },
+      disconnect: () => undefined,
+      onended: null,
+      ...extra,
+    });
+    class InstrumentedAudioContext {
+      currentTime = 0;
+      state = 'suspended';
+      destination = node();
+      sampleRate = 48_000;
+
+      constructor() { state.__audioContextCreations += 1; }
+      async resume() { this.state = 'running'; }
+      async suspend() { this.state = 'suspended'; }
+      async close() { this.state = 'closed'; }
+      createGain() { return node({ gain: parameter() }); }
+      createOscillator() {
+        return node({ frequency: parameter(), type: 'sine', start: () => undefined, stop: () => undefined });
+      }
+      createBuffer(_channels: number, length: number) {
+        return { getChannelData: () => new Float32Array(length) };
+      }
+      createBufferSource() {
+        return node({ buffer: null, loop: false, start: () => undefined, stop: () => undefined });
+      }
+    }
+    Object.defineProperty(window, 'AudioContext', {
+      configurable: true,
+      value: InstrumentedAudioContext,
+    });
+  });
+}
+
 test('opens the persisted mixer from a labeled user-gesture control', async ({ page }) => {
-  await unlock(page);
+  await instrumentAudioContext(page);
+  await page.goto('/');
+  await expect.poll(() => page.evaluate(() => (
+    window as unknown as { __audioContextCreations: number }
+  ).__audioContextCreations)).toBe(0);
+  await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
+  await expect(page.locator('[data-phone-screen="home"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (
+    window as unknown as { __audioContextCreations: number }
+  ).__audioContextCreations)).toBe(1);
   await page.getByRole('button', { name: 'Дууны тохиргоо нээх' }).click();
   await expect(page.getByRole('region', { name: 'Дууны тохиргоо' })).toBeVisible();
   await page.getByLabel('Ерөнхий дуу').fill('0.4');
@@ -84,14 +138,23 @@ test('keeps scripted transcripts available while audio is disabled', async ({ pa
   await expect(page.locator('[data-audio-production-status="scripted"] audio')).toHaveCount(0);
 });
 
-test('uses a short crossfade for reveal presentation under reduced motion', async ({ page }) => {
+test('uses a short crossfade for an actual reveal and persists acknowledgement across reload', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await unlock(page);
+  await page.getByRole('button', { name: 'Зурвас апп' }).click();
+  await page.getByRole('button', { name: '18473 217' }).click();
   const layer = page.locator('[data-presentation-beat]');
-  if (await layer.count()) {
-    await expect(layer).toHaveAttribute('data-presentation-duration', /^(?:[0-9]|[1-9][0-9]|1[0-4][0-9]|150)$/);
-    await expect(layer.getByRole('button', { name: 'Үргэлжлүүлэх' })).toBeVisible();
-  }
+  await expect(layer).toBeVisible();
+  await expect(layer).toHaveAttribute('data-presentation-duration', /^(?:[0-9]|[1-9][0-9]|1[0-4][0-9]|150)$/);
+  const beat = await layer.getAttribute('data-presentation-beat');
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
+  await expect(layer).toHaveAttribute('data-presentation-beat', beat!);
+  await layer.getByRole('button', { name: 'Үргэлжлүүлэх' }).click();
+  await page.reload();
+  await page.getByRole('button', { name: 'Түгжээ тайлах' }).click();
+  await expect(layer).toHaveCount(0);
 });
 
 test('persists decision → call/raspberry → closure → postcredit ordering across reload', async ({ page }) => {

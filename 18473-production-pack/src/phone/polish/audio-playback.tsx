@@ -2,7 +2,7 @@
 
 import { createContext, type ReactNode, useContext } from 'react';
 
-type AudioPlaybackCallbacks = Readonly<{
+export type AudioPlaybackCallbacks = Readonly<{
   onPlaybackStart(): void;
   onPlaybackStop(): void;
 }>;

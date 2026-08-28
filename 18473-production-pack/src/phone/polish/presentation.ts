@@ -74,3 +74,15 @@ const BEAT_DURATIONS: Readonly<Record<PresentationBeat, number>> = {
 export function presentationDuration(beat: PresentationBeat, reducedMotion: boolean): number {
   return reducedMotion ? 120 : BEAT_DURATIONS[beat];
 }
+
+export function presentationBeatKey(
+  beat: PresentationBeat,
+  recordIds: readonly string[],
+  outcomeIdentities: readonly string[],
+): string {
+  return [
+    beat,
+    [...new Set(outcomeIdentities)].sort().join(','),
+    [...new Set(recordIds)].sort().join(','),
+  ].join(':');
+}
